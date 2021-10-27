@@ -1,0 +1,30 @@
+-- IMPROVE ALGORITHM
+-- dataset 				XXXX
+-- stream depthmap			XXXX
+-- norm of image			XXXX
+-- depth->invdepth sampling		XXXX
+-- improve sobel filter 		XXXX
+-- pathtrace->dataset 			XXXX
+-- show world frame 			XXXX
+-- show invdepth  			XXXX
+-- dataset as argument			XXXX
+-- handle borders			XXXX
+-- depth->invdepth  			XXXX
+-- function handling			XXXX
+-- classes mapping/tracking   XXXX
+-- cameragpu in cameracpu   XXXX
+-- add points to state    XXXX
+-- points on blender    XXXX
+
+-- rgb depth map    ????
+-- update sampling    ????
+
+-- plot costs for pixel in graph
+
+-- add rotation for naive dataset maker	maybe not
+-- play with parameters
+
+
+-- initialization
+-- tracking
+-- reference camera update system
