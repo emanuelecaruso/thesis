@@ -30,21 +30,13 @@ class Dtam{
     int frame_current_;
 
     std::thread update_cameras_thread_;
-  //
-  //   double showImgs(int scale);
-  //   void addCamera(Camera_cpu* camera_cpu);
-  //   bool setReferenceCamera(int index_r);
-
-
-    // void loadCameras(CameraVector camera_vector);
+    std::thread mapping_thread_;
+    std::thread tracking_thread_;
 
     void addCamera(bool takeGtPoses);
-    bool getCurrentFrame();
 
     void updateCamerasFromVideostream(bool takeGtPoses);
-    // bool setReferenceCamera(int index_r);
-    // void prepareCameraForDtam(int index_m);
-    //
-    // void updateDepthMap( int index_m, bool check=false);
-    // void updateDepthMap_parallel_cpu( int index_m, bool check=false);
+    void doMapping();
+    void doTracking();
+
 };

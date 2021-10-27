@@ -67,7 +67,7 @@ using json = nlohmann::json;
 //   return delta;
 // }
 
-void Environment::checkDataset(const std::string& path_name, const std::string& dataset_name){
+void Environment::checkDataset(const std::string& path_name, const std::string& dataset_name) const {
 
   const char* path_name_ = path_name.c_str(); // dataset name
 
@@ -148,14 +148,6 @@ std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name
     frame_camera_wrt_world->linear()=R;
     frame_camera_wrt_world->translation()=t;
 
-
-    // Eigen::Isometry3f* frame_camera_wrt_world = new Eigen::Isometry3f;
-    // Eigen::Isometry3f* frame_world_wrt_camera = new Eigen::Isometry3f;
-    // frame_camera_wrt_world->linear().setIdentity();
-    // frame_camera_wrt_world->translation()= Eigen::Vector3f(0,0,0);
-    // frame_world_wrt_camera->linear().setIdentity();
-    // frame_world_wrt_camera->translation()= Eigen::Vector3f(0,0,0);
-
     Camera* camera = new Camera(name,cam_parameters_,frame_camera_wrt_world);
 
     camera->loadRGB(path_rgb);
@@ -226,7 +218,7 @@ CamParameters* Environment::loadCamParameters(const std::string& path_name, cons
 
 }
 
-void Environment::debugAllCameras(bool show_imgs){
+void Environment::debugAllCameras(bool show_imgs) const {
 
   std::cout << "DEBUGGING ALL CAMERAS:" << std::endl;
   std::cout << "camera vector size: " << camera_vector_->size() << std::endl;
