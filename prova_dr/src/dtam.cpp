@@ -1,3 +1,4 @@
+#include "mapper.h"
 #include "dtam.h"
 #include <math.h>
 #include "utils.h"
@@ -5,10 +6,12 @@
 #include <chrono>
 #include <stdlib.h>
 
+
+
 void Dtam::debugAllCameras(bool show_imgs){
 
-  std::cout << "DEBUGGING ALL CAMERAS:" << std::endl;
-  std::cout << "camera vector size: " << camera_vector_->size() << std::endl;
+  sharedCoutDebug("DEBUGGING ALL CAMERAS:");
+  sharedCoutDebug("camera vector size: " + std::to_string(camera_vector_->size()));
 
   for(Camera* camera : *camera_vector_){
     camera->printMembers();
@@ -31,9 +34,12 @@ void Dtam::addCamera(bool takeGtPoses){
   camera_vector_->push_back(new_camera);
 }
 
+int Dtam::getFrameCurrent(){
+  return frame_current_;
+}
 
 void Dtam::doMapping(){
-
+  mapper_->doMapping();
 }
 
 void Dtam::doTracking(){
@@ -46,15 +52,21 @@ void Dtam::updateCamerasFromVideostream(bool takeGtPoses){
 
   while(true){
 
+
     double t_start=getTime();
 
     if (frame_current_>= environment_->camera_vector_->size()){
-      std::cout << "Video stream ended" << std::endl;
+      sharedCout("\nVideo stream ended");
       break;
     }
-    std::cout << "Frame: " << frame_current_ << std::endl;
+    sharedCout("\nFrame: "+ std::to_string(frame_current_));
     addCamera(takeGtPoses);
+    std::unique_lock<std::mutex> locker(mu_frame_);
+    if (frame_current_==2){
+      first_2_frames_available_.notify_all();
+    }
     frame_current_++;
+    locker.unlock();
 
     double t_end=getTime();
 
@@ -63,6 +75,7 @@ void Dtam::updateCamerasFromVideostream(bool takeGtPoses){
     long int time_to_wait=(1.0/fps)*1000000-waitDelay;
     std::this_thread::sleep_for(std::chrono::microseconds(time_to_wait));
   }
+
 }
 
 void Dtam::test_mapping(){
@@ -72,7 +85,8 @@ void Dtam::test_mapping(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromVideostream, this, takeGtPoses);
   std::thread mapping_thread_(&Dtam::doMapping, this);
 
+  // mapping_thread_.join();
+  mapping_thread_.detach();
   update_cameras_thread_.join();
-  mapping_thread_.join();
 
 }

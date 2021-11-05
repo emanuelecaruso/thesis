@@ -1,1 +1,8 @@
-- epipolar line coupling
+- mapper.cpp, resizeLine: it may be simplified?? TODO
+- mapper.cpp, computeEpipolarLine: select better uv TODO
+- mapper.cpp, epipolarTraverse: alternative solutions? TODO
+- camera.h, Pyramid: https://docs.opencv.org/3.4.15/d4/d1f/tutorial_pyramids.html TODO
+- mapper.cpp, resizeLine: pay attention on traverseLine! TODO
+. mapper.cpp, doMapping: take other frame couple TODO
+- interval depth range in epipolar cam 2 TODO
+- comparison range TODO

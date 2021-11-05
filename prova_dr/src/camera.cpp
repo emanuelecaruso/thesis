@@ -2,16 +2,10 @@
 #include <thread>
 #include <vector>
 #include <mutex>
+#include <cstdlib>
 
 using namespace std;
 using namespace pr;
-
-
-
-void Camera::clearImgs(){
-  invdepth_map_->setAllPixels(1.0);
-  image_rgb_->setAllPixels(cv::Vec3b(255,255,255));
-}
 
 void Camera::printMembers() const {
 
@@ -25,6 +19,33 @@ void Camera::printMembers() const {
   std::cout << "frame_camera_wrt_world TRANSL:\n" << (*frame_camera_wrt_world_).translation() << std::endl;
   std::cout << "\n" << std::endl;
 
+}
+
+// sampling
+void Camera::sampleRandomPixel(Eigen::Vector2i& pixel_coords){
+  pixel_coords.x() = rand() % cam_parameters_->resolution_x;
+  pixel_coords.y() = rand() % cam_parameters_->resolution_y;
+}
+void Camera::sampleRandomUv(Eigen::Vector2f& uv){
+  uv.x() = ((float)rand()/RAND_MAX) * cam_parameters_->width;
+  uv.y() = ((float)rand()/RAND_MAX) * cam_parameters_->height;
+}
+
+
+// access
+void Camera::getCentreAsUV(Eigen::Vector2f& uv){
+  uv.x() = cam_parameters_->width/2;
+  uv.y() = cam_parameters_->height/2;
+}
+
+void Camera::getCentreAsPixel(Eigen::Vector2i& pixel_coords){
+  pixel_coords.x() = cam_parameters_->resolution_x/2;
+  pixel_coords.y() = cam_parameters_->resolution_y/2;
+}
+
+void Camera::clearImgs(){
+  invdepth_map_->setAllPixels(1.0);
+  image_rgb_->setAllPixels(cv::Vec3b(255,255,255));
 }
 
 Eigen::Matrix3f* Camera::compute_K(){
@@ -42,20 +63,20 @@ Eigen::Matrix3f* Camera::compute_K(){
   return K;
 }
 
-void Camera::pixelCoords2uv(Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv) const {
+void Camera::pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv) const {
   float pixel_width = cam_parameters_->width/cam_parameters_->resolution_x;
 
   uv.x()=((float)pixel_coords.x()/(cam_parameters_->resolution_x))*cam_parameters_->width+(pixel_width/2);
   uv.y()=(((float)pixel_coords.y())/(float)cam_parameters_->resolution_y)*(float)(cam_parameters_->height)+(pixel_width/2);
 }
 
-void Camera::uv2pixelCoords( Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const {
+void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const {
 
   pixel_coords.x()=(int)((uv.x()/cam_parameters_->width)*cam_parameters_->resolution_x);
   pixel_coords.y()=(int)((uv.y()/cam_parameters_->height)*cam_parameters_->resolution_y);
 }
 
-void Camera::pointAtDepth(Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const {
+void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const {
 
   Eigen::Vector3f p_proj;
   Eigen::Vector2f product = uv * depth;
@@ -67,7 +88,7 @@ void Camera::pointAtDepth(Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) 
 
 }
 
-bool Camera::projectPoint(Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const {
+bool Camera::projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const {
 
 
   Eigen::Vector3f p_cam = *frame_world_wrt_camera_*p;
@@ -83,27 +104,49 @@ bool Camera::projectPoint(Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_
     return false;
 
   return true;
+}
+
+bool Camera::projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv ) const {
+
+  Eigen::Vector3f p_cam = *frame_world_wrt_camera_*p;
+
+  Eigen::Vector3f p_proj = (*K_)*p_cam;
+
+  uv = p_proj.head<2>()*(1./p_proj.z());
+
+  if (-p_cam.z()<cam_parameters_->lens)
+    return false;
+
+  return true;
+}
+
+bool Camera::projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv ) const {
+
+  Eigen::Vector3f p = cam_to_be_projected->frame_camera_wrt_world_->translation();
+
+  bool out = projectPoint(p, uv);
+  return out;
 
 }
 
-void Camera::saveRGB(std::string path) const {
+void Camera::saveRGB(const std::string& path) const {
   cv::imwrite(path+ "/rgb_" +name_+".png", image_rgb_->image_);
 }
 
-void Camera::saveDepthMap(std::string path) const {
+void Camera::saveDepthMap(const std::string& path) const {
   cv::Mat ucharImg;
   invdepth_map_->image_.convertTo(ucharImg, CV_32FC1, 255.0);
   cv::imwrite(path+ "/depth_" +name_+".png", ucharImg);
 
 }
 
-void Camera::loadRGB(std::string path){
+void Camera::loadRGB(const std::string& path){
 
   image_rgb_->image_=cv::imread(path);
 
 }
 
-void Camera::loadDepthMap(std::string path){
+void Camera::loadDepthMap(const std::string& path){
   invdepth_map_->image_=cv::imread(path, cv::IMREAD_ANYDEPTH);
   invdepth_map_->image_/=1.0908;
 }
@@ -116,7 +159,7 @@ void Camera::showDepthMap(int image_scale) const {
   invdepth_map_->show(image_scale);
 }
 
-void Camera::showWorldFrame(Eigen::Vector3f origin, float delta, int length){
+void Camera::showWorldFrame(Eigen::Vector3f& origin, float delta, int length){
   Camera::clearImgs();
   std::vector<Cp> cps_world_frame;
   for (int i=0; i<length; i++)

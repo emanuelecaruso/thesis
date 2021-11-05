@@ -4,6 +4,8 @@
 #include "tracker.h"
 #include "environment.h"
 #include <thread>
+#include <mutex>
+#include <condition_variable>
 
 
 class Dtam{
@@ -17,21 +19,30 @@ class Dtam{
       camera_vector_= new std::vector<Camera*>;
     };
 
+
     void test_mapping();
     void test_tracking(Environment* environment);
     void debugAllCameras(bool show_imgs=false);
+    int getFrameCurrent();
 
 
   private:
-    std::vector<Camera*>* camera_vector_;
     const Environment* environment_;
-    const Mapper* mapper_;
-    const Tracker* tracker_;
+    Mapper* const mapper_;
+    Tracker* const tracker_;
+    friend class Mapper;
+    friend class Tracker;
+    std::vector<Camera*>* camera_vector_;
     int frame_current_;
+
+    std::mutex mu_frame_;
+    std::condition_variable first_2_frames_available_;
 
     std::thread update_cameras_thread_;
     std::thread mapping_thread_;
     std::thread tracking_thread_;
+
+
 
     void addCamera(bool takeGtPoses);
 

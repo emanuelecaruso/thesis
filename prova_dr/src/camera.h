@@ -4,6 +4,19 @@
 
 using namespace pr;
 
+struct Pyramid{
+  public:
+    Image<cv::Vec3b>* pyr_2;
+    Image<cv::Vec3b>* pyr_4;
+    Image<cv::Vec3b>* pyr_8;
+
+    Pyramid(Image<cv::Vec3b>* image_rgb){
+      // https://docs.opencv.org/3.4.15/d4/d1f/tutorial_pyramids.html TODO
+    };
+  // private:
+  //   void makePyramid();
+
+};
 
 class Camera{
   public:
@@ -49,22 +62,32 @@ class Camera{
 
     void printMembers() const;
 
+    // sampling
+    void sampleRandomUv(Eigen::Vector2f& uv);
+    void sampleRandomPixel(Eigen::Vector2i& pixel_coords);
+
+    // access
+    void getCentreAsUV(Eigen::Vector2f& uv);
+    void getCentreAsPixel(Eigen::Vector2i& pixel_coords);
+
     // functions for projections/transformations
-    void pixelCoords2uv(Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv) const;
-    void uv2pixelCoords( Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const;
-    void pointAtDepth(Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const;
-    bool projectPoint(Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const;
+    void pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv) const;
+    void uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const;
+    void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const;
+    bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const;
+    bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv) const;
+    bool projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv) const;
 
     // functions for images
     void clearImgs();
-    void saveRGB(std::string path) const;
-    void saveDepthMap(std::string path) const;
-    void loadRGB(std::string path);
-    void loadDepthMap(std::string path);
+    void saveRGB(const std::string& path) const;
+    void saveDepthMap(const std::string& path) const;
+    void loadRGB(const std::string& path);
+    void loadDepthMap(const std::string& path);
     void showRGB(int image_scale=1) const;
     void showDepthMap(int image_scale=1) const;
 
-    void showWorldFrame(Eigen::Vector3f origin, float delta,int length);
+    void showWorldFrame(Eigen::Vector3f& origin, float delta,int length);
 
     inline Camera* clone(){
       return new Camera(*this);
@@ -73,5 +96,3 @@ class Camera{
     Eigen::Matrix3f* compute_K();
 
 };
-
-typedef std::vector<Camera*> CameraVector;

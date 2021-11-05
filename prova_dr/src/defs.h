@@ -8,6 +8,7 @@
 #include "opencv2/opencv.hpp"
 #include <sys/types.h>
 #include <dirent.h>
+#include <mutex>
 
 
 namespace pr {
@@ -246,20 +247,32 @@ namespace pr {
 
   };
 
+
+
   struct Cp // Colored point (in 3D)
   {
     Eigen::Vector3f point;
     cv::Vec3b color;
   };
-  struct Cp_gpu // Colored point (in 3D)
-  {
-    Eigen::Vector3f point;
-    uchar color[3];
-    bool valid;
-  };
 
+  static std::mutex mu_cout;
 
-  typedef std::vector<Cp> cpVector;
-  // typedef std::vector<Camera*> CameraVector;
+  static bool debug_mode = 1;
 
+  inline void sharedCout(const std::string& msg){
+    std::lock_guard<std::mutex> locker(mu_cout);
+    std::cout << msg << std::endl;
+  }
+
+  inline void sharedCoutDebug(const std::string& msg){
+    if (debug_mode){
+      std::lock_guard<std::mutex> locker(mu_cout);
+      std::cout << msg << std::endl;
+    }
+  }
+
+  const cv::Vec3b magenta = cv::Vec3b(255,0,255);
+  const cv::Vec3b red = cv::Vec3b(0,0,255);
+  const cv::Vec3b green = cv::Vec3b(0,255,0);
+  const cv::Vec3b blue = cv::Vec3b(255,0,0);
 }

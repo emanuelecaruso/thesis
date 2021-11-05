@@ -15,16 +15,13 @@ class Environment{
     camera_vector_(loadCameraVector( path_name, dataset_name)),
     dataset_name_(dataset_name),
     fps_(fps)
-    {
-      checkDataset( path_name, dataset_name);
-    };
+    {};
 
     void debugAllCameras(bool show_imgs=false) const;
 
   private:
     std::vector<Camera*>* loadCameraVector(const std::string& path_name, const std::string& dataset_name);
     CamParameters* loadCamParameters(const std::string& path_name, const std::string& dataset_name);
-    void checkDataset(const std::string& path_name, const std::string& dataset_name) const;
 
     // double saveState(std::string path_name, Camera_cpu* camera_cpu);
 

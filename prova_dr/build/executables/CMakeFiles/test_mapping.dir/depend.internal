@@ -1335,9 +1335,12 @@ executables/CMakeFiles/test_mapping.dir/__/src/image.cpp.o
 executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o
  /home/emanuele/Scrivania/myalg/prova_dr/src/camera.h
  /home/emanuele/Scrivania/myalg/prova_dr/src/defs.h
+ /home/emanuele/Scrivania/myalg/prova_dr/src/dtam.h
+ /home/emanuele/Scrivania/myalg/prova_dr/src/environment.h
  /home/emanuele/Scrivania/myalg/prova_dr/src/image.h
  /home/emanuele/Scrivania/myalg/prova_dr/src/mapper.cpp
  /home/emanuele/Scrivania/myalg/prova_dr/src/mapper.h
+ /home/emanuele/Scrivania/myalg/prova_dr/src/tracker.h
  /home/emanuele/Scrivania/myalg/prova_dr/src/utils.h
  /usr/local/include/eigen3/Eigen/Cholesky
  /usr/local/include/eigen3/Eigen/Core
