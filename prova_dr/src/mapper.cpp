@@ -11,7 +11,7 @@ void EpipolarLine::printMembers() const {
 
   sharedCout("\n"+cam->name_+", epipolar line:");
   sharedCout("slope: "+std::to_string(slope));
-  sharedCout("vh: "+std::to_string(vh));
+  sharedCout("c0: "+std::to_string(c0));
   sharedCout("u_or_v: "+std::to_string(u_or_v));
   sharedCout("start: "+std::to_string(start));
   sharedCout("end: "+std::to_string(end));
@@ -20,11 +20,11 @@ void EpipolarLine::printMembers() const {
 void EpipolarLine::coordToUV(float& coord, Eigen::Vector2f& uv){
   if (u_or_v){
     uv.x()=coord;
-    uv.y()= slope*coord+vh;
+    uv.y()= slope*coord+c0;
   }
   else{
     uv.y()= coord;
-    uv.x()= (coord-vh)/slope;
+    uv.x()= coord/slope+c0;
   }
 }
 
@@ -99,7 +99,7 @@ bool EpipolarLine::resizeLine(){
     }
     UVToCoord(end_uv,end);
 
-    // pay attention on traverseLine! TODO
+    // pay attention on lineTraverse! TODO
     lineTraverse();
     return true;
 }
@@ -168,9 +168,102 @@ void Mapper::frameCouplingLast(int& frame_1, int& frame_2 ){
   sharedCoutDebug("chosen frames: "+std::to_string(frame_1)+ " " +std::to_string(frame_2));
 }
 
+void getParametersABCD(EpipolarLine* ep_line_1, EpipolarLine* ep_line_2,
+                      float& A_M,float& B_M,float& C_M,float& D_M,
+                      float& A_m,float& B_m,float& C_m,float& D_m){
+
+  // from cam_2 to cam_1
+  Eigen::Isometry3f T = (*(ep_line_1->cam->frame_world_wrt_camera_))*(*(ep_line_2->cam->frame_camera_wrt_world_));
+  Eigen::Matrix3f r=T.linear();
+  Eigen::Vector3f t=T.translation();
+  float slope1 = ep_line_1->slope;
+  float slope2 = ep_line_2->slope;
+  float f = ep_line_1->cam->cam_parameters_->lens;
+  float f2 = f*f;
+  float w = ep_line_1->cam->cam_parameters_->width;
+  float w2 = w*w;
+  float h = ep_line_1->cam->cam_parameters_->height;
+  float max_depth = ep_line_1->cam->cam_parameters_->max_depth;
+  float min_depth = ep_line_1->cam->cam_parameters_->min_depth;
+  float d1;
+  bool u_or_v = ep_line_1->u_or_v;
+  float vh = ep_line_1->c0;
+
+  // max depth
+  d1=max_depth;
+  if(u_or_v){
+    //(4 d1 f r11 - 2 d1 r31 width - 4 d1 f r12 slope1 + 2 d1 r32 slope1 width)
+    A_M=(4*d1*f*r(0,0) - 2*d1*r(2,1)*w - 4*d1*f*r(0,1)*slope1 +  4*d1*f*r(0,1)*slope1 + 2*d1*r(2,1)*slope1*w );
+
+    // 4 f  t1 + d1 r31 width  - 2 f t3 width - 4 d1 f  r13
+    //  + 2 d1 f height r12 - 4 d1 f r12 vh - 2 d1 f r11 width + 2 d1 f r33 width - d1 height r32 width
+    //  + 2 d1 r32 vh width)
+    B_M=4*f2*t(0) + d1*r(2,0)*w2 - 2*f*t(2)*w - 4*d1*f2*r(0,2)
+        + 2*d1*f*h*r(0,1) - 4*d1*f*r(0,1)*vh - 2*d1*f*r(0,0)*w + 2*d1*f*r(2,2)*w - d1*h*r(2,1)*w
+        + 2*d1*r(2,1)*vh*w ;
+
+    // (4 d1 r32 slope1 - 4 d1 r31)
+    C_M=4*d1*r(2,1)*slope1 - 4*d1*r(2,0);
+
+    // 4 d1 f r33 - 4 f t3 - 2 d1 height r32 + 4 d1 r32 vh + 2 d1 r31 width
+    D_M=4*d1*f*r(2,2) - 4*f*t(2) - 2*d1*h*r(2,1) + 4*d1*r(2,1)*vh + 2*d1*r(2,0)*w;
+  }
+  else{
+
+  }
+
+  // min depth
+  d1=min_depth;
+  if(u_or_v){
+    //(4 d1 f r11 - 2 d1 r31 width - 4 d1 f r12 slope1 + 2 d1 r32 slope1 width)
+    A_m=(4*d1*f*r(0,0) - 2*d1*r(2,1)*w - 4*d1*f*r(0,1)*slope1 +  4*d1*f*r(0,1)*slope1 + 2*d1*r(2,1)*slope1*w );
+
+    // 4 f  t1 + d1 r31 width  - 2 f t3 width - 4 d1 f  r13
+    //  + 2 d1 f height r12 - 4 d1 f r12 vh - 2 d1 f r11 width + 2 d1 f r33 width - d1 height r32 width
+    //  + 2 d1 r32 vh width)
+    B_m=4*f2*t(0) + d1*r(2,0)*w2 - 2*f*t(2)*w - 4*d1*f2*r(0,2)
+        + 2*d1*f*h*r(0,1) - 4*d1*f*r(0,1)*vh - 2*d1*f*r(0,0)*w + 2*d1*f*r(2,2)*w - d1*h*r(2,1)*w
+        + 2*d1*r(2,1)*vh*w ;
+
+    // (4 d1 r32 slope1 - 4 d1 r31)
+    C_m=4*d1*r(2,1)*slope1 - 4*d1*r(2,0);
+
+    // 4 d1 f r33 - 4 f t3 - 2 d1 height r32 + 4 d1 r32 vh + 2 d1 r31 width
+    D_m=4*d1*f*r(2,2) - 4*f*t(2) - 2*d1*h*r(2,1) + 4*d1*r(2,1)*vh + 2*d1*r(2,0)*w;
+  }
+  else{
+
+  }
+
+
+}
+
+bool buildFeatureVec(EpipolarLine*& ep_line_1, EpipolarLine*& ep_line_2,
+          std::vector<Feature*>*& feats_1, std::vector<Feature*>*& feats_2)
+{
+  int feats_1_size = ep_line_1->uvs->size();
+  int feats_2_size = ep_line_2->uvs->size();
+  feats_1 = new std::vector<Feature*>(feats_1_size);
+  feats_2 = new std::vector<Feature*>(feats_2_size);
+
+  float A_M, B_M, C_M, D_M, A_m, B_m, C_m, D_m;
+
+  getParametersABCD(ep_line_1, ep_line_2,
+                     A_M, B_M, C_M, D_M,
+                     A_m, B_m, C_m, D_m);
+
+  for(int i=0; i<feats_1_size; i++){
+    cv::Vec3b gradient;
+    cv::Vec3b color;
+    float upperbound;
+    float lowerbound;
+    feats_1->at(i)= new Feature(i,color,gradient,upperbound,lowerbound);
+  }
+
+}
 
 bool Mapper::computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
-            Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,EpipolarLine*& ep_line_2)
+        Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,EpipolarLine*& ep_line_2)
 {
 
   Eigen::Vector2f cam_2_on_cam_1;

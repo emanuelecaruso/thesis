@@ -6,23 +6,26 @@ class Dtam; //forward declaration
 
 class EpipolarLine{
   public:
-    // line parameters
-    const float slope;  // slope of the line
-    const float vh;     // y value at x=0
 
-    // defines wether start and end are expressed as  u or v coordinate, true->u, false->v
+    // line parameters
+
+    // defines wether start, end and x0 are expressed as  u or v coordinate, true->u, false->v
     const bool u_or_v;
+    const float slope;  // slope of the line
+    const float c0;     // v at u=0, or u at v=0
+
+
     // slope is kept const, start and end can be moved
-    float start;  // start of segment
-    float end;    // end of segment
+    float start;  // start of segment (u or v coord)
+    float end;    // end of segment (u or v coord)
 
     const Camera* cam; // camera associated to epipolar line
     std::vector<Eigen::Vector2f>* uvs;  // vector of interpoled uvs along epipolar line
 
     EpipolarLine( const Camera* cam_, Eigen::Vector2f& start_, Eigen::Vector2f& end_):
     slope((end_-start_).y()/(end_-start_).x()),
-    vh(start_.y()-slope*start_.x()),
     u_or_v( (slope<1 && slope>-1) ),
+    c0( u_or_v ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ),
     cam(cam_)
     {
       UVToCoord(start_,start);
@@ -39,26 +42,36 @@ class EpipolarLine{
 
 };
 
-struct featureData{
-  int idx;
-  cv::Vec3b color;
-  cv::Vec3b gradient;
-  int parent = -1;
-  float upperbound; //  in u coord
-  float lowerbound; //  in u coord
+class Feature{
+  public:
+    const int idx_;
+    const cv::Vec3b color_;
+    const cv::Vec3b gradient_;
+    const float upperbound_; //  in u coord
+    const float lowerbound_; //  in u coord
+    int parent_ = -1;
 
-  inline void printMembers(){
-    sharedCout("idx: "+std::to_string(idx));
-    sharedCout("parent: "+std::to_string(parent));
-    sharedCout("upperbound: "+std::to_string(upperbound));
-    sharedCout("lowerbound: "+std::to_string(lowerbound));
-    sharedCout("color: "+std::to_string(color[0])+
-                    ", "+std::to_string(color[1])+
-                    ", "+std::to_string(color[2]));
-    sharedCout("gradient: "+std::to_string(gradient[0])+
-                       ", "+std::to_string(gradient[1])+
-                       ", "+std::to_string(gradient[2]));
-  }
+    Feature(int idx, cv::Vec3b& color, cv::Vec3b& gradient,
+            float upperbound, float lowerbound):
+            idx_(idx), color_(color), gradient_(gradient),
+            upperbound_(upperbound),
+            lowerbound_(lowerbound)
+            {}
+
+
+    inline void printMembers(){
+      sharedCout("idx: "+std::to_string(idx_));
+      sharedCout("parent: "+std::to_string(parent_));
+      sharedCout("upperbound: "+std::to_string(upperbound_));
+      sharedCout("lowerbound: "+std::to_string(lowerbound_));
+      sharedCout("color: "+std::to_string(color_[0])+
+                      ", "+std::to_string(color_[1])+
+                      ", "+std::to_string(color_[2]));
+      sharedCout("gradient: "+std::to_string(gradient_[0])+
+                         ", "+std::to_string(gradient_[1])+
+                         ", "+std::to_string(gradient_[2]));
+    }
+
 };
 
 class Mapper{
@@ -78,5 +91,11 @@ class Mapper{
     bool computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
                                 Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,
                                 EpipolarLine*& ep_line_2);
+
+    bool buildFeatureVec(EpipolarLine*& ep_line_1, EpipolarLine*& ep_line_2,
+                std::vector<Feature*>*& feats_1, std::vector<Feature*>*& feats_2);
+
+    void getParametersABCD(EpipolarLine* ep_line_1, EpipolarLine* ep_line_2,
+                          float& A,float& B,float& C,float& D);
 
 };
