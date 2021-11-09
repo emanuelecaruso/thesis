@@ -1,6 +1,8 @@
 #pragma once
 #include "defs.h"
+#include "json.hpp"
 #include "image.h"
+#include <sys/stat.h>
 
 using namespace pr;
 
@@ -25,40 +27,42 @@ class Camera{
     const CamParameters* cam_parameters_;
     const Eigen::Matrix3f* K_;
     const Eigen::Matrix3f* Kinv_;
+    const Image<cv::Vec3b>* image_rgb_;
+    const Image<cv::Vec3f>* features_;
     Image<float>* invdepth_map_;
-    Image<cv::Vec3b>* image_rgb_;
     Eigen::Isometry3f* frame_world_wrt_camera_;
     Eigen::Isometry3f* frame_camera_wrt_world_;
 
-    Camera(const std::string& name, const CamParameters* cam_parameters, Eigen::Isometry3f* frame_camera_wrt_world):
-    name_(name),
-    cam_parameters_(cam_parameters),
-    K_(compute_K()),
-    Kinv_( new Eigen::Matrix3f(K_->inverse()) )
 
+
+    Camera(const std::string& name, const CamParameters* cam_parameters,
+           const std::string& path_rgb ):
+           name_(name),
+           cam_parameters_(cam_parameters),
+           K_(compute_K()),
+           Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
+           image_rgb_( returnRGBFromPath( path_rgb ) ),
+           features_( computeCurvature() ){};
+
+    Camera(const std::string& name, const CamParameters* cam_parameters,
+           nlohmann::basic_json<>::value_type f,
+           const std::string& path_rgb ):
+    Camera( name,cam_parameters, path_rgb )
     {
-
-       float resolution_x = cam_parameters->resolution_x;
-       float resolution_y = cam_parameters->resolution_y;
-       float max_depth = cam_parameters->max_depth;
-       float min_depth = cam_parameters->min_depth;
-
-       Eigen::Isometry3f* frame_world_wrt_camera = new Eigen::Isometry3f;
-       *frame_world_wrt_camera=frame_camera_wrt_world->inverse();
-
-       frame_camera_wrt_world_ = frame_camera_wrt_world;
-       frame_world_wrt_camera_ = frame_world_wrt_camera;
-
-       invdepth_map_ = new Image< float >("invdepth_"+name_);
-       image_rgb_ = new Image< cv::Vec3b >("rgb_"+name_);
-
-       // initialize images with white color
-       invdepth_map_->initImage(resolution_y,resolution_x);
-       invdepth_map_->setAllPixels(1.0);
-       image_rgb_->initImage(resolution_y,resolution_x);
-       image_rgb_->setAllPixels(cv::Vec3b(255,255,255));
-
+      loadPoseFromJsonVal(f);
+      invdepth_map_ = new Image< float >("invdepth_"+name_);
+      loadWhiteDepth();
     };
+
+    Camera(const std::string& name, const CamParameters* cam_parameters,
+           nlohmann::basic_json<>::value_type f,
+           const std::string& path_rgb,  const std::string& path_depth ):
+    Camera( name,cam_parameters, f, path_rgb )
+    {
+      loadDepthMap(path_depth);
+    };
+
+
 
     void printMembers() const;
 
@@ -82,8 +86,6 @@ class Camera{
     void clearImgs();
     void saveRGB(const std::string& path) const;
     void saveDepthMap(const std::string& path) const;
-    void loadRGB(const std::string& path);
-    void loadDepthMap(const std::string& path);
     void showRGB(int image_scale=1) const;
     void showDepthMap(int image_scale=1) const;
 
@@ -94,5 +96,13 @@ class Camera{
     }
   private:
     Eigen::Matrix3f* compute_K();
+    Image<cv::Vec3b>* returnRGBFromPath(const std::string& path_rgb);
+    void loadWhiteDepth();
+    void loadDepthMap(const std::string& path);
+    void loadPoseFromJsonVal(nlohmann::basic_json<>::value_type f);
+
+    //feature types
+    Image<cv::Vec3f>* computeCurvature();
+    Image<cv::Vec6f>* derivativeXY();
 
 };

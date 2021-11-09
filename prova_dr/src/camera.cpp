@@ -45,7 +45,7 @@ void Camera::getCentreAsPixel(Eigen::Vector2i& pixel_coords){
 
 void Camera::clearImgs(){
   invdepth_map_->setAllPixels(1.0);
-  image_rgb_->setAllPixels(cv::Vec3b(255,255,255));
+  // image_rgb_->setAllPixels(cv::Vec3b(255,255,255));
 }
 
 Eigen::Matrix3f* Camera::compute_K(){
@@ -140,11 +140,88 @@ void Camera::saveDepthMap(const std::string& path) const {
 
 }
 
-void Camera::loadRGB(const std::string& path){
+Image<cv::Vec3b>* Camera::returnRGBFromPath(const std::string& path_rgb){
 
-  image_rgb_->image_=cv::imread(path);
+  Image<cv::Vec3b>* img = new Image<cv::Vec3b>(name_);
+  img->image_=cv::imread(path_rgb);
+  return img;
+}
+
+Image<cv::Vec3f>* Camera::computeCurvature(){
+
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+
+  Image<cv::Vec3f>* fx = img->compute_sobel_x();
+  Image<cv::Vec3f>* fx_sqrd = fx->squared();
+  Image<cv::Vec3f>* fxx = fx->compute_sobel_x();
+  Image<cv::Vec3f>* fy = img->compute_sobel_y();
+  Image<cv::Vec3f>* fy_sqrd = fy->squared();
+  Image<cv::Vec3f>* fyy = fy->compute_sobel_y();
+  Image<cv::Vec3f>* fxy = fx->compute_sobel_y();
+
+  // curvature
+  Image<cv::Vec3f>* k = new Image<cv::Vec3f>("curvature_"+name_);
+  // curvature -> κ = fy^2 fxx − 2*fx fy fxy + fx^2 fyy ,
+  k->image_=fy_sqrd->image_.mul(fxx->image_)-2*fx->image_.mul(fy->image_.mul(fxy->image_))+fx_sqrd->image_.mul(fyy->image_);
+
+
+  return k;
+}
+
+
+Image<cv::Vec6f>* Camera::derivativeXY(){
+
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+
+  Image<cv::Vec3f>* fx = img->compute_sobel_x();
+  Image<cv::Vec3f>* fy = img->compute_sobel_y();
+
+  // mix 2 rgb images to 6 channel image
+  // https://stackoverflow.com/questions/10575699/combine-two-rgb-images-to-a-6-channel-image-opencv
+  std::vector<cv::Mat> s;
+  s.resize(2);
+  s[0] = fx->image_;   //fx
+  s[1] = fy->image_;   //fy
+  auto d = cv::Mat(s[0].size(), CV_MAKETYPE(s[0].depth(), 6));
+  int from_to[] = { 0,0, 1,1, 2,2, 3,3, 4,4, 5,5 };
+  cv::mixChannels(s.data(), s.size(), &d, 1, from_to, 6);
+
+  // curvature
+  Image<cv::Vec6f>* derivativeXY = new Image<cv::Vec6f>("derXY_"+name_);
+  derivativeXY->image_=d;
+
+  return derivativeXY;
+}
+
+void Camera::loadWhiteDepth(){
+  invdepth_map_->initImage(cam_parameters_->resolution_y,cam_parameters_->resolution_x);
+  invdepth_map_->setAllPixels(1.0); // initialize images with white color
 
 }
+
+void Camera::loadPoseFromJsonVal(nlohmann::basic_json<>::value_type f){
+  float resolution_x = cam_parameters_->resolution_x;
+  float resolution_y = cam_parameters_->resolution_y;
+
+  Eigen::Matrix3f R;
+  R <<
+    f[0], f[1], f[2],
+    f[3], f[4], f[5],
+    f[6], f[7], f[8];
+
+  Eigen::Vector3f t(f[9],f[10],f[11]);
+  frame_camera_wrt_world_ = new Eigen::Isometry3f;
+  frame_camera_wrt_world_->linear()=R;
+  frame_camera_wrt_world_->translation()=t;
+
+  frame_world_wrt_camera_ = new Eigen::Isometry3f;
+  *frame_world_wrt_camera_=frame_camera_wrt_world_->inverse();
+
+}
+
+
 
 void Camera::loadDepthMap(const std::string& path){
   invdepth_map_->image_=cv::imread(path, cv::IMREAD_ANYDEPTH);

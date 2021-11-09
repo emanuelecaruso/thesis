@@ -129,18 +129,16 @@ std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name
     frame_camera_wrt_world->linear()=R;
     frame_camera_wrt_world->translation()=t;
 
-    Camera* camera = new Camera(name,cam_parameters_,frame_camera_wrt_world);
-
-    camera->loadRGB(path_rgb);
 
     struct stat info__;
     std::string path_depth_=(path_name+"/depth_"+name+".exr");
     const char* path_depth = path_depth_.c_str(); // dataset name
     if( stat( path_depth, &info__ ) != 0 ){
+      Camera* camera = new Camera(name,cam_parameters_, f, path_rgb_ );
       camera_vector->push_back(camera);
     }
     else{
-      camera->loadDepthMap(path_depth_);
+      Camera* camera = new Camera(name,cam_parameters_, f, path_rgb_, path_depth_);
       camera_vector->push_back(camera);
     }
 

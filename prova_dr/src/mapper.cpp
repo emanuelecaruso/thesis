@@ -139,6 +139,7 @@ void EpipolarLine::showEpipolar(int size){
         image_rgb_new->setPixel(pixel, magenta);
     }
     image_rgb_new->show(size);
+    cam->features_->show(size);
 }
 
 
