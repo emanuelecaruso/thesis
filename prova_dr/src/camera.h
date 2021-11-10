@@ -28,7 +28,9 @@ class Camera{
     const Eigen::Matrix3f* K_;
     const Eigen::Matrix3f* Kinv_;
     const Image<cv::Vec3b>* image_rgb_;
-    const Image<cv::Vec3f>* features_;
+    const Image<cv::Vec3f>* curvature_;
+    const Image<cv::Vec3f>* grad_x_;
+    const Image<cv::Vec3f>* grad_y_;
     Image<float>* invdepth_map_;
     Eigen::Isometry3f* frame_world_wrt_camera_;
     Eigen::Isometry3f* frame_camera_wrt_world_;
@@ -42,7 +44,9 @@ class Camera{
            K_(compute_K()),
            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
            image_rgb_( returnRGBFromPath( path_rgb ) ),
-           features_( computeCurvature() ){};
+           curvature_( computeCurvature() ),
+           grad_x_( gradientX() ),
+           grad_y_( gradientY() ){};
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
@@ -103,6 +107,7 @@ class Camera{
 
     //feature types
     Image<cv::Vec3f>* computeCurvature();
-    Image<cv::Vec6f>* derivativeXY();
+    Image<cv::Vec3f>* gradientX();
+    Image<cv::Vec3f>* gradientY();
 
 };

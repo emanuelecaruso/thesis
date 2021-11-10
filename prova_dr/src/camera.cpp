@@ -170,29 +170,25 @@ Image<cv::Vec3f>* Camera::computeCurvature(){
 }
 
 
-Image<cv::Vec6f>* Camera::derivativeXY(){
 
-  Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+Image<cv::Vec3f>* Camera::gradientX(){
+
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>(name_);
   image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
 
   Image<cv::Vec3f>* fx = img->compute_sobel_x();
+
+  return fx;
+}
+
+Image<cv::Vec3f>* Camera::gradientY(){
+
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>(name_);
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+
   Image<cv::Vec3f>* fy = img->compute_sobel_y();
 
-  // mix 2 rgb images to 6 channel image
-  // https://stackoverflow.com/questions/10575699/combine-two-rgb-images-to-a-6-channel-image-opencv
-  std::vector<cv::Mat> s;
-  s.resize(2);
-  s[0] = fx->image_;   //fx
-  s[1] = fy->image_;   //fy
-  auto d = cv::Mat(s[0].size(), CV_MAKETYPE(s[0].depth(), 6));
-  int from_to[] = { 0,0, 1,1, 2,2, 3,3, 4,4, 5,5 };
-  cv::mixChannels(s.data(), s.size(), &d, 1, from_to, 6);
-
-  // curvature
-  Image<cv::Vec6f>* derivativeXY = new Image<cv::Vec6f>("derXY_"+name_);
-  derivativeXY->image_=d;
-
-  return derivativeXY;
+  return fy;
 }
 
 void Camera::loadWhiteDepth(){

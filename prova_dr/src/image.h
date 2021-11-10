@@ -27,10 +27,20 @@ class Image{
       image_ = color;
     }
 
-    inline void show(int image_scale=1, const std::string& name_ext="") const{
+    inline void show(float image_scale=1, const std::string& name_ext="") const{
       cv::Mat_< T > resized_image;
       cv::resize(image_, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
       cv::imshow(name_+name_ext, resized_image);
+    }
+    inline void showWithOtherImage(const Image<T>* image_2, float image_scale=1,
+                                   const std::string& name_ext="") const{
+
+      cv::Mat_<T> collage;
+      cv::hconcat(image_,image_2->image_,collage);
+
+      cv::Mat_< T > resized_image;
+      cv::resize(collage, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
+      cv::imshow(name_+","+image_2->name_+name_ext, collage);
 
     }
 
@@ -107,7 +117,7 @@ class Image{
     }
 
     inline Image<cv::Vec3f>* compute_sobel_y() const{
-      Image< cv::Vec3f >* img_sobel_x =new Image< cv::Vec3f >("fx_"+name_);
+      Image< cv::Vec3f >* img_sobel_x =new Image< cv::Vec3f >("fy_"+name_);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<   1,  2,  1,

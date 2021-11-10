@@ -265,8 +265,8 @@ namespace pr {
   }
 
   inline void sharedCoutDebug(const std::string& msg){
+    std::lock_guard<std::mutex> locker(mu_cout);
     if (debug_mode){
-      std::lock_guard<std::mutex> locker(mu_cout);
       std::cout << msg << std::endl;
     }
   }

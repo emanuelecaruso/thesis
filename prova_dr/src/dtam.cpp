@@ -52,6 +52,7 @@ void Dtam::updateCamerasFromVideostream(bool takeGtPoses){
 
   while(true){
 
+    std::unique_lock<std::mutex> locker(mu_frame_);
 
     double t_start=getTime();
 
@@ -61,14 +62,13 @@ void Dtam::updateCamerasFromVideostream(bool takeGtPoses){
     }
     sharedCout("\nFrame: "+ std::to_string(frame_current_));
     addCamera(takeGtPoses);
-    std::unique_lock<std::mutex> locker(mu_frame_);
     if (frame_current_==2){
       first_2_frames_available_.notify_all();
     }
     frame_current_++;
-    locker.unlock();
 
     double t_end=getTime();
+    locker.unlock();
 
     long int waitDelay=(t_end-t_start)*1000;
 

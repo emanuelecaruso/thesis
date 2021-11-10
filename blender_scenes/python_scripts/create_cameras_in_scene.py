@@ -95,17 +95,44 @@ for obj_ in bpy.data.objects:
 
         ratio=i/cams_num
         angle=(2*pi)*ratio
-        Rx=0.3
-        Ry=1
-        z=1.80
-        scl=0.05
+        scl=0.03
 
-        #x=-2
-        #y=-2+4*ratioo
-        #obj_.rotation_euler.z=pi/2
+        #########################
+        # #ELLIPSE
+        # #rays
+        # Rx=0.3
+        # Ry=1
+        # Rz=0
+        #
+        # #location
+        # x_center=-3
+        # y_center=0
+        # z_center=1.80
+        #
+        # x=math.cos(angle)*Rx+x_center
+        # y=math.sin(angle)*Ry+y_center
+        # z=math.cos(angle)*Rz+z_center
+        #
+        # roll=0
+        #########################
+        #ROLL
+        #rays
+        Rx=0.1
+        Ry=0.1
+        Rz=0.1
 
-        x=math.cos(angle)*Rx-3
-        y=math.sin(angle)*Ry
+        #location
+        x_center=-3
+        y_center=0
+        z_center=1.80
+
+        x=math.cos(angle)*Rx+x_center
+        y=math.sin(angle)*Ry+y_center
+        z=math.cos(angle)*Rz+z_center
+
+        roll=angle
+        #########################
+
 
         obj_.location=(x,y,z)
 
@@ -114,7 +141,7 @@ for obj_ in bpy.data.objects:
         slide=0.5
         tar_y=-slide+slide*2*math.sin(ratio*pi)
         target=(0,tar_y,0.5)
-        point_at(obj_, target)
+        point_at(obj_, target, roll)
         obj_.scale=(scl,scl,scl)
 
         marker = bpy.data.scenes[0].timeline_markers.new('F_'+str(i), frame=i)

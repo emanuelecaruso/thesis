@@ -71,8 +71,9 @@ for n in tree.nodes:
     tree.nodes.remove(n)
 
 rl = tree.nodes.new('CompositorNodeRLayers')
-d = tree.nodes.new('CompositorNodeDenoise')
-l1=links.new(rl.outputs['Image'], d.inputs[0])
+if engine=='CYCLES':
+    d = tree.nodes.new('CompositorNodeDenoise')
+    l1=links.new(rl.outputs['Image'], d.inputs[0])
 
 v = tree.nodes.new('CompositorNodeComposite')
 v.use_alpha = False
@@ -127,8 +128,12 @@ for obj_ in bpy.data.objects:
 
         camera=bpy.data.cameras[name_]
         scene.frame_current=i
-
-        l1=links.new(d.outputs['Image'], v.inputs[0])
+        
+        if engine=='CYCLES':
+            l1=links.new(d.outputs['Image'], v.inputs[0])
+        else:
+            l1=links.new(rl.outputs['Image'], v.inputs[0])
+            
         if( (con and not os.path.isfile(path_rgb+".png")) or not con ):
             render.image_settings.file_format='PNG'
             render.image_settings.color_mode='RGB'

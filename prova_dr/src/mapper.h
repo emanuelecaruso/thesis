@@ -23,9 +23,9 @@ class EpipolarLine{
     std::vector<Eigen::Vector2f>* uvs;  // vector of interpoled uvs along epipolar line
 
     EpipolarLine( const Camera* cam_, Eigen::Vector2f& start_, Eigen::Vector2f& end_):
-    slope((end_-start_).y()/(end_-start_).x()),
-    u_or_v( (slope<1 && slope>-1) ),
-    c0( u_or_v ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ),
+    slope( (end_-start_).y()/(end_-start_).x() ),
+    u_or_v( computeUOrV(start_, end_) ),
+    c0( computeC0(start_, end_) ),
     cam(cam_)
     {
       UVToCoord(start_,start);
@@ -34,11 +34,24 @@ class EpipolarLine{
 
     void printMembers() const;
     bool resizeLine();
-    void showEpipolar(int size);
+    void showEpipolar(float size);
+    void showEpipolarComparison(EpipolarLine* ep_line_2, float size);
   private:
+    Image<cv::Vec3b>* createEpipolarImg();
     void coordToUV(float& coord, Eigen::Vector2f& uv);
     void UVToCoord(Eigen::Vector2f& uv, float& coord);
     void lineTraverse();
+    inline bool computeUOrV(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
+      float slope_ = (end_-start_).y()/(end_-start_).x();
+      bool out = (slope_<1 && slope_>-1);
+      return out;
+    }
+    inline float computeC0(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
+      float slope_ = (end_-start_).y()/(end_-start_).x();
+      bool u_or_v_ = computeUOrV(start_, end_);
+      float out = u_or_v ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ;
+      return out;
+    }
 
 };
 
@@ -87,6 +100,7 @@ class Mapper{
     // frame coupling
     void frameCouplingRandom(int& frame_1, int& frame_2);
     void frameCouplingLast(int& frame_1, int& frame_2);
+    void frameCouplingOpposite(int& frame_1, int& frame_2);
 
     bool computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
                                 Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,

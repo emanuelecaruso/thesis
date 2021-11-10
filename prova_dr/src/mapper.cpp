@@ -66,18 +66,24 @@ bool EpipolarLine::resizeLine(){
     // if out of the square
     if ( (start_uv.y()<axes_h[0]) || (start_uv.y()>axes_h[1]) ){
       // bring to axis h
+
       float axis_h= axes_h[axis_h_idx];
       float delta = axis_h-start_uv.y();
-      start_uv.x()=start_uv.x()+slope*delta;
+      start_uv.x()=start_uv.x()+delta/slope;
       start_uv.y()=axis_h;
       // if out of the square again, line does not intersect the rectangle
       if ( (start_uv.x()<axes_v[0]) || (start_uv.x()>axes_v[1]) ){
+        sharedCoutDebug("error on start of segment");
         return false;
       }
     }
     UVToCoord(start_uv,start);
-
-
+    // sharedCoutDebug("slope: "+std::to_string(slope) );
+    // sharedCoutDebug("START c0: "+std::to_string(c0) );
+    // sharedCoutDebug("vx for end is: "+std::to_string(start_uv.x()));
+    // sharedCoutDebug("vy for end is: "+std::to_string(start_uv.y()));
+    // sharedCoutDebug("vc for end is: "+std::to_string(start));
+    //
 
     // it may be simplified?? TODO
     // bring to axis v
@@ -86,18 +92,28 @@ bool EpipolarLine::resizeLine(){
     end_uv.y()=end_uv.y()+slope*delta;
     end_uv.x()=axis_v;
     // if out of the square
+    // sharedCoutDebug("\nEND" );
+    // sharedCoutDebug("axis_h: "+std::to_string(axis_h));
+    // sharedCoutDebug("vx for end is: "+std::to_string(end_uv.x()));
+    // sharedCoutDebug("vy for end is: "+std::to_string(end_uv.y()));
+    // sharedCoutDebug("vc for end is: "+std::to_string(end));
     if ( (end_uv.y()<axes_h[0]) || (end_uv.y()>axes_h[1]) ){
       // bring to axis h
       float axis_h= axes_h[!axis_h_idx];
       float delta = axis_h-end_uv.y();
-      end_uv.x()=end_uv.x()+slope*delta;
+      end_uv.x()=end_uv.x()+delta/slope;
       end_uv.y()=axis_h;
       // if out of the square again, line does not intersect the rectangle
+
       if ( (end_uv.x()<axes_v[0]) || (end_uv.x()>axes_v[1]) ){
+        sharedCoutDebug("error on end of segment");
         return false;
       }
     }
     UVToCoord(end_uv,end);
+
+
+
 
     // pay attention on lineTraverse! TODO
     lineTraverse();
@@ -106,24 +122,38 @@ bool EpipolarLine::resizeLine(){
 
 void EpipolarLine::lineTraverse()
 {
-    float distance = end-start;
+
+    float distance = abs(end-start);
 
     float pixel_width=cam->cam_parameters_->width/(float)cam->cam_parameters_->resolution_x;
 
     // alternative solutions? TODO
     int n_uvs= (distance/pixel_width)+1;
+
     uvs = new std::vector<Eigen::Vector2f>(n_uvs);
 
     for (int i=0; i<n_uvs; i++){
       float ratio = (float)i/(n_uvs-1);
       float coord = (1-ratio)*start+(ratio)*end;
+
       Eigen::Vector2f uv;
       coordToUV(coord,uv);
       uvs->at(i)= uv;
     }
 }
 
-void EpipolarLine::showEpipolar(int size){
+void EpipolarLine::showEpipolar(float size){
+    Image<cv::Vec3b>* image_rgb_new = createEpipolarImg();
+    image_rgb_new->show(size);
+}
+
+void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2, float size=1){
+    Image<cv::Vec3b>* image_rgb_new = createEpipolarImg();
+    Image<cv::Vec3b>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
+    image_rgb_new->showWithOtherImage(image_rgb_new_2,size);
+}
+
+Image<cv::Vec3b>* EpipolarLine::createEpipolarImg(){
     Image<cv::Vec3b>* image_rgb_new = cam->image_rgb_->clone("epipolar_"+cam->name_);
 
     for( int i=0; i<uvs->size(); i++){
@@ -138,8 +168,8 @@ void EpipolarLine::showEpipolar(int size){
       else
         image_rgb_new->setPixel(pixel, magenta);
     }
-    image_rgb_new->show(size);
-    cam->features_->show(size);
+    return image_rgb_new;
+
 }
 
 
@@ -165,6 +195,14 @@ void Mapper::frameCouplingLast(int& frame_1, int& frame_2 ){
   int max_frame=dtam_->getFrameCurrent();
   frame_1=max_frame-1;
   frame_2=max_frame-2;
+
+  sharedCoutDebug("chosen frames: "+std::to_string(frame_1)+ " " +std::to_string(frame_2));
+}
+
+void Mapper::frameCouplingOpposite(int& frame_1, int& frame_2 ){
+  int max_frame=dtam_->getFrameCurrent();
+  frame_1=max_frame-1;
+  frame_2=0;
 
   sharedCoutDebug("chosen frames: "+std::to_string(frame_1)+ " " +std::to_string(frame_2));
 }
@@ -272,7 +310,6 @@ bool Mapper::computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
 
   ep_line_1 = new EpipolarLine(cam_1, cam_2_on_cam_1,uv_1);
 
-  // sharedCoutDebug("cam2 projected on cam1: "+ std::to_string(cam_2_on_cam_1.x()) +", "+std::to_string(cam_2_on_cam_1.y()));
 
   if(!ep_line_1->resizeLine()){
     sharedCoutDebug("ep1 returned false");
@@ -295,6 +332,7 @@ bool Mapper::computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
     sharedCoutDebug("ep2 returned false");
     return false;}
 
+  return true;
 }
 
 
@@ -308,8 +346,9 @@ void Mapper::doMapping(){
   dtam_->first_2_frames_available_.wait(locker, [&](){return Mapper::dtam_->frame_current_>=2;});
   locker.unlock();
   while(true){
-    frameCouplingRandom(frame_1, frame_2 );
+    // frameCouplingRandom(frame_1, frame_2 );
     // frameCouplingLast(frame_1, frame_2 );
+    frameCouplingOpposite(frame_1, frame_2 );
 
     Camera* cam_1 = dtam_->camera_vector_->at(frame_1);
     Camera* cam_2 = dtam_->camera_vector_->at(frame_2);
@@ -321,15 +360,20 @@ void Mapper::doMapping(){
     // cam_2->sampleRandomUv(uv_2);
 
     if (!computeEpipolarLineCouple(cam_1, cam_2, uv_1, ep_line_1, ep_line_2)){
+      break;
       continue; //take other frame couple TODO
     }
 
     locker.lock();
-    int size = 2;
+    // float size = 1;
+    float size = 1.2;
+    // float size = 2;
     // ep_line_1->printMembers();
     // ep_line_2->printMembers();
-    ep_line_1->showEpipolar(size);
-    ep_line_2->showEpipolar(size);
+    // ep_line_1->showEpipolarComparison(ep_line_2,size);
+    cam_1->curvature_->showWithOtherImage(cam_2->curvature_,size);
+    // cam_1->grad_x_->showWithOtherImage(cam_2->grad_x_,size);
+    // cam_1->grad_y_->showWithOtherImage(cam_2->grad_y_,size);
     cv::waitKey(0);
     cv::destroyAllWindows();
     locker.unlock();
