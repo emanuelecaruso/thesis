@@ -112,7 +112,7 @@ data_['environment']['max_depth']=max_depth
 data_['environment']['min_depth']=min_depth
 data_['environment']['lens']=lens
 
-
+pi=math.pi
 i=0
 # iterate through objects
 for obj_ in bpy.data.objects:
@@ -128,6 +128,8 @@ for obj_ in bpy.data.objects:
 
         camera=bpy.data.cameras[name_]
         scene.frame_current=i
+        
+        scene.view_settings.exposure=2*math.sin((i/120)*8*pi)
         
         if engine=='CYCLES':
             l1=links.new(d.outputs['Image'], v.inputs[0])

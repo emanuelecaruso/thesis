@@ -147,49 +147,6 @@ Image<cv::Vec3b>* Camera::returnRGBFromPath(const std::string& path_rgb){
   return img;
 }
 
-Image<cv::Vec3f>* Camera::computeCurvature(){
-
-  Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
-  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
-
-  Image<cv::Vec3f>* fx = img->compute_sobel_x();
-  Image<cv::Vec3f>* fx_sqrd = fx->squared();
-  Image<cv::Vec3f>* fxx = fx->compute_sobel_x();
-  Image<cv::Vec3f>* fy = img->compute_sobel_y();
-  Image<cv::Vec3f>* fy_sqrd = fy->squared();
-  Image<cv::Vec3f>* fyy = fy->compute_sobel_y();
-  Image<cv::Vec3f>* fxy = fx->compute_sobel_y();
-
-  // curvature
-  Image<cv::Vec3f>* k = new Image<cv::Vec3f>("curvature_"+name_);
-  // curvature -> κ = fy^2 fxx − 2*fx fy fxy + fx^2 fyy ,
-  k->image_=fy_sqrd->image_.mul(fxx->image_)-2*fx->image_.mul(fy->image_.mul(fxy->image_))+fx_sqrd->image_.mul(fyy->image_);
-
-
-  return k;
-}
-
-
-
-Image<cv::Vec3f>* Camera::gradientX(){
-
-  Image<cv::Vec3f>* img = new Image<cv::Vec3f>(name_);
-  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
-
-  Image<cv::Vec3f>* fx = img->compute_sobel_x();
-
-  return fx;
-}
-
-Image<cv::Vec3f>* Camera::gradientY(){
-
-  Image<cv::Vec3f>* img = new Image<cv::Vec3f>(name_);
-  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
-
-  Image<cv::Vec3f>* fy = img->compute_sobel_y();
-
-  return fy;
-}
 
 void Camera::loadWhiteDepth(){
   invdepth_map_->initImage(cam_parameters_->resolution_y,cam_parameters_->resolution_x);
@@ -232,56 +189,84 @@ void Camera::showDepthMap(int image_scale) const {
   invdepth_map_->show(image_scale);
 }
 
-void Camera::showWorldFrame(Eigen::Vector3f& origin, float delta, int length){
-  Camera::clearImgs();
-  std::vector<Cp> cps_world_frame;
-  for (int i=0; i<length; i++)
-  {
-    Eigen::Vector3f x(origin[0]+delta*i,origin[1],origin[2]);
-    cv::Vec3b color1(0,0,255);
-    struct Cp cp1 = {x, color1};
-    cps_world_frame.push_back(cp1);
+Image<cv::Vec3f>* CameraForStudy::computeCurvature(float gain){
 
-    Eigen::Vector3f y(origin[0],origin[1]+delta*i,origin[2]);
-    cv::Vec3b color2(0,255,0);
-    struct Cp cp2 = {y, color2};
-    cps_world_frame.push_back(cp2);
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
 
-    if (i>0)
-    {
-      Eigen::Vector3f z(origin[0],origin[1],origin[2]+delta*i);
-      cv::Vec3b color3(255,0,0);
-      struct Cp cp3 = {z, color3};
-      cps_world_frame.push_back(cp3);
-    }
-  }
+  Image<cv::Vec3f>* fx = img->compute_sobel_x();
+  Image<cv::Vec3f>* fx_sqrd = fx->squared();
+  Image<cv::Vec3f>* fxx = fx->compute_sobel_x();
+  Image<cv::Vec3f>* fy = img->compute_sobel_y();
+  Image<cv::Vec3f>* fy_sqrd = fy->squared();
+  Image<cv::Vec3f>* fyy = fy->compute_sobel_y();
+  Image<cv::Vec3f>* fxy = fx->compute_sobel_y();
+
+  // curvature
+  Image<cv::Vec3f>* k = new Image<cv::Vec3f>("curvature_"+name_);
+  // curvature -> κ = fy^2 fxx − 2*fx fy fxy + fx^2 fyy ,
+  k->image_=fy_sqrd->image_.mul(fxx->image_)-2*fx->image_.mul(fy->image_.mul(fxy->image_))+fx_sqrd->image_.mul(fyy->image_);
+  // k->image_/=(image_rgb_->image_.mul(image_rgb_->image_.mul(image_rgb_->image_)));
+  k->image_*=gain;
+
+  return k;
+}
 
 
-  int cols=cam_parameters_->resolution_x;
-  int rows=cam_parameters_->resolution_y;
 
-  for (Cp cp : cps_world_frame){
+Image<cv::Vec3f>* CameraForStudy::gradientX(){
 
-    Eigen::Vector2f uv;
-    float p_cam_z;
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>("grad_x_"+name_);
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
 
-    if (!projectPoint(cp.point, uv, p_cam_z ))
-      continue;
+  Image<cv::Vec3f>* fx = img->compute_sobel_x();
 
-    Eigen::Vector2i pixel_coords;
-    Camera::uv2pixelCoords( uv, pixel_coords);
+  return fx;
+}
 
-    if (cp.color[0]>255 || cp.color[1]>255 || cp.color[2]>255)
-      continue;
+Image<cv::Vec3f>* CameraForStudy::gradientY(){
 
-    int r=pixel_coords.y();
-    int c=pixel_coords.x();
-    if(r<0||r>=rows)
-      continue;
-    if(c<0||c>=cols)
-      continue;
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>("grad_y_"+name_);
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
 
-    cv::circle(image_rgb_->image_, cv::Point(c,r), 3, cp.color);
-  }
+  Image<cv::Vec3f>* fy = img->compute_sobel_y();
 
+  return fy;
+}
+
+Image<cv::Vec3f>* CameraForStudy::gradientRobustX(){
+
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+
+  float offset=0.1;
+  img->image_+=cv::Scalar(offset,offset,offset);
+
+  Image<cv::Vec3f>* fx = img->compute_sobel_x();
+
+  Image<cv::Vec3f>* fxr = new Image<cv::Vec3f>("grad_x_rob_"+name_);
+
+  fxr->image_=fx->image_/(img->image_);
+  fxr->image_*=5;
+
+  return fxr;
+}
+
+Image<float>* CameraForStudy::gradientintensity(){
+
+  Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+  image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+
+  Image<cv::Vec3f>* fx = img->compute_sobel_x();
+  Image<cv::Vec3f>* fy = img->compute_sobel_y();
+  Image<cv::Vec3f>* fx_sqrd = fx->squared();
+  Image<cv::Vec3f>* fy_sqrd = fy->squared();
+
+  Image<cv::Vec3f>* f = new Image<cv::Vec3f>();
+  Image<float>* out = new Image<float>("grad_intensity_"+name_);
+  // curvature -> κ = fy^2 fxx − 2*fx fy fxy + fx^2 fyy ,
+  f->image_=(1./8.)*(fx_sqrd->image_+fy_sqrd->image_);
+  out=f->getComponentSum();
+
+  return out;
 }

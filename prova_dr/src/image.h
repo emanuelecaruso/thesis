@@ -32,18 +32,22 @@ class Image{
       cv::resize(image_, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
       cv::imshow(name_+name_ext, resized_image);
     }
-    inline void showWithOtherImage(const Image<T>* image_2, float image_scale=1,
-                                   const std::string& name_ext="") const{
-
+    inline void showWithOtherImage(const Image<T>* image_2, float image_scale=1) const{
       cv::Mat_<T> collage;
       cv::hconcat(image_,image_2->image_,collage);
-
       cv::Mat_< T > resized_image;
       cv::resize(collage, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
-      cv::imshow(name_+","+image_2->name_+name_ext, collage);
-
+      cv::imshow(name_+","+image_2->name_, collage);
     }
 
+    inline void showWithOtherImage(const Image<T>* image_2,const std::string& name,
+                                    float image_scale=1 ) const{
+      cv::Mat_<T> collage;
+      cv::hconcat(image_,image_2->image_,collage);
+      cv::Mat_< T > resized_image;
+      cv::resize(collage, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
+      cv::imshow(name, collage);
+    }
 
     inline Image* clone(const std::string& new_name) const{
       Image<T>* new_img = new Image<T>(new_name);
@@ -145,6 +149,17 @@ class Image{
       squared->image_=image_.mul(image_);
 
       return squared;
+    }
+
+    inline Image<float>* getComponentSum() const{
+      Image< float >* intensity =new Image< float >("^intensity_"+name_);
+
+      std::vector<cv::Mat> channels_i(3);
+      split(image_, channels_i);
+
+      intensity->image_=channels_i[0]+channels_i[1]+channels_i[2];
+
+      return intensity;
     }
 
 };

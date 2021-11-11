@@ -22,6 +22,8 @@ class Dtam{
 
     void test_mapping();
     void test_tracking(Environment* environment);
+    void testFeatures();
+
     void debugAllCameras(bool show_imgs=false);
     int getFrameCurrent();
 
@@ -49,5 +51,6 @@ class Dtam{
     void updateCamerasFromVideostream(bool takeGtPoses);
     void doMapping();
     void doTracking();
+    void showFeatures(int idx, float size);
 
 };

@@ -36,6 +36,7 @@ class EpipolarLine{
     bool resizeLine();
     void showEpipolar(float size);
     void showEpipolarComparison(EpipolarLine* ep_line_2, float size);
+    void showEpipolarComparison(EpipolarLine* ep_line_2, const std::string& name, float size);
   private:
     Image<cv::Vec3b>* createEpipolarImg();
     void coordToUV(float& coord, Eigen::Vector2f& uv);

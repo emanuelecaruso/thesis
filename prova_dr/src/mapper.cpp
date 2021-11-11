@@ -153,6 +153,14 @@ void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2, float size=1)
     image_rgb_new->showWithOtherImage(image_rgb_new_2,size);
 }
 
+void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2,
+                          const std::string& name, float size=1)
+{
+    Image<cv::Vec3b>* image_rgb_new = createEpipolarImg();
+    Image<cv::Vec3b>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
+    image_rgb_new->showWithOtherImage(image_rgb_new_2,name,size);
+}
+
 Image<cv::Vec3b>* EpipolarLine::createEpipolarImg(){
     Image<cv::Vec3b>* image_rgb_new = cam->image_rgb_->clone("epipolar_"+cam->name_);
 
@@ -360,23 +368,20 @@ void Mapper::doMapping(){
     // cam_2->sampleRandomUv(uv_2);
 
     if (!computeEpipolarLineCouple(cam_1, cam_2, uv_1, ep_line_1, ep_line_2)){
-      break;
       continue; //take other frame couple TODO
     }
 
-    locker.lock();
+    // locker.lock();
     // float size = 1;
     float size = 1.2;
     // float size = 2;
     // ep_line_1->printMembers();
     // ep_line_2->printMembers();
-    // ep_line_1->showEpipolarComparison(ep_line_2,size);
-    cam_1->curvature_->showWithOtherImage(cam_2->curvature_,size);
-    // cam_1->grad_x_->showWithOtherImage(cam_2->grad_x_,size);
-    // cam_1->grad_y_->showWithOtherImage(cam_2->grad_y_,size);
-    cv::waitKey(0);
-    cv::destroyAllWindows();
-    locker.unlock();
+    ep_line_1->showEpipolarComparison(ep_line_2,"epipolar comparison",size);
+    dtam_->showFeatures(frame_1, size);
+    cv::waitKey(1);
+    // cv::destroyAllWindows();
+    // locker.unlock();
 
   }
 }

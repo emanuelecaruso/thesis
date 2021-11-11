@@ -20,6 +20,8 @@ struct Pyramid{
 
 };
 
+
+
 class Camera{
   public:
 
@@ -28,14 +30,9 @@ class Camera{
     const Eigen::Matrix3f* K_;
     const Eigen::Matrix3f* Kinv_;
     const Image<cv::Vec3b>* image_rgb_;
-    const Image<cv::Vec3f>* curvature_;
-    const Image<cv::Vec3f>* grad_x_;
-    const Image<cv::Vec3f>* grad_y_;
     Image<float>* invdepth_map_;
     Eigen::Isometry3f* frame_world_wrt_camera_;
     Eigen::Isometry3f* frame_camera_wrt_world_;
-
-
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
            const std::string& path_rgb ):
@@ -43,10 +40,8 @@ class Camera{
            cam_parameters_(cam_parameters),
            K_(compute_K()),
            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
-           image_rgb_( returnRGBFromPath( path_rgb ) ),
-           curvature_( computeCurvature() ),
-           grad_x_( gradientX() ),
-           grad_y_( gradientY() ){};
+           image_rgb_( returnRGBFromPath( path_rgb ) )
+           {};
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
@@ -93,21 +88,62 @@ class Camera{
     void showRGB(int image_scale=1) const;
     void showDepthMap(int image_scale=1) const;
 
-    void showWorldFrame(Eigen::Vector3f& origin, float delta,int length);
-
     inline Camera* clone(){
       return new Camera(*this);
     }
-  private:
+  protected:
     Eigen::Matrix3f* compute_K();
     Image<cv::Vec3b>* returnRGBFromPath(const std::string& path_rgb);
     void loadWhiteDepth();
     void loadDepthMap(const std::string& path);
     void loadPoseFromJsonVal(nlohmann::basic_json<>::value_type f);
 
+
+
+};
+
+class CameraForStudy: public Camera{
+  public:
+    const Image<cv::Vec3f>* curvature_;
+    const Image<cv::Vec3f>* grad_x_;
+    const Image<cv::Vec3f>* grad_y_;
+    const Image<cv::Vec3f>* grad_robust_x_;
+    const Image<float>* grad_intensity_;
+
+    CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
+           const std::string& path_rgb):
+           Camera( name, cam_parameters, path_rgb),
+           curvature_( computeCurvature(100) ),
+           grad_x_( gradientX() ),
+           grad_y_( gradientY() ),
+           grad_robust_x_( gradientRobustX() ),
+           grad_intensity_( gradientintensity() )
+           {};
+
+    CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
+           nlohmann::basic_json<>::value_type f,
+           const std::string& path_rgb):
+           CameraForStudy( name,cam_parameters, path_rgb )
+           {
+             loadPoseFromJsonVal(f);
+             invdepth_map_ = new Image< float >("invdepth_"+name_);
+             loadWhiteDepth();
+           };
+
+    CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
+           nlohmann::basic_json<>::value_type f,
+           const std::string& path_rgb,  const std::string& path_depth ):
+           CameraForStudy( name,cam_parameters, f, path_rgb )
+           {
+             loadDepthMap(path_depth);
+           };
+
+  private:
     //feature types
-    Image<cv::Vec3f>* computeCurvature();
+    Image<cv::Vec3f>* computeCurvature(float gain=1);
     Image<cv::Vec3f>* gradientX();
     Image<cv::Vec3f>* gradientY();
+    Image<cv::Vec3f>* gradientRobustX();
+    Image<float>* gradientintensity();
 
 };

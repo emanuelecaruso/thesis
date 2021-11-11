@@ -90,3 +90,28 @@ void Dtam::test_mapping(){
   update_cameras_thread_.join();
 
 }
+
+void Dtam::testFeatures(){
+  CameraForStudy* cam_1=environment_->camera_vector_->at(0);
+  // float size=1;
+  float size=1.3;
+  // float size=2;
+
+  for (int i=1; i<environment_->camera_vector_->size(); i++){
+    showFeatures(i, size);
+    cv::waitKey(0);
+  }
+};
+
+void Dtam::showFeatures(int idx, float size=1){
+  CameraForStudy* cam_1=environment_->camera_vector_->at(0);
+  CameraForStudy* cam_2=environment_->camera_vector_->at(idx);
+  cam_1->image_rgb_->showWithOtherImage(cam_2->image_rgb_,"image comparison",size);
+  cam_1->curvature_->showWithOtherImage(cam_2->curvature_,"curvature comparison",size);
+  // cam_1->grad_intensity_->showWithOtherImage(cam_2->grad_intensity_,"grad intensity comparison",size);
+  // cam_1->grad_x_->showWithOtherImage(cam_2->grad_x_,"grad x comparison",size);
+  // cam_1->grad_y_->showWithOtherImage(cam_2->grad_y_,"grad y comparison",size);
+  cam_1->grad_robust_x_->showWithOtherImage(cam_2->grad_robust_x_,"grad x rob comparison",size);
+
+
+};

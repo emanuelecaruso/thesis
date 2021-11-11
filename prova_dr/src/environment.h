@@ -7,7 +7,7 @@ class Environment{
     const std::string dataset_name_;
     const int fps_;
     const CamParameters* cam_parameters_;
-    const std::vector<Camera*>* camera_vector_; // vector containing pointers to camera objects
+    const std::vector<CameraForStudy*>* camera_vector_; // vector containing pointers to camera objects
 
 
     Environment(const std::string& path_name, const std::string& dataset_name, float fps=30):
@@ -20,7 +20,7 @@ class Environment{
     void debugAllCameras(bool show_imgs=false) const;
 
   private:
-    std::vector<Camera*>* loadCameraVector(const std::string& path_name, const std::string& dataset_name);
+    std::vector<CameraForStudy*>* loadCameraVector(const std::string& path_name, const std::string& dataset_name);
     CamParameters* loadCamParameters(const std::string& path_name, const std::string& dataset_name);
 
     // double saveState(std::string path_name, Camera_cpu* camera_cpu);

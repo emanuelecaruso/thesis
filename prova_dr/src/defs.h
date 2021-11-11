@@ -257,7 +257,7 @@ namespace pr {
 
   static std::mutex mu_cout;
 
-  static bool debug_mode = 1;
+  static bool debug_mode = 0;
 
   inline void sharedCout(const std::string& msg){
     std::lock_guard<std::mutex> locker(mu_cout);
