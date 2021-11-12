@@ -206,6 +206,33 @@ __/src/environment.cpp.s:
 	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/environment.cpp.s
 .PHONY : __/src/environment.cpp.s
 
+__/src/epline.o: __/src/epline.cpp.o
+
+.PHONY : __/src/epline.o
+
+# target to build an object file
+__/src/epline.cpp.o:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.o
+.PHONY : __/src/epline.cpp.o
+
+__/src/epline.i: __/src/epline.cpp.i
+
+.PHONY : __/src/epline.i
+
+# target to preprocess a source file
+__/src/epline.cpp.i:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.i
+.PHONY : __/src/epline.cpp.i
+
+__/src/epline.s: __/src/epline.cpp.s
+
+.PHONY : __/src/epline.s
+
+# target to generate assembly for a file
+__/src/epline.cpp.s:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.s
+.PHONY : __/src/epline.cpp.s
+
 __/src/image.o: __/src/image.cpp.o
 
 .PHONY : __/src/image.o
@@ -359,6 +386,9 @@ help:
 	@echo "... __/src/environment.o"
 	@echo "... __/src/environment.i"
 	@echo "... __/src/environment.s"
+	@echo "... __/src/epline.o"
+	@echo "... __/src/epline.i"
+	@echo "... __/src/epline.s"
 	@echo "... __/src/image.o"
 	@echo "... __/src/image.i"
 	@echo "... __/src/image.s"

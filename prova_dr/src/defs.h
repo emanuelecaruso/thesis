@@ -257,7 +257,7 @@ namespace pr {
 
   static std::mutex mu_cout;
 
-  static bool debug_mode = 0;
+  static bool debug_mode = 1;
 
   inline void sharedCout(const std::string& msg){
     std::lock_guard<std::mutex> locker(mu_cout);
@@ -275,4 +275,6 @@ namespace pr {
   const cv::Vec3b red = cv::Vec3b(0,0,255);
   const cv::Vec3b green = cv::Vec3b(0,255,0);
   const cv::Vec3b blue = cv::Vec3b(255,0,0);
+  const cv::Vec3b cyan = cv::Vec3b(255,255,0);
+  const cv::Vec3b yellow = cv::Vec3b(0,255,255);
 }

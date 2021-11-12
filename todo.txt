@@ -5,7 +5,5 @@
 - mapper.cpp, resizeLine: pay attention on lineTraverse! TODO
 . mapper.cpp, doMapping: take other frame couple TODO
 - interval depth range in epipolar cam 2 TODO
-- comparison range TODO
 
-- vh uh switch
-- TODO resolve
+- comparison range TODO

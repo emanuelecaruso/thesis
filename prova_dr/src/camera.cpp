@@ -33,7 +33,7 @@ void Camera::sampleRandomUv(Eigen::Vector2f& uv){
 
 
 // access
-void Camera::getCentreAsUV(Eigen::Vector2f& uv){
+void Camera::getCenterAsUV(Eigen::Vector2f& uv){
   uv.x() = cam_parameters_->width/2;
   uv.y() = cam_parameters_->height/2;
 }
@@ -189,6 +189,16 @@ void Camera::showDepthMap(int image_scale) const {
   invdepth_map_->show(image_scale);
 }
 
+Image<cv::Vec3b>* Camera::setPixelAndReturnImg(const Eigen::Vector2i& pixel_coords,
+                                               const std::string& name){
+
+  Image<cv::Vec3b>* img = image_rgb_->clone(image_rgb_->name_);
+  return img;
+}
+
+
+
+
 Image<cv::Vec3f>* CameraForStudy::computeCurvature(float gain){
 
   Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
@@ -247,7 +257,7 @@ Image<cv::Vec3f>* CameraForStudy::gradientRobustX(){
   Image<cv::Vec3f>* fxr = new Image<cv::Vec3f>("grad_x_rob_"+name_);
 
   fxr->image_=fx->image_/(img->image_);
-  fxr->image_*=5;
+  // fxr->image_*=5;
 
   return fxr;
 }

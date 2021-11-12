@@ -392,6 +392,12 @@ condition_variable
 camera.h
 /home/manu/Desktop/thesis/prova_dr/src/camera.h
 
+/home/manu/Desktop/thesis/prova_dr/src/epline.h
+camera.h
+/home/manu/Desktop/thesis/prova_dr/src/camera.h
+image.h
+/home/manu/Desktop/thesis/prova_dr/src/image.h
+
 /home/manu/Desktop/thesis/prova_dr/src/image.h
 defs.h
 /home/manu/Desktop/thesis/prova_dr/src/defs.h
@@ -399,6 +405,8 @@ defs.h
 /home/manu/Desktop/thesis/prova_dr/src/mapper.cpp
 mapper.h
 /home/manu/Desktop/thesis/prova_dr/src/mapper.h
+epline.h
+/home/manu/Desktop/thesis/prova_dr/src/epline.h
 dtam.h
 /home/manu/Desktop/thesis/prova_dr/src/dtam.h
 math.h
@@ -417,6 +425,8 @@ chrono
 /home/manu/Desktop/thesis/prova_dr/src/mapper.h
 camera.h
 /home/manu/Desktop/thesis/prova_dr/src/camera.h
+epline.h
+/home/manu/Desktop/thesis/prova_dr/src/epline.h
 image.h
 /home/manu/Desktop/thesis/prova_dr/src/image.h
 

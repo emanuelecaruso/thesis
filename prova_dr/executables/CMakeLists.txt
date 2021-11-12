@@ -9,6 +9,7 @@ add_executable(test_mapping test_mapping.cpp
 ../src/environment.cpp
 ../src/dtam.cpp
 ../src/utils.cpp
+../src/epline.cpp
 ../src/mapper.cpp
 ../src/tracker.cpp
 )

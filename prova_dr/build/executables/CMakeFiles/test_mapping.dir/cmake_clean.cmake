@@ -2,6 +2,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/test_mapping.dir/__/src/camera.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/dtam.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/environment.cpp.o"
+  "CMakeFiles/test_mapping.dir/__/src/epline.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/image.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o"

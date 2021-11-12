@@ -70,7 +70,7 @@ class Camera{
     void sampleRandomPixel(Eigen::Vector2i& pixel_coords);
 
     // access
-    void getCentreAsUV(Eigen::Vector2f& uv);
+    void getCenterAsUV(Eigen::Vector2f& uv);
     void getCentreAsPixel(Eigen::Vector2i& pixel_coords);
 
     // functions for projections/transformations
@@ -87,6 +87,8 @@ class Camera{
     void saveDepthMap(const std::string& path) const;
     void showRGB(int image_scale=1) const;
     void showDepthMap(int image_scale=1) const;
+
+    Image<cv::Vec3b>* setPixelAndReturnImg(const Eigen::Vector2i& pixel_coords,const std::string& name);
 
     inline Camera* clone(){
       return new Camera(*this);

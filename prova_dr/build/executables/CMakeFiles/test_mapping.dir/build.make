@@ -135,9 +135,22 @@ executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/test_mapping.dir/__/src/utils.cpp.s"
 	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/manu/Desktop/thesis/prova_dr/src/utils.cpp -o CMakeFiles/test_mapping.dir/__/src/utils.cpp.s
 
+executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.o: executables/CMakeFiles/test_mapping.dir/flags.make
+executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.o: ../src/epline.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.o"
+	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/test_mapping.dir/__/src/epline.cpp.o -c /home/manu/Desktop/thesis/prova_dr/src/epline.cpp
+
+executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/test_mapping.dir/__/src/epline.cpp.i"
+	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/manu/Desktop/thesis/prova_dr/src/epline.cpp > CMakeFiles/test_mapping.dir/__/src/epline.cpp.i
+
+executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/test_mapping.dir/__/src/epline.cpp.s"
+	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/manu/Desktop/thesis/prova_dr/src/epline.cpp -o CMakeFiles/test_mapping.dir/__/src/epline.cpp.s
+
 executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o: executables/CMakeFiles/test_mapping.dir/flags.make
 executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o: ../src/mapper.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o"
 	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o -c /home/manu/Desktop/thesis/prova_dr/src/mapper.cpp
 
 executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.i: cmake_force
@@ -150,7 +163,7 @@ executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.s: cmake_force
 
 executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o: executables/CMakeFiles/test_mapping.dir/flags.make
 executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o: ../src/tracker.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o"
 	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o -c /home/manu/Desktop/thesis/prova_dr/src/tracker.cpp
 
 executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.i: cmake_force
@@ -169,6 +182,7 @@ test_mapping_OBJECTS = \
 "CMakeFiles/test_mapping.dir/__/src/environment.cpp.o" \
 "CMakeFiles/test_mapping.dir/__/src/dtam.cpp.o" \
 "CMakeFiles/test_mapping.dir/__/src/utils.cpp.o" \
+"CMakeFiles/test_mapping.dir/__/src/epline.cpp.o" \
 "CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o" \
 "CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o"
 
@@ -181,6 +195,7 @@ executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/image.c
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/environment.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/dtam.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.o
+executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/build.make
@@ -251,7 +266,7 @@ executables/test_mapping: /usr/local/lib/libopencv_cudaarithm.so.4.5.2
 executables/test_mapping: /usr/local/lib/libopencv_core.so.4.5.2
 executables/test_mapping: /usr/local/lib/libopencv_cudev.so.4.5.2
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX executable test_mapping"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable test_mapping"
 	cd /home/manu/Desktop/thesis/prova_dr/build/executables && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_mapping.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
