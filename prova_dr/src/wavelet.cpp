@@ -29,8 +29,7 @@ void Wvlt_lvl::WaveletDecHaar(const Image<cv::Vec3f>* img){
   dh=new Image<cv::Vec3f>("dh");
   dv=new Image<cv::Vec3f>("dv");
   dd=new Image<cv::Vec3f>("dd");
-  max_idx=new Image<cv::Vec3i>("max_idx");
-  norm_max=new Image<float>("norm_max");
+  norm_img=new Image<float>("norm_img");
 
   int width=img->image_.cols;
   int height=img->image_.rows;
@@ -39,8 +38,7 @@ void Wvlt_lvl::WaveletDecHaar(const Image<cv::Vec3f>* img){
   dh->initImage(height/2, width/2);
   dv->initImage(height/2, width/2);
   dd->initImage(height/2, width/2);
-  max_idx->initImage(height/2, width/2);
-  norm_max->initImage(height/2, width/2);
+  norm_img->initImage(height/2, width/2);
 
 
   for (int y=0;y<(height/2);y++)
@@ -50,59 +48,57 @@ void Wvlt_lvl::WaveletDecHaar(const Image<cv::Vec3f>* img){
 
           float norm=filterWaves( x, y, img);
 
-          norm_max->setPixel(y,x,norm);
-          cv::Vec3i max_idx_(y,x,level);
-          max_idx->setPixel(y,x,max_idx_);
+          norm_img->setPixel(y,x,norm);
 
       }
   }
 
 }
-
-void Wvlt_lvl::WaveletDecHaar(Wvlt_lvl* wvlt_lvl_previous){
-  c=new Image<cv::Vec3f>("c");
-  dh=new Image<cv::Vec3f>("dh");
-  dv=new Image<cv::Vec3f>("dv");
-  dd=new Image<cv::Vec3f>("dd");
-  max_idx=new Image<cv::Vec3i>("max_idx");
-  norm_max=new Image<float>("norm_max");
-
-  int width=wvlt_lvl_previous->c->image_.cols;
-  int height=wvlt_lvl_previous->c->image_.rows;
-
-  c->initImage(height/2, width/2);
-  dh->initImage(height/2, width/2);
-  dv->initImage(height/2, width/2);
-  dd->initImage(height/2, width/2);
-  max_idx->initImage(height/2, width/2);
-  norm_max->initImage(height/2, width/2);
-
-  for (int y=0;y<(height/2);y++)
-  {
-      for (int x=0; x<(width/2);x++)
-      {
-
-        float norm=filterWaves( x, y, wvlt_lvl_previous->c);
-
-        float max_norm_=norm;
-        cv::Vec3i max_idx_(y,x,level);
-
-
-        for(int i=0; i<2; i++){
-          for(int j=0; j<2; j++){
-            float norm_max_ij = wvlt_lvl_previous->norm_max->evalPixel(2*y+i,2*x+j);
-            if(norm_max_ij>norm){
-              max_norm_=norm_max_ij;
-              max_idx_=wvlt_lvl_previous->max_idx->evalPixel(2*y+i,2*x+j);
-            }
-          }
-        }
-        norm_max->setPixel(y,x,max_norm_);
-        max_idx->setPixel(y,x,max_idx_);
-    }
-  }
-
-}
+//
+// void Wvlt_lvl::WaveletDecHaar(Wvlt_lvl* wvlt_lvl_previous){
+//   c=new Image<cv::Vec3f>("c");
+//   dh=new Image<cv::Vec3f>("dh");
+//   dv=new Image<cv::Vec3f>("dv");
+//   dd=new Image<cv::Vec3f>("dd");
+//   max_idx=new Image<cv::Vec3i>("max_idx");
+//   norm_max=new Image<float>("norm_max");
+//
+//   int width=wvlt_lvl_previous->c->image_.cols;
+//   int height=wvlt_lvl_previous->c->image_.rows;
+//
+//   c->initImage(height/2, width/2);
+//   dh->initImage(height/2, width/2);
+//   dv->initImage(height/2, width/2);
+//   dd->initImage(height/2, width/2);
+//   max_idx->initImage(height/2, width/2);
+//   norm_max->initImage(height/2, width/2);
+//
+//   for (int y=0;y<(height/2);y++)
+//   {
+//       for (int x=0; x<(width/2);x++)
+//       {
+//
+//         float norm=filterWaves( x, y, wvlt_lvl_previous->c);
+//
+//         float max_norm_=norm;
+//         cv::Vec3i max_idx_(y,x,level);
+//
+//
+//         for(int i=0; i<2; i++){
+//           for(int j=0; j<2; j++){
+//             float norm_max_ij = wvlt_lvl_previous->norm_max->evalPixel(2*y+i,2*x+j);
+//             if(norm_max_ij>norm){
+//               max_norm_=norm_max_ij;
+//               max_idx_=wvlt_lvl_previous->max_idx->evalPixel(2*y+i,2*x+j);
+//             }
+//           }
+//         }
+//         norm_max->setPixel(y,x,max_norm_);
+//         max_idx->setPixel(y,x,max_idx_);
+//     }
+//   }
+//
+// }
 
 void Wvlt_dec::showWaveletDec(float size){
   showWaveletDec("wavelet decomposition", size);
@@ -136,48 +132,48 @@ void Wvlt_dec::showWaveletDec(const std::string& name, float size){
 
 
 
-void Wvlt_dec::signThresholdedPoints(float threshold, bool printNPix){
-  int cols=image_->image_.cols;
-  int rows=image_->image_.rows;
-  int n_pixels_kept=0;
+// void Wvlt_dec::signThresholdedPoints(float threshold, bool printNPix){
+//   int cols=image_->image_.cols;
+//   int rows=image_->image_.rows;
+//   int n_pixels_kept=0;
+//
+//   int cur_rows=rows>>levels_;
+//   int cur_cols=cols>>levels_;
+//
+//   Wvlt_lvl* wvlt_curr=vector_wavelets->at(levels_-1);
+//
+//   for (int row=0; row<cur_rows; row++)
+//   {
+//     for (int col=0; col<cur_cols ;col++)
+//     {
+//
+//       float norm=wvlt_curr->norm_max->evalPixel(row,col);
+//       cv::Vec3i idx=wvlt_curr->max_idx->evalPixel(row,col);
+//
+//       if (norm>threshold){
+//         // sharedCout("lvl: "+std::to_string(idx[2]));
+//         Wvlt_lvl* wvlt_curr_=vector_wavelets->at(idx[2]);
+//         wvlt_curr_->dh->setPixel(idx[0],idx[1],white);
+//         wvlt_curr_->dv->setPixel(idx[0],idx[1],white);
+//         wvlt_curr_->dd->setPixel(idx[0],idx[1],white);
+//         n_pixels_kept++;
+//       }
+//     }
+//   }
+//
+//   if (printNPix)
+//     sharedCout("n° pixels kept: "+std::to_string(n_pixels_kept));
+// }
 
-  int cur_rows=rows>>levels_;
-  int cur_cols=cols>>levels_;
 
-  Wvlt_lvl* wvlt_curr=vector_wavelets->at(levels_-1);
-
-  for (int row=0; row<cur_rows; row++)
-  {
-    for (int col=0; col<cur_cols ;col++)
-    {
-
-      float norm=wvlt_curr->norm_max->evalPixel(row,col);
-      cv::Vec3i idx=wvlt_curr->max_idx->evalPixel(row,col);
-
-      if (norm>threshold){
-        // sharedCout("lvl: "+std::to_string(idx[2]));
-        Wvlt_lvl* wvlt_curr_=vector_wavelets->at(idx[2]);
-        wvlt_curr_->dh->setPixel(idx[0],idx[1],white);
-        wvlt_curr_->dv->setPixel(idx[0],idx[1],white);
-        wvlt_curr_->dd->setPixel(idx[0],idx[1],white);
-        n_pixels_kept++;
-      }
-    }
-  }
-
-  if (printNPix)
-    sharedCout("n° pixels kept: "+std::to_string(n_pixels_kept));
-}
-
-
-void Wvlt_dec::compareThreshold(float threshold, float size){
-  Wvlt_dec* thresholded = new Wvlt_dec(this);
-  thresholded->signThresholdedPoints(threshold,true);
-
-  thresholded->showWaveletDec("thresholded",size);
-  this->showWaveletDec("original",size);
-
-}
+// void Wvlt_dec::compareThreshold(float threshold, float size){
+//   Wvlt_dec* thresholded = new Wvlt_dec(this);
+//   thresholded->signThresholdedPoints(threshold,true);
+//
+//   thresholded->showWaveletDec("thresholded",size);
+//   this->showWaveletDec("original",size);
+//
+// }
 // }
 
 

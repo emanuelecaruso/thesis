@@ -16,7 +16,7 @@ class Dtam{
     tracker_(new Tracker(this))
     {
       frame_current_=0;
-      camera_vector_= new std::vector<Camera*>;
+      camera_vector_= new std::vector<CameraForMapping*>;
     };
 
 
@@ -34,7 +34,7 @@ class Dtam{
     Tracker* const tracker_;
     friend class Mapper;
     friend class Tracker;
-    std::vector<Camera*>* camera_vector_;
+    std::vector<CameraForMapping*>* camera_vector_;
     int frame_current_;
 
     std::mutex mu_frame_;

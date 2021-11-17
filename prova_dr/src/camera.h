@@ -20,40 +20,38 @@ class Camera{
     Image<float>* invdepth_map_;
     Eigen::Isometry3f* frame_world_wrt_camera_;
     Eigen::Isometry3f* frame_camera_wrt_world_;
-    Wvlt_dec* wavelet_dec_;
+
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
-           const Image<cv::Vec3b>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
-               Eigen::Isometry3f* frame_camera_wrt_world, int wav_levels=4 ):
+           const Image<cv::Vec3b>* image_rgb):
            name_(name),
            cam_parameters_(cam_parameters),
            K_(compute_K()),
            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
            image_rgb_( image_rgb )
+           { };
+
+     Camera(const std::string& name, const CamParameters* cam_parameters,
+            const std::string& path_rgb):
+            name_(name),
+            cam_parameters_(cam_parameters),
+            K_(compute_K()),
+            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
+            image_rgb_( returnRGBFromPath( path_rgb ) )
+            { };
+
+    Camera(const std::string& name, const CamParameters* cam_parameters,
+           const Image<cv::Vec3b>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
+               Eigen::Isometry3f* frame_camera_wrt_world ):
+           Camera(name, cam_parameters, image_rgb )
            {
-             Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
-             image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
-             wavelet_dec_= new Wvlt_dec(wav_levels,img);
              frame_world_wrt_camera_=frame_world_wrt_camera;
              frame_camera_wrt_world_=frame_camera_wrt_world;
            };
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
-           const std::string& path_rgb, int wav_levels=4 ):
-           name_(name),
-           cam_parameters_(cam_parameters),
-           K_(compute_K()),
-           Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
-           image_rgb_( returnRGBFromPath( path_rgb ) )
-           {
-             Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
-             image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
-             wavelet_dec_= new Wvlt_dec(wav_levels,img);
-           };
-
-    Camera(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
-           const std::string& path_rgb ):
+           const std::string& path_rgb):
     Camera( name,cam_parameters, path_rgb )
     {
       loadPoseFromJsonVal(f);
@@ -119,21 +117,26 @@ class CameraForStudy: public Camera{
     const Image<cv::Vec3f>* grad_y_;
     const Image<cv::Vec3f>* grad_robust_x_;
     const Image<float>* grad_intensity_;
+    Wvlt_dec* wavelet_dec_;
 
     CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
-           const std::string& path_rgb):
+           const std::string& path_rgb, int wav_levels=4):
            Camera( name, cam_parameters, path_rgb),
            curvature_( computeCurvature(100) ),
            grad_x_( gradientX() ),
            grad_y_( gradientY() ),
            grad_robust_x_( gradientRobustX() ),
            grad_intensity_( gradientintensity() )
-           { };
+           {
+             Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+             image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+             wavelet_dec_= new Wvlt_dec(wav_levels,img);
+           };
 
     CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
-           const std::string& path_rgb):
-           CameraForStudy( name,cam_parameters, path_rgb )
+           const std::string& path_rgb, int wav_levels=4):
+           CameraForStudy( name,cam_parameters, path_rgb, wav_levels )
            {
              loadPoseFromJsonVal(f);
              invdepth_map_ = new Image< float >("invdepth_"+name_);
@@ -142,8 +145,8 @@ class CameraForStudy: public Camera{
 
     CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
-           const std::string& path_rgb,  const std::string& path_depth ):
-           CameraForStudy( name,cam_parameters, f, path_rgb )
+           const std::string& path_rgb,  const std::string& path_depth, int wav_levels=4 ):
+           CameraForStudy( name,cam_parameters, f, path_rgb, wav_levels )
            {
              loadDepthMap(path_depth);
            };
@@ -155,5 +158,57 @@ class CameraForStudy: public Camera{
     Image<cv::Vec3f>* gradientY();
     Image<cv::Vec3f>* gradientRobustX();
     Image<float>* gradientintensity();
+
+};
+
+class Mapper; // forward declaration
+
+class CameraForMapping: public Camera{
+
+  public:
+    typedef std::pair<Eigen::Vector3i,float> Candidate;
+    typedef std::vector<Candidate*> Region;
+
+    Wvlt_dec* wavelet_dec_;
+    std::vector<Region*>* regions_;
+    std::vector<Candidate*>* candidates_;
+    friend class Mapper;
+
+    CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
+           const Image<cv::Vec3b>* image_rgb, int wav_levels=4):
+           Camera( name, cam_parameters, image_rgb)
+           {
+             Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+             image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+             wavelet_dec_= new Wvlt_dec(wav_levels,img);
+
+             regions_=new std::vector<Region*>;
+             candidates_=new std::vector<Candidate*>;
+           };
+
+    CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
+            const Image<cv::Vec3b>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
+                Eigen::Isometry3f* frame_camera_wrt_world, int wav_levels=4):
+            CameraForMapping( name, cam_parameters, image_rgb, wav_levels)
+            {
+              frame_world_wrt_camera_=frame_world_wrt_camera;
+              frame_camera_wrt_world_=frame_camera_wrt_world;
+            };
+
+    CameraForMapping(Camera* cam, int wav_levels=4):
+           CameraForMapping( cam->name_, cam->cam_parameters_, cam->image_rgb_,
+                   cam->frame_world_wrt_camera_, cam->frame_camera_wrt_world_,
+                   wav_levels)
+           {
+             Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+             image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+             wavelet_dec_= new Wvlt_dec(wav_levels,img);
+           };
+
+  private:
+    void selectCandidates(int max_num_candidates);
+    void collectRegions(float threshold);
+    void showCandidates(float size);
+
 
 };

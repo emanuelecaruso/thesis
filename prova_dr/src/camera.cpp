@@ -305,3 +305,90 @@ Image<float>* CameraForStudy::gradientintensity(){
 
   return out;
 }
+
+
+void CameraForMapping::collectRegions(float threshold){
+  Wvlt_lvl* wvlt_last_lvl= wavelet_dec_->vector_wavelets->back();
+
+  int levels= wavelet_dec_->levels_;
+  int rows=wvlt_last_lvl->c->image_.rows;
+  int cols=wvlt_last_lvl->c->image_.cols;
+
+  auto lb_cmp = [](Candidate* const & x, float d) -> bool
+    { return (*x).second < d; };
+
+  for (int row=0; row<rows; row++){
+    for (int col=0; col<cols; col++){
+      Region* reg= new Region;
+      for (int level=levels-1; level>=0; level--){
+        int lev_opp=levels-1-level;
+        for (int row_offs=0; row_offs<(2<<lev_opp); row_offs++){
+          for (int col_offs=0; col_offs<(2<<lev_opp); col_offs++){
+
+            Wvlt_lvl* wvlt_lvl= wavelet_dec_->vector_wavelets->at(level);
+            int row_curr=(row<<lev_opp)+row_offs;
+            int col_curr=(col<<lev_opp)+col_offs;
+            float norm = wvlt_lvl->norm_img->evalPixel(row_curr,col_curr);
+            Eigen::Vector3i idx(row_curr,col_curr,level);
+            if(norm>threshold){
+              Candidate* candidate = new Candidate{idx,norm};
+
+              auto it = std::lower_bound(reg->begin(), reg->end(), norm, lb_cmp);
+
+              reg->insert ( it , candidate );
+            }
+
+          }
+        }
+      }
+      if(!reg->empty()){
+        regions_->push_back(reg);
+      }
+    }
+  }
+
+}
+
+
+void CameraForMapping::selectCandidates(int max_num_candidates){
+  int num_candidates=0;
+
+  while(num_candidates<max_num_candidates){
+    if(!regions_->empty()){
+      for(int i=regions_->size()-1; i>=0; i--){
+        if (num_candidates>=max_num_candidates)
+          break;
+
+        Region* region= regions_->at(i);
+
+        Candidate* candidate = region->back();
+        region->pop_back();
+
+        candidates_->push_back(candidate);
+        if (region->empty()){
+          regions_->erase (regions_->begin() + i);
+        }
+
+
+        num_candidates++;
+      }
+    }
+
+  }
+}
+
+void CameraForMapping::showCandidates(float size){
+  Wvlt_dec* selected = new Wvlt_dec(wavelet_dec_);
+
+  int n_candidates=0;
+  for(Candidate* candidate : *candidates_){
+    Eigen::Vector3i idx = candidate->first;
+    Wvlt_lvl* wvlt_curr_=selected->vector_wavelets->at(idx[2]);
+    wvlt_curr_->dh->setPixel(idx[0],idx[1],white);
+    wvlt_curr_->dv->setPixel(idx[0],idx[1],white);
+    wvlt_curr_->dd->setPixel(idx[0],idx[1],white);
+    n_candidates++;
+  }
+  selected->showWaveletDec(std::to_string(n_candidates)+" candidates",size);
+
+}

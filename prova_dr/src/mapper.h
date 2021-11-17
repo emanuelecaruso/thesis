@@ -23,9 +23,6 @@ class Mapper{
                                 Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,
                                 EpipolarLine*& ep_line_2);
 
-    bool buildFeatureVec(EpipolarLine*& ep_line_1, EpipolarLine*& ep_line_2,
-                std::vector<Feature*>*& feats_1, std::vector<Feature*>*& feats_2);
-
     float coord2FromCoord1(float coord1, Eigen::Vector4f& abcd);
 
     void getParametersABCD( EpipolarLine* ep_line_source, EpipolarLine* ep_line_range,
@@ -33,5 +30,9 @@ class Mapper{
 
     void showRangeStudy(EpipolarLine* ep_line_source, EpipolarLine* ep_line_range,
                             int uvs_idx, float size=1);
+
+    void collectRegionsAndCandidates(int frame_idx_r, float threshold, int num_candidates);
+
+
 
 };

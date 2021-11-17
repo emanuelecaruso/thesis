@@ -108,7 +108,7 @@ CamParameters* Environment::loadCamParameters(const std::string& path_name, cons
   }
   else
   {
-    printf( "ERROR: %s Is not a directory\n", path_name );
+    printf( "ERROR: %s Is not a directory\n", path_name_ );
     return cam_parameters_out;
   }
 

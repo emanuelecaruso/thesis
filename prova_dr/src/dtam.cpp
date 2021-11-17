@@ -24,10 +24,8 @@ void Dtam::debugAllCameras(bool show_imgs){
 }
 
 void Dtam::addCamera(bool takeGtPoses){
-  Camera* env_cam=environment_->camera_vector_->at(frame_current_);
-  Camera* new_cam=new Camera (env_cam->name_, env_cam->cam_parameters_,
-                 env_cam->image_rgb_, env_cam->frame_world_wrt_camera_,
-                 env_cam->frame_camera_wrt_world_);
+  CameraForStudy* env_cam=environment_->camera_vector_->at(frame_current_);
+  CameraForMapping* new_cam=new CameraForMapping (env_cam, env_cam->wavelet_dec_->levels_);
   if(!takeGtPoses){
     new_cam->frame_camera_wrt_world_->linear().setIdentity();
     new_cam->frame_camera_wrt_world_->translation()= Eigen::Vector3f(0,0,0);
@@ -90,7 +88,7 @@ void Dtam::test_mapping(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromVideostream, this, takeGtPoses);
   std::thread mapping_thread_(&Dtam::doMapping, this);
 
-  // mapping_thread_.join();
+  mapping_thread_.join();
   mapping_thread_.detach();
   update_cameras_thread_.join();
 
@@ -112,8 +110,8 @@ void Dtam::showFeatures(int idx, float size=1){
   CameraForStudy* cam_1=environment_->camera_vector_->at(0);
   CameraForStudy* cam_2=environment_->camera_vector_->at(idx);
   // cam_1->image_rgb_->showWithOtherImage(cam_2->image_rgb_,"image comparison",size);
-  // cam_1->wavelet_dec_->showWaveletDec(size);
-  cam_1->wavelet_dec_->compareThreshold(0.1,size);
+  cam_1->wavelet_dec_->showWaveletDec(size);
+  // cam_1->wavelet_dec_->compareThreshold(0.1,size);
   // cam_1->curvature_->showWithOtherImage(cam_2->curvature_,"curvature comparison",size);
   // cam_1->grad_intensity_->showWithOtherImage(cam_2->grad_intensity_,"grad intensity comparison",size);
   // cam_1->grad_x_->showWithOtherImage(cam_2->grad_x_,"grad x comparison",size);
