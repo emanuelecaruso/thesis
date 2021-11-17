@@ -271,10 +271,27 @@ namespace pr {
     }
   }
 
+  inline float l1Norm(cv::Vec3f vec){
+    return abs(vec[0])+abs(vec[1])+abs(vec[2]);
+  }
+
+  const cv::Vec3b black = cv::Vec3b(0,0,0);
+  const cv::Vec3b white = cv::Vec3b(255,255,255);
+  const cv::Vec3b grey = cv::Vec3b(127,127,127);
   const cv::Vec3b magenta = cv::Vec3b(255,0,255);
   const cv::Vec3b red = cv::Vec3b(0,0,255);
   const cv::Vec3b green = cv::Vec3b(0,255,0);
   const cv::Vec3b blue = cv::Vec3b(255,0,0);
   const cv::Vec3b cyan = cv::Vec3b(255,255,0);
   const cv::Vec3b yellow = cv::Vec3b(0,255,255);
+
+  const cv::Vec3f black_f = cv::Vec3f(0,0,0);
+  const cv::Vec3f white_f = cv::Vec3f(1,1,1);
+  const cv::Vec3f grey_f = cv::Vec3f(0.5,0.5,0.5);
+  const cv::Vec3f magenta_f = cv::Vec3f(1,0,1);
+  const cv::Vec3f red_f = cv::Vec3f(0,0,1);
+  const cv::Vec3f green_f = cv::Vec3f(0,1,0);
+  const cv::Vec3f blue_f = cv::Vec3f(1,0,0);
+  const cv::Vec3f cyan_f = cv::Vec3f(1,1,0);
+  const cv::Vec3f yellow_f = cv::Vec3f(0,1,1);
 }

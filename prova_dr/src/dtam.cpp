@@ -24,14 +24,17 @@ void Dtam::debugAllCameras(bool show_imgs){
 }
 
 void Dtam::addCamera(bool takeGtPoses){
-  Camera* new_camera=environment_->camera_vector_->at(frame_current_)->clone();
+  Camera* env_cam=environment_->camera_vector_->at(frame_current_);
+  Camera* new_cam=new Camera (env_cam->name_, env_cam->cam_parameters_,
+                 env_cam->image_rgb_, env_cam->frame_world_wrt_camera_,
+                 env_cam->frame_camera_wrt_world_);
   if(!takeGtPoses){
-    new_camera->frame_camera_wrt_world_->linear().setIdentity();
-    new_camera->frame_camera_wrt_world_->translation()= Eigen::Vector3f(0,0,0);
-    new_camera->frame_world_wrt_camera_->linear().setIdentity();
-    new_camera->frame_world_wrt_camera_->translation()= Eigen::Vector3f(0,0,0);
+    new_cam->frame_camera_wrt_world_->linear().setIdentity();
+    new_cam->frame_camera_wrt_world_->translation()= Eigen::Vector3f(0,0,0);
+    new_cam->frame_world_wrt_camera_->linear().setIdentity();
+    new_cam->frame_world_wrt_camera_->translation()= Eigen::Vector3f(0,0,0);
   }
-  camera_vector_->push_back(new_camera);
+  camera_vector_->push_back(new_cam);
 }
 
 int Dtam::getFrameCurrent(){
@@ -70,7 +73,9 @@ void Dtam::updateCamerasFromVideostream(bool takeGtPoses){
     double t_end=getTime();
     locker.unlock();
 
-    long int waitDelay=(t_end-t_start)*1000;
+    int deltaTime=(t_end-t_start);
+    sharedCoutDebug("Add camera computation time: "+ std::to_string(deltaTime)+" ms");
+    long int waitDelay=deltaTime*1000;
 
     long int time_to_wait=(1.0/fps)*1000000-waitDelay;
     std::this_thread::sleep_for(std::chrono::microseconds(time_to_wait));
@@ -93,8 +98,8 @@ void Dtam::test_mapping(){
 
 void Dtam::testFeatures(){
   CameraForStudy* cam_1=environment_->camera_vector_->at(0);
-  // float size=1;
-  float size=1.3;
+  float size=1;
+  // float size=1.3;image_
   // float size=2;
 
   for (int i=1; i<environment_->camera_vector_->size(); i++){
@@ -106,12 +111,17 @@ void Dtam::testFeatures(){
 void Dtam::showFeatures(int idx, float size=1){
   CameraForStudy* cam_1=environment_->camera_vector_->at(0);
   CameraForStudy* cam_2=environment_->camera_vector_->at(idx);
-  cam_1->image_rgb_->showWithOtherImage(cam_2->image_rgb_,"image comparison",size);
-  cam_1->curvature_->showWithOtherImage(cam_2->curvature_,"curvature comparison",size);
+  // cam_1->image_rgb_->showWithOtherImage(cam_2->image_rgb_,"image comparison",size);
+  // cam_1->wavelet_dec_->showWaveletDec(size);
+  cam_1->wavelet_dec_->compareThreshold(0.1,size);
+  // cam_1->curvature_->showWithOtherImage(cam_2->curvature_,"curvature comparison",size);
   // cam_1->grad_intensity_->showWithOtherImage(cam_2->grad_intensity_,"grad intensity comparison",size);
   // cam_1->grad_x_->showWithOtherImage(cam_2->grad_x_,"grad x comparison",size);
+  // cam_1->grad_x_->getChannel(2)->showWithOtherImage(cam_2->grad_x_->getChannel(2),"r grad x comparison",size);
+  // cam_1->grad_x_->getChannel(1)->showWithOtherImage(cam_2->grad_x_->getChannel(1),"g grad x comparison",size);
+  // cam_1->grad_x_->getChannel(0)->showWithOtherImage(cam_2->grad_x_->getChannel(0),"b grad x comparison",size);
   // cam_1->grad_y_->showWithOtherImage(cam_2->grad_y_,"grad y comparison",size);
-  cam_1->grad_robust_x_->showWithOtherImage(cam_2->grad_robust_x_,"grad x rob comparison",size);
+  // cam_1->grad_robust_x_->showWithOtherImage(cam_2->grad_robust_x_,"grad x rob comparison",size);
 
 
 };

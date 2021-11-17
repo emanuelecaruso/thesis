@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_CHECK_CXX
   "/home/manu/Desktop/thesis/prova_dr/src/mapper.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o"
   "/home/manu/Desktop/thesis/prova_dr/src/tracker.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o"
   "/home/manu/Desktop/thesis/prova_dr/src/utils.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/wavelet.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o"
   "/home/manu/Desktop/thesis/prova_dr/executables/test_mapping.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_mapping.dir/test_mapping.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")

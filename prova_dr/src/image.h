@@ -1,5 +1,6 @@
 #pragma once
 #include "defs.h"
+// #include "wavelet.h"
 
 using namespace pr;
 
@@ -37,7 +38,7 @@ class Image{
       cv::hconcat(image_,image_2->image_,collage);
       cv::Mat_< T > resized_image;
       cv::resize(collage, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
-      cv::imshow(name_+","+image_2->name_, collage);
+      cv::imshow(name_+","+image_2->name_, resized_image);
     }
 
     inline void showWithOtherImage(const Image<T>* image_2,const std::string& name,
@@ -46,13 +47,27 @@ class Image{
       cv::hconcat(image_,image_2->image_,collage);
       cv::Mat_< T > resized_image;
       cv::resize(collage, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
-      cv::imshow(name, collage);
+      cv::imshow(name, resized_image);
     }
 
     inline Image* clone(const std::string& new_name) const{
       Image<T>* new_img = new Image<T>(new_name);
       new_img->image_ = image_.clone();
       return new_img;
+    }
+    inline Image* clone() const{
+      Image<T>* new_img = new Image<T>(name_);
+      new_img->image_ = image_.clone();
+      return new_img;
+    }
+
+    inline T evalPixel(const int row, const int col) const{
+      T color;
+      if (row>=0 && row<image_.rows && col>=0 && col<image_.cols)
+      {
+        color = image_.template at<T>(row,col);
+      }
+      return color;
     }
 
     inline bool evalPixel(const Eigen::Vector2i& pixel_coords, T& color) const{
@@ -97,50 +112,93 @@ class Image{
       std::cout << "Could not read the image: " << path << std::endl;
     }
 
+    inline Image< float >* getChannel(int channel) const{
+      if (channel<0 || channel>2){
+        sharedCout("wrong channel in 'get channel'");
+        return nullptr;
+      }
+
+      Image<  float >* out =new Image< float >(std::to_string(channel)+"chan_"+name_);
+
+      std::vector<cv::Mat> channels(3);
+
+      split(image_, channels);
+
+      out->image_=channels[channel];
+
+      return out;
+    }
+
+
+    inline Image* filter3ChannImg(cv::Mat_<float> kernel,
+                                    const std::string& name) const{
+
+      Image< T >* img_filtered =new Image< T >(name);
+
+      std::vector<cv::Mat> channels_o(3);
+      std::vector<cv::Mat> channels_i(3);
+
+      split(image_, channels_i);
+
+      filter2D(channels_i[0], channels_o[0], CV_32FC3, kernel);
+      filter2D(channels_i[1], channels_o[1], CV_32FC3, kernel);
+      filter2D(channels_i[2], channels_o[2], CV_32FC3, kernel);
+
+      /// Merge the three channels
+      merge(channels_o, img_filtered->image_);
+
+      return img_filtered;
+    }
+
+    inline int thresholdHard(float threshold) {
+      int cols=image_.cols;
+      int rows=image_.rows;
+
+      int n_pixels_kept=0;
+
+      for (int row=0;row<rows;row++)
+      {
+          for (int col=0; col<cols;col++)
+          {
+              cv::Vec3f clr ;
+              evalPixel(row,col,clr);
+
+              float norm=l1Norm(clr);
+              if (norm<threshold){
+                setPixel(row,col,black);
+              }
+              else
+                n_pixels_kept++;
+          }
+      }
+      return n_pixels_kept;
+    }
+
+
     inline Image< cv::Vec3f>* compute_sobel_x() const{
-      Image<  cv::Vec3f >* img_sobel_x =new Image< cv::Vec3f >("fx_"+name_);
+      Image<  cv::Vec3f >* img_sobel_x;
 
       cv::Mat_<float> kernel(3,3);
       kernel <<  1,  0, -1,
                  2,  0, -2,
                  1,  0, -1;
 
-      std::vector<cv::Mat> channels_o(3);
-      std::vector<cv::Mat> channels_i(3);
-
-      split(image_, channels_i);
-
-      filter2D(channels_i[0], channels_o[0], CV_32FC3, kernel);
-      filter2D(channels_i[1], channels_o[1], CV_32FC3, kernel);
-      filter2D(channels_i[2], channels_o[2], CV_32FC3, kernel);
-
-      /// Merge the three channels
-      merge(channels_o, img_sobel_x->image_);
+      img_sobel_x = filter3ChannImg( kernel, "fx_"+name_);
 
       return img_sobel_x;
     }
 
     inline Image<cv::Vec3f>* compute_sobel_y() const{
-      Image< cv::Vec3f >* img_sobel_x =new Image< cv::Vec3f >("fy_"+name_);
+      Image< cv::Vec3f >* img_sobel_y =new Image< cv::Vec3f >("fy_"+name_);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<   1,  2,  1,
                   0,  0,  0,
                  -1, -2, -1;
 
-      std::vector<cv::Mat> channels_o(3);
-      std::vector<cv::Mat> channels_i(3);
+      img_sobel_y = filter3ChannImg( kernel, "fx_"+name_);
 
-      split(image_, channels_i);
-
-      filter2D(channels_i[0], channels_o[0], CV_32FC3, kernel);
-      filter2D(channels_i[1], channels_o[1], CV_32FC3, kernel);
-      filter2D(channels_i[2], channels_o[2], CV_32FC3, kernel);
-
-      /// Merge the three channels
-      merge(channels_o, img_sobel_x->image_);
-
-      return img_sobel_x;
+      return img_sobel_y;
     }
 
     inline Image<cv::Vec3f>* squared() const{

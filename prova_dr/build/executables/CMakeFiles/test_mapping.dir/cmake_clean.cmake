@@ -7,6 +7,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/utils.cpp.o"
+  "CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o"
   "CMakeFiles/test_mapping.dir/test_mapping.cpp.o"
   "test_mapping"
   "test_mapping.pdb"

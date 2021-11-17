@@ -1,7 +1,6 @@
 #pragma once
 #include "camera.h"
 #include "epline.h"
-#include "image.h"
 
 class Dtam; //forward declaration
 

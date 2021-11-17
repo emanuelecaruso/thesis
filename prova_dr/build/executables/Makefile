@@ -341,6 +341,33 @@ __/src/utils.cpp.s:
 	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.s
 .PHONY : __/src/utils.cpp.s
 
+__/src/wavelet.o: __/src/wavelet.cpp.o
+
+.PHONY : __/src/wavelet.o
+
+# target to build an object file
+__/src/wavelet.cpp.o:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o
+.PHONY : __/src/wavelet.cpp.o
+
+__/src/wavelet.i: __/src/wavelet.cpp.i
+
+.PHONY : __/src/wavelet.i
+
+# target to preprocess a source file
+__/src/wavelet.cpp.i:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.i
+.PHONY : __/src/wavelet.cpp.i
+
+__/src/wavelet.s: __/src/wavelet.cpp.s
+
+.PHONY : __/src/wavelet.s
+
+# target to generate assembly for a file
+__/src/wavelet.cpp.s:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.s
+.PHONY : __/src/wavelet.cpp.s
+
 test_mapping.o: test_mapping.cpp.o
 
 .PHONY : test_mapping.o
@@ -401,6 +428,9 @@ help:
 	@echo "... __/src/utils.o"
 	@echo "... __/src/utils.i"
 	@echo "... __/src/utils.s"
+	@echo "... __/src/wavelet.o"
+	@echo "... __/src/wavelet.i"
+	@echo "... __/src/wavelet.s"
 	@echo "... test_mapping.o"
 	@echo "... test_mapping.i"
 	@echo "... test_mapping.s"

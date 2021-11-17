@@ -117,8 +117,8 @@ void Mapper::doMapping(){
 
     // cam_1->printMembers();
     Eigen::Vector2f uv_1;
-    // cam_2->getCenterAsUV(uv_1);
-    cam_2->sampleRandomUv(uv_1);
+    cam_2->getCenterAsUV(uv_1);
+    // cam_2->sampleRandomUv(uv_1);
 
     if (!computeEpipolarLineCouple(cam_1, cam_2, uv_1, ep_line_1, ep_line_2)){
       continue; //take other frame couple TODO
@@ -130,9 +130,10 @@ void Mapper::doMapping(){
     locker.lock();
     // ep_line_1->printMembers();
     // ep_line_2->printMembers();
-    showRangeStudy(ep_line_2,ep_line_1, 300,size);
+    // showRangeStudy(ep_line_2,ep_line_1, 300,size);
+    // showRangeStudy(ep_line_1,ep_line_2, 300,size);
     // ep_line_1->showEpipolarComparison(ep_line_2,"epipolar comparison",size);
-    // dtam_->showFeatures(frame_1, size);
+    dtam_->showFeatures(frame_1, size);
     cv::waitKey(0);
     // cv::destroyAllWindows();
     locker.unlock();
@@ -201,15 +202,19 @@ void Mapper::showRangeStudy(EpipolarLine* ep_line_source, EpipolarLine* ep_line_
 
 
     ///////////////////////////////////////
+    Image<cv::Vec3b>* img_source=ep_line_source->createEpipolarImg("source");
     Image<cv::Vec3b>* img_gt=ep_line_range->createEpipolarImg("gt");
     Image<cv::Vec3b>* img_query=ep_line_range->createEpipolarImg("query");
 
     // 1 range with projection
 
+    Eigen::Vector2i pixel_coords;
     Eigen::Vector2f uv_source= ep_line_source->uvs->at(uvs_idx);
+    ep_line_source->cam->uv2pixelCoords(uv_source, pixel_coords);
+    img_source->setPixel(pixel_coords,black);
+
     Eigen::Vector3f p;
     Eigen::Vector2f uv_range;
-    Eigen::Vector2i pixel_coords;
 
     float max_depth = ep_line_source->cam->cam_parameters_->max_depth;
     const cv::Vec3b& cl1=blue;
@@ -222,14 +227,14 @@ void Mapper::showRangeStudy(EpipolarLine* ep_line_source, EpipolarLine* ep_line_
     ep_line_range->cam->projectPoint(p,uv_range);
     ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
     img_gt->setPixel(pixel_coords,cl1);
-    sharedCoutDebug("pxl coords: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
+    sharedCoutDebug("pxl coords u gt: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
 
     // project uv at min depth and set pxl
     ep_line_source->cam->pointAtDepth(uv_source, min_depth, p);
     ep_line_range->cam->projectPoint(p,uv_range);
     ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
     img_gt->setPixel(pixel_coords,cl2);
-    sharedCoutDebug("pxl coords: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
+    sharedCoutDebug("pxl coords v gt: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
 
     ////////////////////////////////////////
 
@@ -254,20 +259,21 @@ void Mapper::showRangeStudy(EpipolarLine* ep_line_source, EpipolarLine* ep_line_
     ep_line_range->coordToUV( coord_range, uv_range);
     ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
     img_query->setPixel(pixel_coords,cl1);
-    sharedCoutDebug("pxl coords: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
+    sharedCoutDebug("pxl coords u: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
 
 
     coord_range = coord2FromCoord1( coord_source, abcd_m);
     ep_line_range->coordToUV( coord_range, uv_range);
     ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
     img_query->setPixel(pixel_coords,cl2);
-    sharedCoutDebug("pxl coords: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
+    sharedCoutDebug("pxl coords v: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
 
 
 
 
     /////////////////////////////////////////
     // hconcat
+    img_source->show(size);
     img_gt->show(size);
     img_query->show(size);
 

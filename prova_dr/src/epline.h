@@ -10,8 +10,8 @@ class Feature{
     const int idx_;
     const cv::Vec3b color_;
     const cv::Vec3b gradient_;
-    const float upperbound_; //  in u coord
-    const float lowerbound_; //  in u coord
+    const float upperbound_;
+    const float lowerbound_;
     int parent_ = -1;
 
     Feature(int idx, cv::Vec3b& color, cv::Vec3b& gradient,

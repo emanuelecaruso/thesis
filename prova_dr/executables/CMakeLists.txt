@@ -12,4 +12,5 @@ add_executable(test_mapping test_mapping.cpp
 ../src/epline.cpp
 ../src/mapper.cpp
 ../src/tracker.cpp
+../src/wavelet.cpp
 )

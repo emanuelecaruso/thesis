@@ -1,26 +1,13 @@
 #pragma once
 #include "defs.h"
 #include "json.hpp"
-#include "image.h"
+// #include "image.h"
+#include "wavelet.h"
 #include <sys/stat.h>
 
 using namespace pr;
 
-struct Pyramid{
-  public:
-    Image<cv::Vec3b>* pyr_2;
-    Image<cv::Vec3b>* pyr_4;
-    Image<cv::Vec3b>* pyr_8;
-
-    Pyramid(Image<cv::Vec3b>* image_rgb){
-      // https://docs.opencv.org/3.4.15/d4/d1f/tutorial_pyramids.html TODO
-    };
-  // private:
-  //   void makePyramid();
-
-};
-
-
+class CameraForStudy;
 
 class Camera{
   public:
@@ -33,15 +20,36 @@ class Camera{
     Image<float>* invdepth_map_;
     Eigen::Isometry3f* frame_world_wrt_camera_;
     Eigen::Isometry3f* frame_camera_wrt_world_;
+    Wvlt_dec* wavelet_dec_;
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
-           const std::string& path_rgb ):
+           const Image<cv::Vec3b>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
+               Eigen::Isometry3f* frame_camera_wrt_world, int wav_levels=4 ):
+           name_(name),
+           cam_parameters_(cam_parameters),
+           K_(compute_K()),
+           Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
+           image_rgb_( image_rgb )
+           {
+             Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+             image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+             wavelet_dec_= new Wvlt_dec(wav_levels,img);
+             frame_world_wrt_camera_=frame_world_wrt_camera;
+             frame_camera_wrt_world_=frame_camera_wrt_world;
+           };
+
+    Camera(const std::string& name, const CamParameters* cam_parameters,
+           const std::string& path_rgb, int wav_levels=4 ):
            name_(name),
            cam_parameters_(cam_parameters),
            K_(compute_K()),
            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
            image_rgb_( returnRGBFromPath( path_rgb ) )
-           {};
+           {
+             Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
+             image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
+             wavelet_dec_= new Wvlt_dec(wav_levels,img);
+           };
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
@@ -120,7 +128,7 @@ class CameraForStudy: public Camera{
            grad_y_( gradientY() ),
            grad_robust_x_( gradientRobustX() ),
            grad_intensity_( gradientintensity() )
-           {};
+           { };
 
     CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,

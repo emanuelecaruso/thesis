@@ -128,14 +128,14 @@ for obj_ in bpy.data.objects:
 
         camera=bpy.data.cameras[name_]
         scene.frame_current=i
-        
-        scene.view_settings.exposure=2*math.sin((i/120)*8*pi)
-        
+
+        # scene.view_settings.exposure=2*math.sin((i/120)*8*pi)
+
         if engine=='CYCLES':
             l1=links.new(d.outputs['Image'], v.inputs[0])
         else:
             l1=links.new(rl.outputs['Image'], v.inputs[0])
-            
+
         if( (con and not os.path.isfile(path_rgb+".png")) or not con ):
             render.image_settings.file_format='PNG'
             render.image_settings.color_mode='RGB'

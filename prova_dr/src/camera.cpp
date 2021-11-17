@@ -230,8 +230,21 @@ Image<cv::Vec3f>* CameraForStudy::gradientX(){
   image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
 
   Image<cv::Vec3f>* fx = img->compute_sobel_x();
+  Image<cv::Vec3f>* fxx = fx->compute_sobel_x();
+  Image<cv::Vec3f>* fxxx = fxx->compute_sobel_x();
 
-  return fx;
+  Image<cv::Vec3f>* out = fx;
+
+  std::vector<cv::Mat> channels_i(3);
+  split(out->image_, channels_i);
+  // channels_i[2]*=1.0/(4);
+  // channels_i[1]*=1.0/(4);
+  // channels_i[0]*=1.0/(4);
+  merge(channels_i, out->image_);
+
+
+  return out;
+  // return fx;
 }
 
 Image<cv::Vec3f>* CameraForStudy::gradientY(){
@@ -240,8 +253,20 @@ Image<cv::Vec3f>* CameraForStudy::gradientY(){
   image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
 
   Image<cv::Vec3f>* fy = img->compute_sobel_y();
+  Image<cv::Vec3f>* fyy = fy->compute_sobel_y();
+  Image<cv::Vec3f>* fyyy = fyy->compute_sobel_y();
 
-  return fy;
+  Image<cv::Vec3f>* out = fy;
+
+  std::vector<cv::Mat> channels_i(3);
+  split(out->image_, channels_i);
+  // channels_i[2]*=1.0/(4);
+  // channels_i[1]*=1.0/(4);
+  // channels_i[0]*=1.0/(4);
+  merge(channels_i, out->image_);
+
+  return out;
+  // return fy;
 }
 
 Image<cv::Vec3f>* CameraForStudy::gradientRobustX(){
