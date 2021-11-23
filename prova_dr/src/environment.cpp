@@ -74,11 +74,11 @@ std::vector<CameraForStudy*>* Environment::loadCameraVector(const std::string& p
     std::string path_depth_=(path_name+"/depth_"+name+".exr");
     const char* path_depth = path_depth_.c_str(); // dataset name
     if( stat( path_depth, &info__ ) != 0 ){
-      CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_ );
+      CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_, wavelet_levels_ );
       camera_vector->push_back(camera);
     }
     else{
-      CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_, path_depth_);
+      CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_, path_depth_, wavelet_levels_);
       camera_vector->push_back(camera);
     }
 

@@ -260,6 +260,33 @@ __/src/image.cpp.s:
 	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/image.cpp.s
 .PHONY : __/src/image.cpp.s
 
+__/src/keyframe.o: __/src/keyframe.cpp.o
+
+.PHONY : __/src/keyframe.o
+
+# target to build an object file
+__/src/keyframe.cpp.o:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.o
+.PHONY : __/src/keyframe.cpp.o
+
+__/src/keyframe.i: __/src/keyframe.cpp.i
+
+.PHONY : __/src/keyframe.i
+
+# target to preprocess a source file
+__/src/keyframe.cpp.i:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.i
+.PHONY : __/src/keyframe.cpp.i
+
+__/src/keyframe.s: __/src/keyframe.cpp.s
+
+.PHONY : __/src/keyframe.s
+
+# target to generate assembly for a file
+__/src/keyframe.cpp.s:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.s
+.PHONY : __/src/keyframe.cpp.s
+
 __/src/mapper.o: __/src/mapper.cpp.o
 
 .PHONY : __/src/mapper.o
@@ -419,6 +446,9 @@ help:
 	@echo "... __/src/image.o"
 	@echo "... __/src/image.i"
 	@echo "... __/src/image.s"
+	@echo "... __/src/keyframe.o"
+	@echo "... __/src/keyframe.i"
+	@echo "... __/src/keyframe.s"
 	@echo "... __/src/mapper.o"
 	@echo "... __/src/mapper.i"
 	@echo "... __/src/mapper.s"

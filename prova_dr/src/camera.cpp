@@ -322,18 +322,20 @@ void CameraForMapping::collectRegions(float threshold){
       Region* reg= new Region;
       for (int level=levels-1; level>=0; level--){
         int lev_opp=levels-1-level;
-        for (int row_offs=0; row_offs<(2<<lev_opp); row_offs++){
-          for (int col_offs=0; col_offs<(2<<lev_opp); col_offs++){
+        for (int row_offs=0; row_offs<(pow(2,lev_opp)); row_offs++){
+          for (int col_offs=0; col_offs<(pow(2,lev_opp)); col_offs++){
 
             Wvlt_lvl* wvlt_lvl= wavelet_dec_->vector_wavelets->at(level);
-            int row_curr=(row<<lev_opp)+row_offs;
-            int col_curr=(col<<lev_opp)+col_offs;
-            float norm = wvlt_lvl->norm_img->evalPixel(row_curr,col_curr);
+            // int row_curr=(row<<lev_opp)+row_offs;
+            // int col_curr=(col<<lev_opp)+col_offs;
+            int row_curr=(row*(pow(2,lev_opp)))+row_offs;
+            int col_curr=(col*(pow(2,lev_opp)))+col_offs;
+            float magnitude = wvlt_lvl->magnitude_img->evalPixel(row_curr,col_curr);
             Eigen::Vector3i idx(row_curr,col_curr,level);
-            if(norm>threshold){
-              Candidate* candidate = new Candidate{idx,norm};
+            if(magnitude>threshold){
+              Candidate* candidate = new Candidate{idx,magnitude};
 
-              auto it = std::lower_bound(reg->begin(), reg->end(), norm, lb_cmp);
+              auto it = std::lower_bound(reg->begin(), reg->end(), magnitude, lb_cmp);
 
               reg->insert ( it , candidate );
             }
@@ -351,12 +353,11 @@ void CameraForMapping::collectRegions(float threshold){
 
 
 void CameraForMapping::selectCandidates(int max_num_candidates){
-  int num_candidates=0;
 
-  while(num_candidates<max_num_candidates){
+  while(n_candidates_<max_num_candidates){
     if(!regions_->empty()){
-      for(int i=regions_->size()-1; i>=0; i--){
-        if (num_candidates>=max_num_candidates)
+      for(int i=0; i<regions_->size(); i++){
+        if (n_candidates_>=max_num_candidates)
           break;
 
         Region* region= regions_->at(i);
@@ -369,10 +370,12 @@ void CameraForMapping::selectCandidates(int max_num_candidates){
           regions_->erase (regions_->begin() + i);
         }
 
-
-        num_candidates++;
+        n_candidates_++;
       }
+      // break;
     }
+    else
+      break;
 
   }
 }
@@ -380,15 +383,13 @@ void CameraForMapping::selectCandidates(int max_num_candidates){
 void CameraForMapping::showCandidates(float size){
   Wvlt_dec* selected = new Wvlt_dec(wavelet_dec_);
 
-  int n_candidates=0;
   for(Candidate* candidate : *candidates_){
     Eigen::Vector3i idx = candidate->first;
     Wvlt_lvl* wvlt_curr_=selected->vector_wavelets->at(idx[2]);
     wvlt_curr_->dh->setPixel(idx[0],idx[1],white);
     wvlt_curr_->dv->setPixel(idx[0],idx[1],white);
     wvlt_curr_->dd->setPixel(idx[0],idx[1],white);
-    n_candidates++;
   }
-  selected->showWaveletDec(std::to_string(n_candidates)+" candidates",size);
+  selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
 
 }

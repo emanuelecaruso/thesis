@@ -1,1 +1,0 @@
-openExample('wavelet/Wavedec2ImageDecompositionLevelExample')

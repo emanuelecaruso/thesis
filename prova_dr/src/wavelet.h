@@ -13,12 +13,12 @@ class Wvlt_lvl{
     Image<cv::Vec3f>* dv;
     Image<cv::Vec3f>* dd;
 
-    Image<float>* norm_img;
+    Image<float>* magnitude_img;
 
 
     Wvlt_lvl(Image<cv::Vec3f>* c_, Image<cv::Vec3f>* dh_,
             Image<cv::Vec3f>* dv_, Image<cv::Vec3f>* dd_,
-            Image<float>* norm_img_,
+            Image<float>* magnitude_img_,
            const int level_):
               level(level_)
     {
@@ -26,7 +26,7 @@ class Wvlt_lvl{
         dh=dh_->clone();
         dv=dv_->clone();
         dd=dd_->clone();
-        norm_img=norm_img_->clone();
+        magnitude_img=magnitude_img_->clone();
     };
 
     Wvlt_lvl(const Image<cv::Vec3f>* img ):
@@ -39,11 +39,11 @@ class Wvlt_lvl{
       // WaveletDecHaar( wvlt_lvl_previous);
       WaveletDecHaar( wvlt_lvl_previous->c);
     };
-    inline Wvlt_lvl* clone(){ return new Wvlt_lvl(c,dh,dv,dd, norm_img, level); };
+    inline Wvlt_lvl* clone(){ return new Wvlt_lvl(c,dh,dv,dd, magnitude_img, level); };
   private:
     void WaveletDecHaar(const Image<cv::Vec3f>* img);
+    Image<float>* getMagnitude(const Image<cv::Vec3f>* img1, const Image<cv::Vec3f>* img2);
     // void WaveletDecHaar(Wvlt_lvl* wvlt_lvl_previous);
-    float filterWaves(int x, int y,const Image<cv::Vec3f>* img );
 
 };
 

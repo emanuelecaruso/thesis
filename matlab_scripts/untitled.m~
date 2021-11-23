@@ -1,4 +1,0 @@
-img=imread("Colori-negativi.jpg");
-[c,s]=wavedec2(img,2,'haar');
-imshow(img)
-imshow(img)

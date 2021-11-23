@@ -23,20 +23,43 @@ void Dtam::debugAllCameras(bool show_imgs){
   cv::waitKey(0);
 }
 
-void Dtam::addCamera(bool takeGtPoses){
+void Dtam::addCamera(){
   CameraForStudy* env_cam=environment_->camera_vector_->at(frame_current_);
-  CameraForMapping* new_cam=new CameraForMapping (env_cam, env_cam->wavelet_dec_->levels_);
-  if(!takeGtPoses){
-    new_cam->frame_camera_wrt_world_->linear().setIdentity();
-    new_cam->frame_camera_wrt_world_->translation()= Eigen::Vector3f(0,0,0);
-    new_cam->frame_world_wrt_camera_->linear().setIdentity();
-    new_cam->frame_world_wrt_camera_->translation()= Eigen::Vector3f(0,0,0);
-  }
+  CameraForMapping* new_cam=new CameraForMapping (env_cam, wavelet_levels_);
+
   camera_vector_->push_back(new_cam);
 }
 
 int Dtam::getFrameCurrent(){
   return frame_current_;
+}
+
+void Dtam::waitForNewFrame(){
+  std::unique_lock<std::mutex> locker(mu_frame_);
+  frame_updated_.wait(locker);
+  locker.unlock();
+}
+
+
+void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
+  while(true){
+
+    waitForNewFrame();
+
+    double t_start=getTime();
+
+    // bool keyframe_added=keyframe_handler_->add_keyframe(all_keyframes);
+    tracker_->trackCam(takeGtPoses);
+    if(keyframe_handler_->add_keyframe(all_keyframes)){
+      mapper_->selectCandidates();
+      mapper_->propagateOldCandidates();
+    }
+    double t_end=getTime();
+    int deltaTime=(t_end-t_start);
+    sharedCoutDebug("Initialization time: "+ std::to_string(deltaTime)+" ms");
+  }
+
+
 }
 
 void Dtam::doMapping(){
@@ -47,26 +70,21 @@ void Dtam::doTracking(){
 
 }
 
-void Dtam::updateCamerasFromVideostream(bool takeGtPoses){
+void Dtam::updateCamerasFromVideostream(){
 
   float fps=environment_->fps_;
 
-  while(true){
+  while(frame_current_< environment_->camera_vector_->size()){
 
     std::unique_lock<std::mutex> locker(mu_frame_);
 
     double t_start=getTime();
 
-    if (frame_current_>= environment_->camera_vector_->size()){
-      sharedCout("\nVideo stream ended");
-      break;
-    }
     sharedCout("\nFrame: "+ std::to_string(frame_current_));
-    addCamera(takeGtPoses);
-    if (frame_current_==2){
-      first_2_frames_available_.notify_all();
-    }
+    addCamera();
+
     frame_current_++;
+    frame_updated_.notify_all();
 
     double t_end=getTime();
     locker.unlock();
@@ -78,19 +96,30 @@ void Dtam::updateCamerasFromVideostream(bool takeGtPoses){
     long int time_to_wait=(1.0/fps)*1000000-waitDelay;
     std::this_thread::sleep_for(std::chrono::microseconds(time_to_wait));
   }
+  sharedCout("\nVideo stream ended");
 
 }
 
 void Dtam::test_mapping(){
 
   bool takeGtPoses=true;
+  bool allKeyframes=true;
 
-  std::thread update_cameras_thread_(&Dtam::updateCamerasFromVideostream, this, takeGtPoses);
-  std::thread mapping_thread_(&Dtam::doMapping, this);
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromVideostream, this);
+  // std::thread track
+  std::thread initialization_thread(&Dtam::doInitialization, this, allKeyframes, takeGtPoses);
+  // std::thread mapping_thread_(&Dtam::doMapping, this);
 
-  mapping_thread_.join();
-  mapping_thread_.detach();
+
+  initialization_thread.detach();
+  // mapping_thread_.detach();
   update_cameras_thread_.join();
+
+  // debugAllCameras();
+
+  // camera_vector_->at(keyframe_vector_->at(0))->showCandidates(2);
+  // cv::waitKey(0);
+
 
 }
 

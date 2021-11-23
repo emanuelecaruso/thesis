@@ -174,31 +174,38 @@ class Image{
       return n_pixels_kept;
     }
 
-
-    inline Image< cv::Vec3f>* compute_sobel_x() const{
-      Image<  cv::Vec3f >* img_sobel_x;
+    inline Image< cv::Vec3f>* compute_sobel_x(const std::string& name) const{
+      Image<  cv::Vec3f >* img_sobel_x=new Image< cv::Vec3f >(name);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<  1,  0, -1,
                  2,  0, -2,
                  1,  0, -1;
 
-      img_sobel_x = filter3ChannImg( kernel, "fx_"+name_);
+      img_sobel_x = filter3ChannImg( kernel, name);
 
       return img_sobel_x;
     }
 
-    inline Image<cv::Vec3f>* compute_sobel_y() const{
-      Image< cv::Vec3f >* img_sobel_y =new Image< cv::Vec3f >("fy_"+name_);
+    inline Image<cv::Vec3f>* compute_sobel_y(const std::string& name) const{
+      Image< cv::Vec3f >* img_sobel_y =new Image< cv::Vec3f >(name);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<   1,  2,  1,
                   0,  0,  0,
                  -1, -2, -1;
 
-      img_sobel_y = filter3ChannImg( kernel, "fx_"+name_);
+      img_sobel_y = filter3ChannImg( kernel, name);
 
       return img_sobel_y;
+    }
+
+    inline Image< cv::Vec3f>* compute_sobel_x() const{
+      return compute_sobel_x("fx_"+name_);
+    }
+
+    inline Image<cv::Vec3f>* compute_sobel_y() const{
+      return compute_sobel_y("fy_"+name_);
     }
 
     inline Image<cv::Vec3f>* squared() const{
@@ -219,5 +226,7 @@ class Image{
 
       return intensity;
     }
+
+
 
 };

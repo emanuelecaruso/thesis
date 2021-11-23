@@ -4,6 +4,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/test_mapping.dir/__/src/environment.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/epline.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/image.cpp.o"
+  "CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/utils.cpp.o"

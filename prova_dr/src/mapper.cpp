@@ -8,6 +8,82 @@
 #include <cstdlib>
 #include <chrono>
 
+void CamCouple::getSlopeParameters(){
+  // 4*r20*t1 - 4*f*r10*t2 - 2*h*r20*t2
+  A_s=4*r(2,0)*t(1) - 4*f*r(1,0)*t(2) - 2*h*r(2,0)*t(2);
+
+  // 4*f*r11*t2 - 4*r12*t1 + 2*h*r12*t2
+  B_s=4*f*r(1,1)*t(2) - 4*r(1,2)*t(1) + 2*h*r(1,2)*t(2);
+
+  //4*f^2*r12*t2 - 2*f*h*t2^2 - 4*f^2*t1*t2 - h^2*r12*t2 - 4*f*r22*t1 + 4*f*t1*t2 + 2*h*r12*t1 - 2*r20*t1*w - 2*f*h*r11*t2 + 2*f*h*r22*t2 + 2*f*r10*t2*w + h*r20*t2*w
+  C_s=4*f2*r(1,2)*t(2) - 2*f*h*t22 - 4*f2*t(1)*t(2) - h2*r(1,2)*t(2) - 4*f*r(2,2)*t(1) + 4*f*t(1)*t(2) + 2*h*r(1,2)*t(1) - 2*r(2,0)*t(1)*w - 2*f*h*r(1,1)*t(2) + 2*f*h*r(2,2)*t(2) + 2*f*r(1,0)*t(2)*w + h*r(2,0)*t(2)*w;
+
+  // 4*r20*t0 + 4*f*r00*t2 - 2*r20*t2*w
+  D_s=4*r(2,0)*t(0) + 4*f*r(0,0)*t(2) - 2*r(2,0)*t(2)*w;
+
+  // 2*r12*t2*w - 4*f*r01*t2 - 4*r12*t0
+  E_s=2*r(1,2)*t(2)*w - 4*f*r(0,1)*t(2) - 4*r(1,2)*t(0);
+
+  // 4*f^2*t0*t2 - 4*f^2*r02*t2 - 2*f*t2^2*w + r20*t2*w^2 - 4*f*r22*t0 + 4*f*t0*t2 + 2*h*r12*t0 - 2*r20*t0*w + 2*f*h*r01*t2 - 2*f*r00*t2*w + 2*f*r22*t2*w - h*r12*t2*w
+  F_s=4*f2*t(0)*t(2) - 4*f2*r(0,2)*t(2) - 2*f*t22*w + r(2,0)*t(2)*w2 - 4*f*r(2,2)*t(0) + 4*f*t(0)*t(2) + 2*h*r(1,2)*t(0) - 2*r(2,0)*t(0)*w + 2*f*h*r(0,1)*t(2) - 2*f*r(0,0)*t(2)*w + 2*f*r(2,2)*t(2)*w - h*r(1,2)*t(2)*w;
+}
+
+void CamCouple::getBoundsParameters(){
+
+  // 2*r20*w - 4*f*r00
+  A_bu=2*r(2,0)*w - 4*f*r(0,0);
+
+  // 4*f*r01 - 2*r12*w
+  B_bu=4*f*r(0,1) - 2*r(1,2)*w;
+
+  // 4*f^2*r02 - r20*w^2 - 2*f*h*r01 + 2*f*r00*w - 2*f*r22*w + h*r12*w
+  C_bu=4*f2*r(0,2) - r(2,0)*w2 - 2*f*h*r(0,1) + 2*f*r(0,0)*w - 2*f*r(2,2)*w + h*r(1,2)*w;
+
+  // - 4*t0*f^2 + 2*t2*w*f
+  D_bu=- 4*t(0)*f2 + 2*t(2)*w*f;
+
+  // 2*r20*w - 4*f*r00
+  E_bu=2*r(2,0)*w - 4*f*r(0,0);
+
+  //4*f*r01 - 2*r12*w
+  F_bu=4*f*r(0,1) - 2*r(1,2)*w;
+
+  //4*f^2*r02 - r20*w^2 - 2*f*h*r01 + 2*f*r00*w - 2*f*r22*w + h*r12*w
+  G_bu=4*f2*r(0,2) - r(2,0)*w2 - 2*f*h*r(0,1) + 2*f*r(0,0)*w - 2*f*r(2,2)*w + h*r(1,2)*w;
+
+  //- 4*t0*f^2 + 2*t2*w*f
+  H_bu=- 4*t(0)*f2 + 2*t(2)*w*f;
+
+
+  A_bv=4*f*r(1,0) + 2*h*r(2,0);
+
+  B_bv=- 4*f*r(1,1) - 2*h*r(1,2);
+
+  C_bv=h2*r(1,2) - 4*f2*r(1,2) + 2*f*h*r(1,1) - 2*f*h*r(2,2) - 2*f*r(1,0)*w - h*r(2,0)*w;
+
+  D_bv=4*t(1)*f2 + 2*h*t(2)*f;
+
+  E_bv=4*f*r(1,0) + 2*h*r(2,0);
+
+  F_bv=- 4*f*r(1,1) - 2*h*r(1,2);
+
+  G_bv=h2*r(1,2) - 4*f2*r(1,2) + 2*f*h*r(1,1) - 2*f*h*r(2,2) - 2*f*r(1,0)*w - h*r(2,0)*w;
+
+  H_bv=4*t(1)*f2 + 2*h*t(2)*f;
+
+}
+
+EpipolarLine* CamCouple::getEpSegment(float u1, float v1){
+  // get slope
+  // void getSlope(float u1, float v1, float& slope_m);
+
+
+
+}
+
+
+
+
 // frame coupling
 void Mapper::frameCouplingRandom(int& frame_idx_r, int& frame_idx_m ){
   int max_frame=dtam_->getFrameCurrent();
@@ -17,29 +93,23 @@ void Mapper::frameCouplingRandom(int& frame_idx_r, int& frame_idx_m ){
     if (frame_idx_m!=frame_idx_r)
       break;
   }
-
-  sharedCoutDebug("chosen frames: "+std::to_string(frame_idx_r)+ " " +std::to_string(frame_idx_m));
 }
 
 void Mapper::frameCouplingLast(int& frame_idx_r, int& frame_idx_m ){
   int max_frame=dtam_->getFrameCurrent();
   frame_idx_r=max_frame-1;
   frame_idx_m=max_frame-2;
-
-  sharedCoutDebug("chosen frames: "+std::to_string(frame_idx_r)+ " " +std::to_string(frame_idx_m));
 }
 
 void Mapper::frameCouplingOpposite(int& frame_idx_r, int& frame_idx_m ){
   int max_frame=dtam_->getFrameCurrent();
   frame_idx_r=max_frame-1;
   frame_idx_m=0;
-
-  sharedCoutDebug("chosen frames: "+std::to_string(frame_idx_r)+ " " +std::to_string(frame_idx_m));
 }
 
 
 
-bool Mapper::computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
+bool Mapper::computeEpipolarLineCouple(const CameraForMapping* cam_1, const CameraForMapping* cam_2,
         Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,EpipolarLine*& ep_line_2)
 {
 
@@ -49,7 +119,7 @@ bool Mapper::computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
   ep_line_1 = new EpipolarLine(cam_1, cam_2_on_cam_1,uv_1);
 
 
-  if(!ep_line_1->resizeLine()){
+  if(!ep_line_1->stretchToBorders()){
     sharedCoutDebug("ep1 returned false");
     return false;
   }
@@ -66,7 +136,7 @@ bool Mapper::computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
 
   ep_line_2 = new EpipolarLine(cam_2, cam_1_on_cam_2,uv_2);
 
-  if(!ep_line_2->resizeLine()){
+  if(!ep_line_2->stretchToBorders()){
     sharedCoutDebug("ep2 returned false");
     return false;}
 
@@ -74,70 +144,80 @@ bool Mapper::computeEpipolarLineCouple(const Camera* cam_1, const Camera* cam_2,
 }
 
 
-void Mapper::collectRegionsAndCandidates(int frame_idx_r, float threshold, int num_candidates){
 
-  CameraForMapping* cam_r = dtam_->camera_vector_->at(frame_idx_r);
+void Mapper::selectCandidates(){
+  int idx=dtam_->keyframe_vector_->back();
+  CameraForMapping* cam_r= dtam_->camera_vector_->at(idx);
+  cam_r->collectRegions(threshold_);
+  cam_r->selectCandidates(num_candidates_);
 
-  double t_start=getTime();
+}
 
-  cam_r->collectRegions(threshold);
-  cam_r->selectCandidates(num_candidates);
+void Mapper::propagateOldCandidates(){
 
-  double t_end=getTime();
-  int deltaTime=(t_end-t_start);
-  sharedCoutDebug("collectRegionsAndCandidates time: "+ std::to_string(deltaTime)+" ms");
+}
 
+bool Mapper::initializeCandidates(const CameraForMapping* cam_r,
+            const CameraForMapping* cam_m, int& current_r_idx){
+
+   CamCouple* cam_couple = new CamCouple(cam_r, cam_m);
+
+  // iterate along candidates
+  while(!(cam_r->candidates_->empty())){
+    // check if there is a new frame
+    if(current_r_idx<dtam_->frame_current_-1){
+      current_r_idx=dtam_->frame_current_-1;
+      cam_r = dtam_->camera_vector_->at(current_r_idx);
+      cam_m = dtam_->camera_vector_->at(current_r_idx-1);
+    }
+
+    Candidate* curr_cand=cam_r->candidates_->back();
+    cam_r->candidates_->pop_back();
+    // get epipolar segment
+    cam_couple->getEpSegment(curr_cand->first[0],curr_cand->first[1]);
+    // search along epipolar line
+
+    // compute mse with c,dd,dh,dv
+    // roll -> associate dd,dh,dv
+
+    // if minimum is clear, add as active point
+
+  }
+
+
+
+  return false;
 }
 
 void Mapper::doMapping(){
 
-  float threshold = 0.1;
-  int num_candidates = 4000;
+  // int frame_idx_r;
+  // int frame_idx_m;
+  //
+  // while(true){
+  //   // frameCouplingRandom(frame_idx_r, frame_idx_m );
+  //   // frameCouplingLast(frame_idx_r, frame_idx_m );
+  //   frameCouplingOpposite(frame_idx_r, frame_idx_m );
+  //   // sharedCoutDebug("chosen frames: "+std::to_string(frame_idx_r)+ " " +std::to_string(frame_idx_m));
+  //
+  //   CameraForMapping* cam_r = dtam_->camera_vector_->at(frame_idx_r);
+  //   CameraForMapping* cam_m = dtam_->camera_vector_->at(frame_idx_m);
+  //   EpipolarLine* ep_line_r; EpipolarLine* ep_line_m;
+  //
+  //
+  //
+  //   // float size = 1;
+  //   // float size = 1.3;
+  //   // float size = 2;
+  //   // locker.lock();
+  //   //
+  //   // cam_r->showCandidates(size);
+  //   // cv::waitKey(0);
+  //   // // cv::destroyAllWindows();
+  //   // locker.unlock();
+  //
+  // }
 
-  int frame_idx_r;
-  int frame_idx_m;
-
-  std::unique_lock<std::mutex> locker(dtam_->mu_frame_);
-  dtam_->first_2_frames_available_.wait(locker, [&](){return Mapper::dtam_->frame_current_>=2;});
-  locker.unlock();
-  while(true){
-    // frameCouplingRandom(frame_idx_r, frame_idx_m );
-    // frameCouplingLast(frame_idx_r, frame_idx_m );
-    frameCouplingOpposite(frame_idx_r, frame_idx_m );
-
-    CameraForMapping* cam_r = dtam_->camera_vector_->at(frame_idx_r);
-    CameraForMapping* cam_m = dtam_->camera_vector_->at(frame_idx_m);
-    EpipolarLine* ep_line_r; EpipolarLine* ep_line_m;
-
-    // cam_r->printMembers();
-
-    /*
-    Eigen::Vector2f uv_r;
-    cam_m->getCenterAsUV(uv_r);
-    // cam_m->sampleRandomUv(uv_r);
-    if (!computeEpipolarLineCouple(cam_r, cam_m, uv_r, ep_line_r, ep_line_m)){
-      continue; //take other frame couple TODO
-    }*/
-
-    collectRegionsAndCandidates(frame_idx_r, threshold, num_candidates);
-
-
-    // float size = 1;
-    // float size = 1.3;
-    float size = 2;
-    locker.lock();
-    // ep_line_r->printMembers();
-    // ep_line_2->printMembers();
-    // showRangeStudy(ep_line_m,ep_line_r, 300,size);
-    // showRangeStudy(ep_line_r,ep_line_m, 300,size);
-    // ep_line_r->showEpipolarComparison(ep_line_m,"epipolar comparison",size);
-    // dtam_->showFeatures(frame_idx_r, size);
-    cam_r->showCandidates(2);
-    cv::waitKey(0);
-    // cv::destroyAllWindows();
-    locker.unlock();
-
-  }
 }
 
 

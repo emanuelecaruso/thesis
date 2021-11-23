@@ -1,10 +1,10 @@
-- mapper.cpp, resizeLine: it may be simplified?? TODO
+- epline.cpp, it may be simplified?? TODO
 - mapper.cpp, computeEpipolarLine: select better uv TODO
-- mapper.cpp, epipolarTraverse: alternative solutions? TODO
-
 - mapper.cpp, resizeLine: pay attention on lineTraverse! TODO
-. mapper.cpp, doMapping: take other frame couple TODO
-- interval depth range in epipolar cam 2 TODO
 
-- cv::Vec3b -> cv::Vec3f
+- keyframe.cpp, marginalize points and keyframes TODO
+
+- interval depth range in epipolar cam 2
+
+- cv::Vec3b - cv::Vec3f ???
 - cv::Mat pointer in image.h

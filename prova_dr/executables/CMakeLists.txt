@@ -10,6 +10,7 @@ add_executable(test_mapping test_mapping.cpp
 ../src/dtam.cpp
 ../src/utils.cpp
 ../src/epline.cpp
+../src/keyframe.cpp
 ../src/mapper.cpp
 ../src/tracker.cpp
 ../src/wavelet.cpp

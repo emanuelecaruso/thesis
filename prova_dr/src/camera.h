@@ -7,8 +7,6 @@
 
 using namespace pr;
 
-class CameraForStudy;
-
 class Camera{
   public:
 
@@ -29,7 +27,14 @@ class Camera{
            K_(compute_K()),
            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
            image_rgb_( image_rgb )
-           { };
+           {
+             frame_camera_wrt_world_=new Eigen::Isometry3f;
+             frame_world_wrt_camera_=new Eigen::Isometry3f;
+             frame_camera_wrt_world_->linear().setIdentity();
+             frame_camera_wrt_world_->translation()= Eigen::Vector3f(0,0,0);
+             frame_world_wrt_camera_->linear().setIdentity();
+             frame_world_wrt_camera_->translation()= Eigen::Vector3f(0,0,0);
+           };
 
      Camera(const std::string& name, const CamParameters* cam_parameters,
             const std::string& path_rgb):
@@ -38,7 +43,14 @@ class Camera{
             K_(compute_K()),
             Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
             image_rgb_( returnRGBFromPath( path_rgb ) )
-            { };
+            {
+              frame_camera_wrt_world_=new Eigen::Isometry3f;
+              frame_world_wrt_camera_=new Eigen::Isometry3f;
+              frame_camera_wrt_world_->linear().setIdentity();
+              frame_camera_wrt_world_->translation()= Eigen::Vector3f(0,0,0);
+              frame_world_wrt_camera_->linear().setIdentity();
+              frame_world_wrt_camera_->translation()= Eigen::Vector3f(0,0,0);
+            };
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
            const Image<cv::Vec3b>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
@@ -120,7 +132,7 @@ class CameraForStudy: public Camera{
     Wvlt_dec* wavelet_dec_;
 
     CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
-           const std::string& path_rgb, int wav_levels=4):
+           const std::string& path_rgb, int wav_levels):
            Camera( name, cam_parameters, path_rgb),
            curvature_( computeCurvature(100) ),
            grad_x_( gradientX() ),
@@ -135,7 +147,7 @@ class CameraForStudy: public Camera{
 
     CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
-           const std::string& path_rgb, int wav_levels=4):
+           const std::string& path_rgb, int wav_levels):
            CameraForStudy( name,cam_parameters, path_rgb, wav_levels )
            {
              loadPoseFromJsonVal(f);
@@ -145,7 +157,7 @@ class CameraForStudy: public Camera{
 
     CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
            nlohmann::basic_json<>::value_type f,
-           const std::string& path_rgb,  const std::string& path_depth, int wav_levels=4 ):
+           const std::string& path_rgb,  const std::string& path_depth, int wav_levels ):
            CameraForStudy( name,cam_parameters, f, path_rgb, wav_levels )
            {
              loadDepthMap(path_depth);
@@ -166,16 +178,17 @@ class Mapper; // forward declaration
 class CameraForMapping: public Camera{
 
   public:
-    typedef std::pair<Eigen::Vector3i,float> Candidate;
-    typedef std::vector<Candidate*> Region;
+
 
     Wvlt_dec* wavelet_dec_;
     std::vector<Region*>* regions_;
     std::vector<Candidate*>* candidates_;
+    int n_candidates_=0;
     friend class Mapper;
+    friend class Dtam;
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
-           const Image<cv::Vec3b>* image_rgb, int wav_levels=4):
+           const Image<cv::Vec3b>* image_rgb, int wav_levels):
            Camera( name, cam_parameters, image_rgb)
            {
              Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
@@ -188,17 +201,16 @@ class CameraForMapping: public Camera{
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
             const Image<cv::Vec3b>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
-                Eigen::Isometry3f* frame_camera_wrt_world, int wav_levels=4):
+                Eigen::Isometry3f* frame_camera_wrt_world, int wav_levels):
             CameraForMapping( name, cam_parameters, image_rgb, wav_levels)
             {
               frame_world_wrt_camera_=frame_world_wrt_camera;
               frame_camera_wrt_world_=frame_camera_wrt_world;
             };
 
-    CameraForMapping(Camera* cam, int wav_levels=4):
+    CameraForMapping(Camera* cam, int wav_levels):
            CameraForMapping( cam->name_, cam->cam_parameters_, cam->image_rgb_,
-                   cam->frame_world_wrt_camera_, cam->frame_camera_wrt_world_,
-                   wav_levels)
+               wav_levels)
            {
              Image<cv::Vec3f>* img = new Image<cv::Vec3f>();
              image_rgb_->image_.convertTo(img->image_, CV_32FC3, 1/255.0);
@@ -206,8 +218,8 @@ class CameraForMapping: public Camera{
            };
 
   private:
-    void selectCandidates(int max_num_candidates);
     void collectRegions(float threshold);
+    void selectCandidates(int max_num_candidates);
     void showCandidates(float size);
 
 

@@ -35,7 +35,7 @@ void EpipolarLine::UVToCoord(Eigen::Vector2f& uv, float& coord){
 }
 
 
-bool EpipolarLine::resizeLine(){
+bool EpipolarLine::stretchToBorders(){
 
     float width = cam->cam_parameters_->width;
     float height = cam->cam_parameters_->height;
@@ -126,7 +126,6 @@ void EpipolarLine::lineTraverse()
 
     float pixel_width=cam->cam_parameters_->width/(float)cam->cam_parameters_->resolution_x;
 
-    // alternative solutions? TODO
     int n_uvs= (distance/pixel_width)+1;
 
     uvs = new std::vector<Eigen::Vector2f>(n_uvs);
