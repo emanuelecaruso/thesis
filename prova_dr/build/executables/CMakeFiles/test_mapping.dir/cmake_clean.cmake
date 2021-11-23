@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/camera.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/dtam.cpp.o"
   "CMakeFiles/test_mapping.dir/__/src/environment.cpp.o"

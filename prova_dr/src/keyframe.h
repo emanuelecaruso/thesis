@@ -15,16 +15,16 @@ class KeyframeHandler{
     dtam_(dtam),
     num_active_keyframes_(num_active_keyframes){};
 
-    bool add_keyframe(bool all_keyframes=false);
+    bool addKeyframe(bool all_keyframes=false);
     bool marginalize_keyframe(bool all_keyframes=false);
 
   private:
     void push_keyframe();
 
-    bool add_keyframe_all();
+    bool addKeyframe_all();
     void marginalize_keyframe_all();
 
-    bool add_keyframe_select();
+    bool addKeyframe_select();
     void marginalize_keyframe_select();
 
     void notify_if_2_frames_are_available();

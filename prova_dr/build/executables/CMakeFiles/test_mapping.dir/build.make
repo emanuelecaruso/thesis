@@ -187,9 +187,22 @@ executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/test_mapping.dir/__/src/tracker.cpp.s"
 	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/manu/Desktop/thesis/prova_dr/src/tracker.cpp -o CMakeFiles/test_mapping.dir/__/src/tracker.cpp.s
 
+executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o: executables/CMakeFiles/test_mapping.dir/flags.make
+executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o: ../src/bundleadj.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o"
+	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o -c /home/manu/Desktop/thesis/prova_dr/src/bundleadj.cpp
+
+executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.i"
+	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/manu/Desktop/thesis/prova_dr/src/bundleadj.cpp > CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.i
+
+executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.s"
+	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/manu/Desktop/thesis/prova_dr/src/bundleadj.cpp -o CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.s
+
 executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o: executables/CMakeFiles/test_mapping.dir/flags.make
 executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o: ../src/wavelet.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o"
 	cd /home/manu/Desktop/thesis/prova_dr/build/executables && /usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o -c /home/manu/Desktop/thesis/prova_dr/src/wavelet.cpp
 
 executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.i: cmake_force
@@ -212,6 +225,7 @@ test_mapping_OBJECTS = \
 "CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.o" \
 "CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o" \
 "CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o" \
+"CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o" \
 "CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o"
 
 # External object files for target test_mapping
@@ -227,6 +241,7 @@ executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/epline.
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o
+executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/build.make
 executables/test_mapping: /usr/local/lib/libopencv_gapi.so.4.5.2
@@ -296,7 +311,7 @@ executables/test_mapping: /usr/local/lib/libopencv_cudaarithm.so.4.5.2
 executables/test_mapping: /usr/local/lib/libopencv_core.so.4.5.2
 executables/test_mapping: /usr/local/lib/libopencv_cudev.so.4.5.2
 executables/test_mapping: executables/CMakeFiles/test_mapping.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable test_mapping"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/manu/Desktop/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Linking CXX executable test_mapping"
 	cd /home/manu/Desktop/thesis/prova_dr/build/executables && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_mapping.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

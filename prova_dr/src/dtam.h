@@ -3,6 +3,7 @@
 #include "keyframe.h"
 #include "mapper.h"
 #include "tracker.h"
+#include "bundleadj.h"
 #include "environment.h"
 #include <thread>
 #include <mutex>
@@ -18,6 +19,7 @@ class Dtam{
     keyframe_handler_(new KeyframeHandler(this, num_active_keyframes)),
     mapper_(new Mapper(this,grad_threshold,num_candidates)),
     tracker_(new Tracker(this)),
+    bundle_adj_(new BundleAdj(this)),
     wavelet_levels_(wavelet_levels)
     {
       frame_current_=0;
@@ -40,6 +42,9 @@ class Dtam{
     KeyframeHandler* const keyframe_handler_;
     Mapper* const mapper_;
     Tracker* const tracker_;
+    BundleAdj* const bundle_adj_;
+    
+    friend class BundleAdj;
     friend class KeyframeHandler;
     friend class Mapper;
     friend class Tracker;

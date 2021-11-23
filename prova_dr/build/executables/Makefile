@@ -125,6 +125,33 @@ test_mapping/fast:
 	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/build
 .PHONY : test_mapping/fast
 
+__/src/bundleadj.o: __/src/bundleadj.cpp.o
+
+.PHONY : __/src/bundleadj.o
+
+# target to build an object file
+__/src/bundleadj.cpp.o:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o
+.PHONY : __/src/bundleadj.cpp.o
+
+__/src/bundleadj.i: __/src/bundleadj.cpp.i
+
+.PHONY : __/src/bundleadj.i
+
+# target to preprocess a source file
+__/src/bundleadj.cpp.i:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.i
+.PHONY : __/src/bundleadj.cpp.i
+
+__/src/bundleadj.s: __/src/bundleadj.cpp.s
+
+.PHONY : __/src/bundleadj.s
+
+# target to generate assembly for a file
+__/src/bundleadj.cpp.s:
+	cd /home/manu/Desktop/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.s
+.PHONY : __/src/bundleadj.cpp.s
+
 __/src/camera.o: __/src/camera.cpp.o
 
 .PHONY : __/src/camera.o
@@ -431,6 +458,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... test_mapping"
 	@echo "... edit_cache"
+	@echo "... __/src/bundleadj.o"
+	@echo "... __/src/bundleadj.i"
+	@echo "... __/src/bundleadj.s"
 	@echo "... __/src/camera.o"
 	@echo "... __/src/camera.i"
 	@echo "... __/src/camera.s"

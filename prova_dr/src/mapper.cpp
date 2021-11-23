@@ -145,15 +145,29 @@ bool Mapper::computeEpipolarLineCouple(const CameraForMapping* cam_1, const Came
 
 
 
-void Mapper::selectCandidates(){
+void Mapper::selectNewCandidates(){
   int idx=dtam_->keyframe_vector_->back();
   CameraForMapping* cam_r= dtam_->camera_vector_->at(idx);
   cam_r->collectRegions(threshold_);
-  cam_r->selectCandidates(num_candidates_);
+  cam_r->selectNewCandidates(num_candidates_);
 
 }
 
-void Mapper::propagateOldCandidates(){
+bool Mapper::trackCandidate(Candidate* cand){
+  return true;
+}
+
+void Mapper::trackExistingCandidates(){
+  //iterate through active keyframes
+  for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
+    int idx = dtam_->keyframe_vector_->at(i);
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
+    // iterate through all candidates
+    for(Candidate* cand : *(keyframe->candidates_)){
+
+    }
+
+  }
 
 }
 
@@ -211,7 +225,7 @@ void Mapper::doMapping(){
   //   // float size = 2;
   //   // locker.lock();
   //   //
-  //   // cam_r->showCandidates(size);
+  //   // cam_r->showCandidates_1(size);
   //   // cv::waitKey(0);
   //   // // cv::destroyAllWindows();
   //   // locker.unlock();

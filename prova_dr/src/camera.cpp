@@ -352,7 +352,7 @@ void CameraForMapping::collectRegions(float threshold){
 }
 
 
-void CameraForMapping::selectCandidates(int max_num_candidates){
+void CameraForMapping::selectNewCandidates(int max_num_candidates){
 
   while(n_candidates_<max_num_candidates){
     if(!regions_->empty()){
@@ -380,7 +380,7 @@ void CameraForMapping::selectCandidates(int max_num_candidates){
   }
 }
 
-void CameraForMapping::showCandidates(float size){
+void CameraForMapping::showCandidates_1(float size){
   Wvlt_dec* selected = new Wvlt_dec(wavelet_dec_);
 
   for(Candidate* candidate : *candidates_){
@@ -389,6 +389,17 @@ void CameraForMapping::showCandidates(float size){
     wvlt_curr_->dh->setPixel(idx[0],idx[1],white);
     wvlt_curr_->dv->setPixel(idx[0],idx[1],white);
     wvlt_curr_->dd->setPixel(idx[0],idx[1],white);
+  }
+  selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
+
+}
+
+//showCandidates_2 TODO
+void CameraForMapping::showCandidates_2(float size){
+  Wvlt_dec* selected = new Wvlt_dec(wavelet_dec_);
+
+  for(Candidate* candidate : *candidates_){
+
   }
   selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
 

@@ -13,5 +13,6 @@ add_executable(test_mapping test_mapping.cpp
 ../src/keyframe.cpp
 ../src/mapper.cpp
 ../src/tracker.cpp
+../src/bundleadj.cpp
 ../src/wavelet.cpp
 )

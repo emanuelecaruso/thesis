@@ -2,7 +2,9 @@
 - mapper.cpp, computeEpipolarLine: select better uv TODO
 - mapper.cpp, resizeLine: pay attention on lineTraverse! TODO
 
-- keyframe.cpp, marginalize points and keyframes TODO
+- keyframe.cpp, marginalize points TODO
+- camera.cpp, showCandidates_2 TODO
+- camera.h, Candidate as class TODO
 
 - interval depth range in epipolar cam 2
 

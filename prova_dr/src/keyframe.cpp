@@ -7,24 +7,24 @@
 #include <stdlib.h>
 
 
-bool KeyframeHandler::add_keyframe(bool all_keyframes){
+bool KeyframeHandler::addKeyframe(bool all_keyframes){
   bool frame_added;
   if(all_keyframes){
-    frame_added=add_keyframe_all();
+    frame_added=addKeyframe_all();
   }else{
-    frame_added=add_keyframe_select();
+    frame_added=addKeyframe_select();
   }
   marginalize_keyframe(all_keyframes);
 
   return frame_added;
 }
 
-bool KeyframeHandler::add_keyframe_all(){
+bool KeyframeHandler::addKeyframe_all(){
   push_keyframe();
   return true;
 }
 
-bool KeyframeHandler::add_keyframe_select(){
+bool KeyframeHandler::addKeyframe_select(){
   // select keyframe TODO
   return true;
 }

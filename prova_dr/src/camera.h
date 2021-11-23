@@ -7,6 +7,23 @@
 
 using namespace pr;
 
+typedef std::vector<Candidate*> Region;
+typedef std::pair<float,float> depthRange;
+
+// Candidate as class TODO
+// class Candidate{
+//   public:
+//
+//     Candidate(int level, Eigen::Vector2f uv, float magnitude ):
+//     level_(level), uv_(uv), magnitude_(magnitude)
+//     {}
+//
+//     const int level_;
+//     const Eigen::Vector2f uv_;
+//     const float magnitude_;
+//     std::vector<depthRange> depth_ranges_;
+// };
+
 class Camera{
   public:
 
@@ -219,8 +236,9 @@ class CameraForMapping: public Camera{
 
   private:
     void collectRegions(float threshold);
-    void selectCandidates(int max_num_candidates);
-    void showCandidates(float size);
+    void selectNewCandidates(int max_num_candidates);
+    void showCandidates_1(float size);
+    void showCandidates_2(float size);
 
 
 };

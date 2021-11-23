@@ -60,8 +60,8 @@ class Mapper{
       {};
 
     void doMapping();
-    void selectCandidates();
-    void propagateOldCandidates();
+    void selectNewCandidates();
+    void trackExistingCandidates();
 
   private:
     Dtam* const dtam_;
@@ -89,4 +89,5 @@ class Mapper{
     bool initializeCandidates(const CameraForMapping* cam_r,
                             const CameraForMapping* cam_m, int& current_r_idx);
 
+    bool trackCandidate(Candidate* cand);
 };
