@@ -35,98 +35,18 @@ void EpipolarLine::UVToCoord(Eigen::Vector2f& uv, float& coord){
 }
 
 
-bool EpipolarLine::stretchToBorders(){
 
-    float width = cam->cam_parameters_->width;
-    float height = cam->cam_parameters_->height;
-    float pixel_width = width/((float)cam->cam_parameters_->resolution_x);
-
-    std::vector<float> axes_v {0+(pixel_width/2),width-(pixel_width/2)};
-    std::vector<float> axes_h {0+(pixel_width/2),height-(pixel_width/2)};
-
-    bool axis_v_idx = 0;
-    bool axis_h_idx;
-    if (slope>0)  // 2 and 4 quadrant (y points down)
-      axis_h_idx=0;
-    else  // 1 and 3 quadrant (y points down)
-      axis_h_idx=1;
-
-
-    Eigen::Vector2f start_uv, end_uv;
-    coordToUV(start,start_uv);
-    coordToUV(end,end_uv);
-
-
-    // bring to axis v
-    float axis_v= axes_v[axis_v_idx];
-    float delta = axis_v-start_uv.x();
-    start_uv.y()=start_uv.y()+slope*delta;
-    start_uv.x()=axis_v;
-    // if out of the square
-    if ( (start_uv.y()<axes_h[0]) || (start_uv.y()>axes_h[1]) ){
-      // bring to axis h
-
-      float axis_h= axes_h[axis_h_idx];
-      float delta = axis_h-start_uv.y();
-      start_uv.x()=start_uv.x()+delta/slope;
-      start_uv.y()=axis_h;
-      // if out of the square again, line does not intersect the rectangle
-      if ( (start_uv.x()<axes_v[0]) || (start_uv.x()>axes_v[1]) ){
-        sharedCoutDebug("error on start of segment");
-        return false;
-      }
-    }
-    UVToCoord(start_uv,start);
-    // sharedCoutDebug("slope: "+std::to_string(slope) );
-    // sharedCoutDebug("START c0: "+std::to_string(c0) );
-    // sharedCoutDebug("vx for end is: "+std::to_string(start_uv.x()));
-    // sharedCoutDebug("vy for end is: "+std::to_string(start_uv.y()));
-    // sharedCoutDebug("vc for end is: "+std::to_string(start));
-    //
-
-    // it may be simplified?? TODO
-    // bring to axis v
-    axis_v= axes_v[!axis_v_idx];
-    delta = axis_v-end_uv.x();
-    end_uv.y()=end_uv.y()+slope*delta;
-    end_uv.x()=axis_v;
-    // if out of the square
-    // sharedCoutDebug("\nEND" );
-    // sharedCoutDebug("axis_h: "+std::to_string(axis_h));
-    // sharedCoutDebug("vx for end is: "+std::to_string(end_uv.x()));
-    // sharedCoutDebug("vy for end is: "+std::to_string(end_uv.y()));
-    // sharedCoutDebug("vc for end is: "+std::to_string(end));
-    if ( (end_uv.y()<axes_h[0]) || (end_uv.y()>axes_h[1]) ){
-      // bring to axis h
-      float axis_h= axes_h[!axis_h_idx];
-      float delta = axis_h-end_uv.y();
-      end_uv.x()=end_uv.x()+delta/slope;
-      end_uv.y()=axis_h;
-      // if out of the square again, line does not intersect the rectangle
-
-      if ( (end_uv.x()<axes_v[0]) || (end_uv.x()>axes_v[1]) ){
-        sharedCoutDebug("error on end of segment");
-        return false;
-      }
-    }
-    UVToCoord(end_uv,end);
-
-
-
-
-    // pay attention on lineTraverse! TODO
-    lineTraverse();
-    return true;
-}
-
-void EpipolarLine::lineTraverse()
+void EpipolarLine::lineTraverse(int level)
 {
 
     float distance = abs(end-start);
 
-    float pixel_width=cam->cam_parameters_->width/(float)cam->cam_parameters_->resolution_x;
+    // float pixel_width=cam->cam_parameters_->width/(float)cam->cam_parameters_->resolution_x;
+    float pixel_width=cam->cam_parameters_->width/((float)cam->cam_parameters_->resolution_x/pow(2,level+1));
 
-    int n_uvs= (distance/pixel_width)+1;
+    int n_uvs= (distance/pixel_width)+2;
+    // int n_uvs= ((distance/pixel_width)+1)/(level+2);
+    // std::cout << n_uvs << std::endl;
 
     uvs = new std::vector<Eigen::Vector2f>(n_uvs);
 
@@ -140,48 +60,101 @@ void EpipolarLine::lineTraverse()
     }
 }
 
-
-// show
-void EpipolarLine::showEpipolar(float size){
-    Image<cv::Vec3b>* image_rgb_new = createEpipolarImg();
-    image_rgb_new->show(size);
+float EpipolarLine::getCost(colorRGB magnitude3C_r, colorRGB magnitude3C_m,colorRGB color_r, colorRGB color_m){
+  float cost_magn = abs(magnitude3C_r[0]-magnitude3C_m[0])+abs(magnitude3C_r[1]-magnitude3C_m[1])+abs(magnitude3C_r[2]-magnitude3C_m[2]);
+  float cost_col = abs(color_r[0]-color_m[0])+abs(color_r[1]-color_m[1])+abs(color_r[2]-color_m[2]);
+  return cost_magn;
+  // return cost_magn+cost_col;
 }
 
-void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2, float size=1){
-    Image<cv::Vec3b>* image_rgb_new = createEpipolarImg();
-    Image<cv::Vec3b>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
+void EpipolarLine::updateBounds(colorRGB magnitude3C ){
+
+}
+
+void EpipolarLine::searchMin(Candidate* candidate ){
+  // iterate through uvs
+  float min_cost = FLT_MAX;
+  int min_uv_idx;
+  // for(Eigen::Vector2f uv : *uvs){
+  for(int i=0; i<uvs->size(); i++){
+    Eigen::Vector2f uv = uvs->at(i);
+    Eigen::Vector2i pixel;
+    cam->uv2pixelCoords(uv,pixel,candidate->level_);
+    colorRGB magnitude3C_m;
+    colorRGB color;
+    if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude3C_img->evalPixel(pixel, magnitude3C_m))
+    {
+      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, color);
+      float cost = getCost(candidate->grad3C_magnitude_,magnitude3C_m, candidate->color_,color );
+      if (cost<min_cost){
+        min_cost=cost;
+        uv_idx_colored=i;
+      }
+    }
+  }
+
+
+}
+
+
+// show
+void EpipolarLine::showEpipolar(int level,float size){
+    Image<colorRGB>* image_rgb_new = createEpipolarImg(level);
+    image_rgb_new->show(size*(pow(2,level+1)));
+}
+
+void EpipolarLine::showEpipolarWithMin(int level,float size){
+    Image<colorRGB>* image_rgb_new = createEpipolarImg(level);
+    Eigen::Vector2i pixel;
+    cam->uv2pixelCoords(uvs->at(uv_idx_colored),pixel,level);
+
+    image_rgb_new->setPixel(pixel,blue);
+    image_rgb_new->show(size*(pow(2,level+1)));
+}
+
+void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2, bool print=false, float size=1){
+    Image<colorRGB>* image_rgb_new = createEpipolarImg();
+    Image<colorRGB>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
     image_rgb_new->showWithOtherImage(image_rgb_new_2,size);
+
 }
 
 void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2,
-                          const std::string& name, float size=1)
+                          const std::string& name, bool print=false, float size=1)
 {
-    Image<cv::Vec3b>* image_rgb_new = createEpipolarImg();
-    Image<cv::Vec3b>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
+    Image<colorRGB>* image_rgb_new = createEpipolarImg();
+    Image<colorRGB>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
     image_rgb_new->showWithOtherImage(image_rgb_new_2,name,size);
 }
 
 
 
 // create imgs to show
-Image<cv::Vec3b>* EpipolarLine::createEpipolarImg(const std::string& name){
-    Image<cv::Vec3b>* image_rgb_new = cam->image_rgb_->clone(name);
+Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int level){
 
-    for( int i=0; i<uvs->size(); i++){
-      Eigen::Vector2i pixel;
+    Image<colorRGB>* image_rgb_new;
+    if (level==-1)
+      image_rgb_new = cam->image_rgb_->clone(name);
+    else
+      image_rgb_new = cam->wavelet_dec_->vector_wavelets->at(level)->c->clone(name);
 
-      cam->uv2pixelCoords(uvs->at(i),pixel);
 
-      if(i==0)
-        image_rgb_new->setPixel(pixel, blue);
-      else if (i==uvs->size()-1)
-        image_rgb_new->setPixel(pixel, red);
-      else
-        image_rgb_new->setPixel(pixel, yellow);
-    }
+    if (!uvs->empty())
+      for( int i=0; i<uvs->size(); i++){
+        Eigen::Vector2i pixel;
+
+        cam->uv2pixelCoords(uvs->at(i),pixel,level);
+
+        // if(i==0)
+        //   image_rgb_new->setPixel(pixel, blue);
+        // else if (i==uvs->size()-1)
+        //   image_rgb_new->setPixel(pixel, red);
+        // else
+        image_rgb_new->setPixel(pixel, green);
+      }
     return image_rgb_new;
 }
 
-Image<cv::Vec3b>* EpipolarLine::createEpipolarImg(){
-  return createEpipolarImg("epipolar_"+cam->name_);
+Image<colorRGB>* EpipolarLine::createEpipolarImg(int level){
+  return createEpipolarImg("epipolar_"+cam->name_,level);
 }

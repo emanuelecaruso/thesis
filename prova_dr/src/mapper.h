@@ -12,6 +12,7 @@ class CamCouple{
     Eigen::Matrix3f r;
     Eigen::Vector3f t;
     float f, f2, w, h, w2, h2, t22;
+    Eigen::Vector2f cam_r_projected_in_cam_m;
 
     CamCouple(const CameraForMapping* cam_r, const CameraForMapping* cam_m):
     cam_r_(cam_r),
@@ -29,12 +30,18 @@ class CamCouple{
       h2 = h*h;
       t22=t(2)*t(2);
 
+      cam_m->projectCam(cam_r, cam_r_projected_in_cam_m);
+
       getSlopeParameters();
       getBoundsParameters();
 
     }
-    EpipolarLine* getEpSegment(float u1, float v1);
-    EpipolarLine* compareEpSegmentWithGt(float u1, float v1);
+    EpipolarLine* getEpSegment(Candidate* candidate);
+    EpipolarLine* getEpSegmentGt(Candidate* candidate);
+    void compareEpSegmentWithGt(Candidate* candidate);
+    void showEpSegment(Candidate* candidate);
+
+    EpipolarLine* trackCandidate(Candidate* candidate);
 
   private:
     //Parameters for slope
@@ -46,7 +53,8 @@ class CamCouple{
     void getSlopeParameters();
     void getBoundsParameters();
     void getSlope(float u1, float v1, float& slope_m);
-    void getBounds(float u1, float v1, float d1, float& bound_low, float& bound_up);
+    void getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v);
+    void getBound(float u1, float v1, float d1, float& bound, bool u_or_v);
 
 };
 
@@ -69,25 +77,8 @@ class Mapper{
     const int num_candidates_;
     int current_frame_;
 
-    // frame coupling
-    void frameCouplingRandom(int& frame_1, int& frame_2);
-    void frameCouplingLast(int& frame_1, int& frame_2);
-    void frameCouplingOpposite(int& frame_1, int& frame_2);
-
-    bool computeEpipolarLineCouple(const CameraForMapping* cam_1, const CameraForMapping* cam_2,
-                                Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,
-                                EpipolarLine*& ep_line_2);
-
-    float coord2FromCoord1(float coord1, Eigen::Vector4f& abcd);
-
-    void getParametersABCD( EpipolarLine* ep_line_source, EpipolarLine* ep_line_range,
-                                float depth, Eigen::Vector4f& abcd);
-
-    void showRangeStudy(EpipolarLine* ep_line_source, EpipolarLine* ep_line_range,
-                            int uvs_idx, float size=1);
 
     bool initializeCandidates(const CameraForMapping* cam_r,
                             const CameraForMapping* cam_m, int& current_r_idx);
 
-    bool trackCandidate(Candidate* cand);
 };

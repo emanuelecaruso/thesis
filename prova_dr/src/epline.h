@@ -21,10 +21,11 @@ class EpipolarLine{
     float start;  // start of segment (u or v coord)
     float end;    // end of segment (u or v coord)
 
-    const Camera* cam; // camera associated to epipolar line
+    const CameraForMapping* cam; // camera associated to epipolar line
     std::vector<Eigen::Vector2f>* uvs;  // vector of interpoled uvs along epipolar line
+    int uv_idx_colored;  // idx of the uv colored along epipolar line (to plot max)
 
-    EpipolarLine( const Camera* cam_, float slope_, float c_start_, float c_end_, float c0_ ):
+    EpipolarLine( const CameraForMapping* cam_, float slope_, float c_start_, float c_end_, float c0_, int level=-1 ):
     slope( slope_ ),
     u_or_v( (slope_<1 && slope_>-1) ),
     c0( c0_ ),
@@ -32,14 +33,17 @@ class EpipolarLine{
     {
       start=c_start_;
       end=c_end_;
+      uvs = new std::vector<Eigen::Vector2f>;
+      lineTraverse(level);
+
     }
 
-    EpipolarLine( const Camera* cam_, float slope_, float c_start_,
-                  float c_end_, Eigen::Vector2f& cam_proj_ ):
-    EpipolarLine( cam_, slope_, c_start_, c_end_, computeC0( cam_proj_, slope_)  ){}
+    EpipolarLine( const CameraForMapping* cam_, float slope_, float c_start_,
+                  float c_end_, Eigen::Vector2f& cam_proj_ , int level=-1):
+    EpipolarLine( cam_, slope_, c_start_, c_end_, computeC0( cam_proj_, slope_), level  ){}
 
 
-    EpipolarLine( const Camera* cam_, Eigen::Vector2f& start_, Eigen::Vector2f& end_):
+    EpipolarLine( const CameraForMapping* cam_, Eigen::Vector2f& start_, Eigen::Vector2f& end_, int level=-1):
     slope( (end_-start_).y()/(end_-start_).x() ),
     u_or_v( computeUOrV(start_, end_) ),
     c0( computeC0(start_, end_) ),
@@ -47,34 +51,38 @@ class EpipolarLine{
     {
       UVToCoord(start_,start);
       UVToCoord(end_,end);
+      lineTraverse(level);
+
     }
 
     void printMembers() const;
-    bool stretchToBorders();
-    bool resizeWithinImage();
+    void updateBounds(colorRGB magnitude3C );
 
     // show
-    void showEpipolar(float size);
-    void showEpipolarComparison(EpipolarLine* ep_line_2, float size);
-    void showEpipolarComparison(EpipolarLine* ep_line_2, const std::string& name, float size);
-    void showRangeStudy(EpipolarLine* ep_line_2, int uvs_idx, float size=1);
+    void showEpipolar(int level=-1, float size=1);
+    void showEpipolarWithMin(int level=-1, float size=1);
+    void showEpipolarComparison(EpipolarLine* ep_line_2, bool print, float size);
+    void showEpipolarComparison(EpipolarLine* ep_line_2, const std::string& name, bool print, float size);
 
+
+    void searchMin(Candidate* candidate );
+    float getCost(colorRGB magnitude3C_r, colorRGB magnitude3C_m,colorRGB color_r, colorRGB color_m );
 
   private:
 
     friend class Mapper;
 
+    void lineTraverse(int level);
     void coordToUV(float& coord, Eigen::Vector2f& uv);
     void UVToCoord(Eigen::Vector2f& uv, float& coord);
 
     // create imgs to show
-    Image<cv::Vec3b>* createEpipolarImg();
-    Image<cv::Vec3b>* createEpipolarImg(const std::string& name);
+    Image<colorRGB>* createEpipolarImg(int level=-1);
+    Image<colorRGB>* createEpipolarImg(const std::string& name, int level=-1);
 
-    Image<cv::Vec3b>* createRangeStudyImg();
+    Image<colorRGB>* createRangeStudyImg();
 
 
-    void lineTraverse();
     inline bool computeUOrV(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
       float slope_ = (end_-start_).y()/(end_-start_).x();
       bool out = (slope_<1 && slope_>-1);
@@ -83,12 +91,13 @@ class EpipolarLine{
     inline float computeC0(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
       float slope_ = (end_-start_).y()/(end_-start_).x();
       bool u_or_v_ = computeUOrV(start_, end_);
-      float out = u_or_v ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ;
+      float out = u_or_v_ ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ;
       return out;
     }
     inline float computeC0(Eigen::Vector2f& p, float slope_){
       bool u_or_v_ = (slope_<1 && slope_>-1);
-      float out = u_or_v ? p.y()-slope_*p.x() : p.x()-p.y()/slope_ ;
+      float out = u_or_v_ ? p.y()-slope_*p.x() : p.x()-p.y()/slope_ ;
+
       return out;
     }
 

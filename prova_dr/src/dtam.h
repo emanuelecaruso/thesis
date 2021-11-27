@@ -43,7 +43,7 @@ class Dtam{
     Mapper* const mapper_;
     Tracker* const tracker_;
     BundleAdj* const bundle_adj_;
-    
+
     friend class BundleAdj;
     friend class KeyframeHandler;
     friend class Mapper;
@@ -64,6 +64,7 @@ class Dtam{
 
     void addCamera();
 
+    void updateCamerasFromEnvironment();
     void updateCamerasFromVideostream();
     void doMapping();
     void doInitialization(bool all_keyframes=false, bool takeGtPoses=false);

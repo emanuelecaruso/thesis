@@ -218,6 +218,12 @@ namespace pr {
 
   typedef std::vector<IntPair > IntPairVector;
 
+
+
+
+
+
+
   struct CamParameters{
     const int resolution_x;
     const int resolution_y;
@@ -248,6 +254,16 @@ namespace pr {
   };
 
 
+  static bool debug_mode = 1;
+  static std::mutex mu_cout;
+
+  typedef cv::Vec3f colorRGB;
+  const float colorRGB_maxval = 1;
+  const int colorRGB_CODE = CV_32FC3;
+
+  // typedef cv::Vec3b colorRGB;
+  // const float colorRGB_maxval = 255;
+  // const int colorRGB_CODE = CV_8UC3;
 
   struct Cp // Colored point (in 3D)
   {
@@ -255,9 +271,7 @@ namespace pr {
     cv::Vec3b color;
   };
 
-  static std::mutex mu_cout;
 
-  static bool debug_mode = 1;
 
   inline void sharedCout(const std::string& msg){
     std::lock_guard<std::mutex> locker(mu_cout);
@@ -275,25 +289,20 @@ namespace pr {
     return abs(vec[0])+abs(vec[1])+abs(vec[2]);
   }
 
-  const cv::Vec3b black = cv::Vec3b(0,0,0);
-  const cv::Vec3b white = cv::Vec3b(255,255,255);
-  const cv::Vec3b grey = cv::Vec3b(127,127,127);
-  const cv::Vec3b magenta = cv::Vec3b(255,0,255);
-  const cv::Vec3b red = cv::Vec3b(0,0,255);
-  const cv::Vec3b green = cv::Vec3b(0,255,0);
-  const cv::Vec3b blue = cv::Vec3b(255,0,0);
-  const cv::Vec3b cyan = cv::Vec3b(255,255,0);
-  const cv::Vec3b yellow = cv::Vec3b(0,255,255);
+  const colorRGB black = colorRGB(0,0,0);
+  const colorRGB white = colorRGB(colorRGB_maxval,colorRGB_maxval,colorRGB_maxval);
+  const colorRGB grey = colorRGB(colorRGB_maxval/2,colorRGB_maxval/2,colorRGB_maxval/2);
+  const colorRGB magenta = colorRGB(colorRGB_maxval,0,colorRGB_maxval);
+  const colorRGB red = colorRGB(0,0,colorRGB_maxval);
+  const colorRGB green = colorRGB(0,colorRGB_maxval,0);
+  const colorRGB blue = colorRGB(colorRGB_maxval,0,0);
+  const colorRGB cyan = colorRGB(colorRGB_maxval,colorRGB_maxval,0);
+  const colorRGB yellow = colorRGB(0,colorRGB_maxval,colorRGB_maxval);
 
-  const cv::Vec3f black_f = cv::Vec3f(0,0,0);
-  const cv::Vec3f white_f = cv::Vec3f(1,1,1);
-  const cv::Vec3f grey_f = cv::Vec3f(0.5,0.5,0.5);
-  const cv::Vec3f magenta_f = cv::Vec3f(1,0,1);
-  const cv::Vec3f red_f = cv::Vec3f(0,0,1);
-  const cv::Vec3f green_f = cv::Vec3f(0,1,0);
-  const cv::Vec3f blue_f = cv::Vec3f(1,0,0);
-  const cv::Vec3f cyan_f = cv::Vec3f(1,1,0);
-  const cv::Vec3f yellow_f = cv::Vec3f(0,1,1);
+  const colorRGB red_ = colorRGB(colorRGB_maxval/2,colorRGB_maxval/2,colorRGB_maxval);
+  const colorRGB green_ = colorRGB(colorRGB_maxval/2,colorRGB_maxval,colorRGB_maxval/2);
+  const colorRGB blue_ = colorRGB(colorRGB_maxval,colorRGB_maxval/2,colorRGB_maxval/2);
+  const colorRGB cyan_ = colorRGB(colorRGB_maxval,colorRGB_maxval,colorRGB_maxval/2);
+  const colorRGB magenta_ = colorRGB(colorRGB_maxval,colorRGB_maxval/2,colorRGB_maxval);
 
-  typedef std::pair<Eigen::Vector3i,float> Candidate;
 }

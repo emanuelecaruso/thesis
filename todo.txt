@@ -1,12 +1,4 @@
-- epline.cpp, it may be simplified?? TODO
-- mapper.cpp, computeEpipolarLine: select better uv TODO
-- mapper.cpp, resizeLine: pay attention on lineTraverse! TODO
-
-- keyframe.cpp, marginalize points TODO
-- camera.cpp, showCandidates_2 TODO
-- camera.h, Candidate as class TODO
-
-- interval depth range in epipolar cam 2
-
-- cv::Vec3b - cv::Vec3f ???
+- move CameraForMapping in mapper
 - cv::Mat pointer in image.h
+- synchronize better threads
+- why thread keeps going during showing of epSegments?

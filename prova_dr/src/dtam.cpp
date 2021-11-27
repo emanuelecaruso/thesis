@@ -49,17 +49,25 @@ void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
 
     double t_start=getTime();
 
+    frame_current_=camera_vector_->size()-1;
+    if(frame_current_<=0)
+      continue;
+
+    sharedCoutDebug("Initialization of frame: "+std::to_string(frame_current_)+" ...");
+
     tracker_->trackCam(takeGtPoses);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
       bundle_adj_->projectAndMarginalizeActivePoints();
       mapper_->trackExistingCandidates();
       mapper_->selectNewCandidates();
       bundle_adj_->activateNewPoints();
-      bundle_adj_->optimize();
+      // bundle_adj_->optimize(); in other thread
     }
     double t_end=getTime();
     int deltaTime=(t_end-t_start);
-    sharedCoutDebug("Initialization time: "+ std::to_string(deltaTime)+" ms");
+    sharedCoutDebug("Initialization of frame: "+std::to_string(frame_current_)+", time: "+ std::to_string(deltaTime)+" ms");
+
+
   }
 
 
@@ -73,20 +81,20 @@ void Dtam::doTracking(){
 
 }
 
-void Dtam::updateCamerasFromVideostream(){
+void Dtam::updateCamerasFromEnvironment(){
 
   float fps=environment_->fps_;
+  int counter=0;
 
-  while(frame_current_< environment_->camera_vector_->size()){
+  while(counter< environment_->camera_vector_->size()){
 
     std::unique_lock<std::mutex> locker(mu_frame_);
 
     double t_start=getTime();
 
-    sharedCout("\nFrame: "+ std::to_string(frame_current_));
+    sharedCout("\nFrame: "+ std::to_string(counter));
     addCamera();
 
-    frame_current_++;
     frame_updated_.notify_one();
 
     double t_end=getTime();
@@ -99,6 +107,11 @@ void Dtam::updateCamerasFromVideostream(){
     long int time_to_wait=(1.0/fps)*1000000-waitDelay;
     if(time_to_wait>0)
       std::this_thread::sleep_for(std::chrono::microseconds(time_to_wait));
+    else
+      sharedCoutDebug("Delay accumulated! : "+ std::to_string(-time_to_wait)+" ms");
+
+
+    counter++;
   }
   sharedCout("\nVideo stream ended");
 
@@ -109,20 +122,22 @@ void Dtam::test_mapping(){
   bool takeGtPoses=true;
   bool allKeyframes=true;
 
-  std::thread update_cameras_thread_(&Dtam::updateCamerasFromVideostream, this);
-  // std::thread track
   std::thread initialization_thread(&Dtam::doInitialization, this, allKeyframes, takeGtPoses);
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+  // std::thread track
   // std::thread mapping_thread_(&Dtam::doMapping, this);
 
 
-  initialization_thread.detach();
+  initialization_thread.join();
   // mapping_thread_.detach();
   update_cameras_thread_.join();
 
   // debugAllCameras();
 
-  // camera_vector_->at(keyframe_vector_->at(0))->showCandidates_1(2);
-  // cv::waitKey(0);
+
+  camera_vector_->at(keyframe_vector_->back())->showCandidates_1(2);
+  camera_vector_->at(keyframe_vector_->back())->showCandidates_2(2);
+  cv::waitKey(0);
 
 
 }
@@ -143,7 +158,7 @@ void Dtam::showFeatures(int idx, float size=1){
   CameraForStudy* cam_1=environment_->camera_vector_->at(0);
   CameraForStudy* cam_2=environment_->camera_vector_->at(idx);
   // cam_1->image_rgb_->showWithOtherImage(cam_2->image_rgb_,"image comparison",size);
-  cam_1->wavelet_dec_->showWaveletDec(size);
+  cam_2->wavelet_dec_->showWaveletDec(size);
   // cam_1->wavelet_dec_->compareThreshold(0.1,size);
   // cam_1->curvature_->showWithOtherImage(cam_2->curvature_,"curvature comparison",size);
   // cam_1->grad_intensity_->showWithOtherImage(cam_2->grad_intensity_,"grad intensity comparison",size);

@@ -17,6 +17,10 @@ class Image{
     name_(name),
     image_(image){};
 
+    Image(const Image* img):
+    name_(img->name_),
+    image_(img->image_){};
+
     Image():
     name_("undefined"){};
 
@@ -140,9 +144,9 @@ class Image{
 
       split(image_, channels_i);
 
-      filter2D(channels_i[0], channels_o[0], CV_32FC3, kernel);
-      filter2D(channels_i[1], channels_o[1], CV_32FC3, kernel);
-      filter2D(channels_i[2], channels_o[2], CV_32FC3, kernel);
+      filter2D(channels_i[0], channels_o[0], colorRGB_CODE, kernel);
+      filter2D(channels_i[1], channels_o[1], colorRGB_CODE, kernel);
+      filter2D(channels_i[2], channels_o[2], colorRGB_CODE, kernel);
 
       /// Merge the three channels
       merge(channels_o, img_filtered->image_);
@@ -160,7 +164,7 @@ class Image{
       {
           for (int col=0; col<cols;col++)
           {
-              cv::Vec3f clr ;
+              colorRGB clr ;
               evalPixel(row,col,clr);
 
               float norm=l1Norm(clr);
@@ -174,8 +178,8 @@ class Image{
       return n_pixels_kept;
     }
 
-    inline Image< cv::Vec3f>* compute_sobel_x(const std::string& name) const{
-      Image<  cv::Vec3f >* img_sobel_x=new Image< cv::Vec3f >(name);
+    inline Image< colorRGB>* compute_sobel_x(const std::string& name) const{
+      Image<  colorRGB >* img_sobel_x=new Image< colorRGB >(name);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<  1,  0, -1,
@@ -187,8 +191,8 @@ class Image{
       return img_sobel_x;
     }
 
-    inline Image<cv::Vec3f>* compute_sobel_y(const std::string& name) const{
-      Image< cv::Vec3f >* img_sobel_y =new Image< cv::Vec3f >(name);
+    inline Image<colorRGB>* compute_sobel_y(const std::string& name) const{
+      Image< colorRGB >* img_sobel_y =new Image< colorRGB >(name);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<   1,  2,  1,
@@ -200,16 +204,16 @@ class Image{
       return img_sobel_y;
     }
 
-    inline Image< cv::Vec3f>* compute_sobel_x() const{
+    inline Image< colorRGB>* compute_sobel_x() const{
       return compute_sobel_x("fx_"+name_);
     }
 
-    inline Image<cv::Vec3f>* compute_sobel_y() const{
+    inline Image<colorRGB>* compute_sobel_y() const{
       return compute_sobel_y("fy_"+name_);
     }
 
-    inline Image<cv::Vec3f>* squared() const{
-      Image< cv::Vec3f >* squared =new Image< cv::Vec3f >("^2_"+name_);
+    inline Image<colorRGB>* squared() const{
+      Image< colorRGB >* squared =new Image< colorRGB >("^2_"+name_);
 
       squared->image_=image_.mul(image_);
 
@@ -227,6 +231,16 @@ class Image{
       return intensity;
     }
 
+    inline void drawRectangle(cv::Rect rect, colorRGB color, int type, float alpha=1){
+      cv::Mat roi = image_(rect);
+      cv::Mat clr(roi.size(), colorRGB_CODE, color);
+      cv::addWeighted(clr, alpha, roi, 1.0 - alpha , 0.0, roi);
+      // cv::rectangle(image_,rect, color, type);
+    }
 
-
+    inline void showImgWithColoredPixel(const Eigen::Vector2i pixel, float size=1) const{
+      Image< colorRGB >* out =this->clone();
+      out->setPixel( pixel, red);
+      out->show(size);
+    }
 };

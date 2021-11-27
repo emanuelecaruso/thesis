@@ -33,14 +33,15 @@ b=[kinv*p_proj1;1]; %3D point in cam1 frame + 1 for homogeneous transf
 
 mlt=T*b; %T (cam1 expressed in cam2)
 
-cam1_in_cam2= t;
+cam1_in_cam2= k*t;
 cam1_in_cam2=cam1_in_cam2/(cam1_in_cam2(3));
 cam1_in_cam2=cam1_in_cam2(1:2);
+cam1_in_cam2=simplify(cam1_in_cam2,'Steps',1000);
 
-cam2_in_cam1= Tinv*[0;0;0;1];
-cam2_in_cam1=cam2_in_cam1/(cam2_in_cam1(3));
-cam2_in_cam1=cam2_in_cam1(1:2);
-cam2_in_cam1=simplify(cam2_in_cam1,'Steps',1000);
+% cam2_in_cam1= Tinv*[0;0;0;1];
+% cam2_in_cam1=cam2_in_cam1/(cam2_in_cam1(3));
+% cam2_in_cam1=cam2_in_cam1(1:2);
+% cam2_in_cam1=simplify(cam2_in_cam1,'Steps',1000);
 
 % d2 function as d1
 % disp("d2")
@@ -104,6 +105,13 @@ disp("E")
 disp(E);
 disp("F")
 disp(F);
+
+%% verify
+
+
+% A*u1+B*v1*C
+% -----------
+% D*u1+E*v1+F
 
 
 

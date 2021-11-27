@@ -63,10 +63,10 @@ A=simplify(A,'Steps',1000);
 B=simplify(B,'Steps',1000);
 C=simplify(C,'Steps',1000);
 D=simplify(D,'Steps',1000);
-E=simplify(A,'Steps',1000);
-F=simplify(B,'Steps',1000);
-G=simplify(C,'Steps',1000);
-H=simplify(D,'Steps',1000);
+E=simplify(E,'Steps',1000);
+F=simplify(F,'Steps',1000);
+G=simplify(G,'Steps',1000);
+H=simplify(H,'Steps',1000);
 
 disp("A")
 disp(A);
@@ -116,10 +116,10 @@ A=simplify(A,'Steps',1000);
 B=simplify(B,'Steps',1000);
 C=simplify(C,'Steps',1000);
 D=simplify(D,'Steps',1000);
-E=simplify(A,'Steps',1000);
-F=simplify(B,'Steps',1000);
-G=simplify(C,'Steps',1000);
-H=simplify(D,'Steps',1000);
+E=simplify(E,'Steps',1000);
+F=simplify(F,'Steps',1000);
+G=simplify(G,'Steps',1000);
+H=simplify(H,'Steps',1000);
 
 disp("A")
 disp(A);

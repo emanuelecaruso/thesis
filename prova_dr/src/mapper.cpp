@@ -9,138 +9,126 @@
 #include <chrono>
 
 void CamCouple::getSlopeParameters(){
-  // 4*r20*t1 - 4*f*r10*t2 - 2*h*r20*t2
-  A_s=4*r(2,0)*t(1) - 4*f*r(1,0)*t(2) - 2*h*r(2,0)*t(2);
-
-  // 4*f*r11*t2 - 4*r12*t1 + 2*h*r12*t2
-  B_s=4*f*r(1,1)*t(2) - 4*r(1,2)*t(1) + 2*h*r(1,2)*t(2);
-
-  //4*f^2*r12*t2 - 2*f*h*t2^2 - 4*f^2*t1*t2 - h^2*r12*t2 - 4*f*r22*t1 + 4*f*t1*t2 + 2*h*r12*t1 - 2*r20*t1*w - 2*f*h*r11*t2 + 2*f*h*r22*t2 + 2*f*r10*t2*w + h*r20*t2*w
-  C_s=4*f2*r(1,2)*t(2) - 2*f*h*t22 - 4*f2*t(1)*t(2) - h2*r(1,2)*t(2) - 4*f*r(2,2)*t(1) + 4*f*t(1)*t(2) + 2*h*r(1,2)*t(1) - 2*r(2,0)*t(1)*w - 2*f*h*r(1,1)*t(2) + 2*f*h*r(2,2)*t(2) + 2*f*r(1,0)*t(2)*w + h*r(2,0)*t(2)*w;
-
-  // 4*r20*t0 + 4*f*r00*t2 - 2*r20*t2*w
-  D_s=4*r(2,0)*t(0) + 4*f*r(0,0)*t(2) - 2*r(2,0)*t(2)*w;
-
-  // 2*r12*t2*w - 4*f*r01*t2 - 4*r12*t0
-  E_s=2*r(1,2)*t(2)*w - 4*f*r(0,1)*t(2) - 4*r(1,2)*t(0);
-
-  // 4*f^2*t0*t2 - 4*f^2*r02*t2 - 2*f*t2^2*w + r20*t2*w^2 - 4*f*r22*t0 + 4*f*t0*t2 + 2*h*r12*t0 - 2*r20*t0*w + 2*f*h*r01*t2 - 2*f*r00*t2*w + 2*f*r22*t2*w - h*r12*t2*w
-  F_s=4*f2*t(0)*t(2) - 4*f2*r(0,2)*t(2) - 2*f*t22*w + r(2,0)*t(2)*w2 - 4*f*r(2,2)*t(0) + 4*f*t(0)*t(2) + 2*h*r(1,2)*t(0) - 2*r(2,0)*t(0)*w + 2*f*h*r(0,1)*t(2) - 2*f*r(0,0)*t(2)*w + 2*f*r(2,2)*t(2)*w - h*r(1,2)*t(2)*w;
+  A_s=2*r(2,0)*t(1) - 2*r(1,0)*t(2);
+  B_s=2*r(1,1)*t(2) - 2*r(1,2)*t(1);
+  C_s=2*f*r(1,2)*t(2) - 2*f*r(2,2)*t(1) - h*r(1,1)*t(2) + h*r(1,2)*t(1) + r(1,0)*t(2)*w - r(2,0)*t(1)*w;
+  D_s=2*r(0,0)*t(2) - 2*r(2,0)*t(0);
+  E_s=2*r(1,2)*t(0) - 2*r(0,1)*t(2);
+  F_s=2*f*r(2,2)*t(0) - 2*f*r(0,2)*t(2) + h*r(0,1)*t(2) - h*r(1,2)*t(0) - r(0,0)*t(2)*w + r(2,0)*t(0)*w;
 }
 
 void CamCouple::getBoundsParameters(){
 
-  // 2*r20*w - 4*f*r00
   A_bu=2*r(2,0)*w - 4*f*r(0,0);
-
-  // 4*f*r01 - 2*r12*w
   B_bu=4*f*r(0,1) - 2*r(1,2)*w;
-
-  // 4*f^2*r02 - r20*w^2 - 2*f*h*r01 + 2*f*r00*w - 2*f*r22*w + h*r12*w
   C_bu=4*f2*r(0,2) - r(2,0)*w2 - 2*f*h*r(0,1) + 2*f*r(0,0)*w - 2*f*r(2,2)*w + h*r(1,2)*w;
-
-  // - 4*t0*f^2 + 2*t2*w*f
   D_bu=- 4*t(0)*f2 + 2*t(2)*w*f;
-
-  // 2*r20*w - 4*f*r00
-  E_bu=2*r(2,0)*w - 4*f*r(0,0);
-
-  //4*f*r01 - 2*r12*w
-  F_bu=4*f*r(0,1) - 2*r(1,2)*w;
-
-  //4*f^2*r02 - r20*w^2 - 2*f*h*r01 + 2*f*r00*w - 2*f*r22*w + h*r12*w
-  G_bu=4*f2*r(0,2) - r(2,0)*w2 - 2*f*h*r(0,1) + 2*f*r(0,0)*w - 2*f*r(2,2)*w + h*r(1,2)*w;
-
-  //- 4*t0*f^2 + 2*t2*w*f
-  H_bu=- 4*t(0)*f2 + 2*t(2)*w*f;
-
+  E_bu=4*r(2,0);
+  F_bu=-4*r(1,2);
+  G_bu=2*h*r(1,2) - 4*f*r(2,2) - 2*r(2,0)*w;
+  H_bu= 4*f*t(2);
 
   A_bv=4*f*r(1,0) + 2*h*r(2,0);
-
   B_bv=- 4*f*r(1,1) - 2*h*r(1,2);
-
   C_bv=h2*r(1,2) - 4*f2*r(1,2) + 2*f*h*r(1,1) - 2*f*h*r(2,2) - 2*f*r(1,0)*w - h*r(2,0)*w;
-
   D_bv=4*t(1)*f2 + 2*h*t(2)*f;
-
-  E_bv=4*f*r(1,0) + 2*h*r(2,0);
-
-  F_bv=- 4*f*r(1,1) - 2*h*r(1,2);
-
-  G_bv=h2*r(1,2) - 4*f2*r(1,2) + 2*f*h*r(1,1) - 2*f*h*r(2,2) - 2*f*r(1,0)*w - h*r(2,0)*w;
-
-  H_bv=4*t(1)*f2 + 2*h*t(2)*f;
+  E_bv=4*r(2,0);
+  F_bv=-4*r(1,2);
+  G_bv=2*h*r(1,2) - 4*f*r(2,2) - 2*r(2,0)*w;
+  H_bv=4*f*t(2);
 
 }
 
-EpipolarLine* CamCouple::getEpSegment(float u1, float v1){
-  // get slope
-  // void getSlope(float u1, float v1, float& slope_m);
+void CamCouple::getSlope(float u1, float v1, float& slope_m){
+  slope_m=(A_s*u1+B_s*v1+C_s)/(D_s*u1+E_s*v1+F_s);
+}
 
+void CamCouple::getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v){
 
+  getBound(u1, v1, min_depth, bound_low, u_or_v);
+  getBound(u1, v1, max_depth, bound_up, u_or_v);
 
 }
 
-
-
-
-// frame coupling
-void Mapper::frameCouplingRandom(int& frame_idx_r, int& frame_idx_m ){
-  int max_frame=dtam_->getFrameCurrent();
-  frame_idx_r=rand() % max_frame;
-  while(true){
-    frame_idx_m=rand() % max_frame;
-    if (frame_idx_m!=frame_idx_r)
-      break;
+void CamCouple::getBound(float u1, float v1, float d1, float& bound, bool u_or_v){
+  // u2
+  if (u_or_v){
+    bound=(A_bu*u1*d1+B_bu*v1*d1+C_bu*d1+D_bu)/(E_bu*u1*d1+F_bu*v1*d1+G_bu*d1+H_bu);
   }
-}
-
-void Mapper::frameCouplingLast(int& frame_idx_r, int& frame_idx_m ){
-  int max_frame=dtam_->getFrameCurrent();
-  frame_idx_r=max_frame-1;
-  frame_idx_m=max_frame-2;
-}
-
-void Mapper::frameCouplingOpposite(int& frame_idx_r, int& frame_idx_m ){
-  int max_frame=dtam_->getFrameCurrent();
-  frame_idx_r=max_frame-1;
-  frame_idx_m=0;
-}
-
-
-
-bool Mapper::computeEpipolarLineCouple(const CameraForMapping* cam_1, const CameraForMapping* cam_2,
-        Eigen::Vector2f& uv_1, EpipolarLine*& ep_line_1,EpipolarLine*& ep_line_2)
-{
-
-  Eigen::Vector2f cam_2_on_cam_1;
-  cam_1->projectCam(cam_2, cam_2_on_cam_1);
-
-  ep_line_1 = new EpipolarLine(cam_1, cam_2_on_cam_1,uv_1);
-
-
-  if(!ep_line_1->stretchToBorders()){
-    sharedCoutDebug("ep1 returned false");
-    return false;
+  // v2
+  else{
+    bound=(A_bv*u1*d1+B_bv*v1*d1+C_bv*d1+D_bv)/(E_bv*u1*d1+F_bv*v1*d1+G_bv*d1+H_bv);
   }
 
-  Eigen::Vector2f cam_1_on_cam_2;
-  cam_2->projectCam(cam_1, cam_1_on_cam_2);
+}
+EpipolarLine* CamCouple::getEpSegment(Candidate* candidate){
 
-  Eigen::Vector3f p;
-  // select better uv TODO
-  float depth = cam_1->cam_parameters_->max_depth;
-  cam_1->pointAtDepth(uv_1, depth, p);
-  Eigen::Vector2f uv_2;
-  cam_2->projectPoint(p,uv_2);
+  float u1=candidate->uv_.x();
+  float v1=candidate->uv_.y();
 
-  ep_line_2 = new EpipolarLine(cam_2, cam_1_on_cam_2,uv_2);
 
-  if(!ep_line_2->stretchToBorders()){
-    sharedCoutDebug("ep2 returned false");
-    return false;}
+  float slope_m=0, bound_up=0, bound_low=0;
+  getSlope(u1, v1, slope_m);
 
-  return true;
+  bool u_or_v = (slope_m<1 && slope_m>-1);
+
+  getBounds(u1, v1, candidate->min_depth_, candidate->max_depth_, bound_low, bound_up, u_or_v);
+
+  EpipolarLine* ep_seg = new EpipolarLine(  cam_m_, slope_m, bound_low, bound_up, cam_r_projected_in_cam_m, candidate->level_);
+  return ep_seg;
+}
+
+EpipolarLine* CamCouple::getEpSegmentGt(Candidate* candidate){
+
+
+
+  Eigen::Vector2f uv = candidate->uv_;
+
+  float min_depth = candidate->min_depth_;
+  float max_depth = candidate->max_depth_;
+
+  Eigen::Vector3f p_min;
+  cam_r_->pointAtDepth( uv, min_depth, p_min);
+  Eigen::Vector2f uv_min;
+  cam_m_->projectPoint(p_min,uv_min);
+
+  Eigen::Vector3f p_max;
+  cam_r_->pointAtDepth( uv, max_depth, p_max);
+  Eigen::Vector2f uv_max;
+  cam_m_->projectPoint(p_max,uv_max);
+
+  float slope = (uv_max.y()-uv_min.y())/(uv_max.x()-uv_min.x());
+
+  EpipolarLine* ep_seg_gt= new EpipolarLine( cam_m_, uv_min, uv_max, candidate->level_);
+
+  return ep_seg_gt;
+}
+
+void CamCouple::compareEpSegmentWithGt(Candidate* candidate){
+  std::cout << "camCouple: " << cam_r_->name_ << " " << cam_m_->name_ << std::endl;
+
+  EpipolarLine* ep_query = getEpSegment( candidate);
+  EpipolarLine* ep_gt = getEpSegmentGt(candidate);
+
+
+  ep_gt->showEpipolarComparison(ep_query, true, 2);
+
+
+}
+
+void CamCouple::showEpSegment(Candidate* candidate){
+  // std::cout << "camCouple: " << cam_r_->name_ << " " << cam_m_->name_ << std::endl;
+  EpipolarLine* ep_query = getEpSegment( candidate);
+
+  // sharedCoutDebug(", slope query: "+std::to_string(ep_query->slope));
+  // sharedCoutDebug(", start query: "+std::to_string(ep_query->start));
+  // sharedCoutDebug(", end query: "+std::to_string(ep_query->end));
+  // sharedCoutDebug(", c0 query: "+std::to_string(ep_query->c0));
+  // sharedCoutDebug(", u_or_v query: "+std::to_string(ep_query->u_or_v));
+  // sharedCoutDebug(","+std::to_string(cam_r_projected_in_cam_m.y()));
+
+
+  ep_query->showEpipolar(candidate->level_,2);
 }
 
 
@@ -153,18 +141,35 @@ void Mapper::selectNewCandidates(){
 
 }
 
-bool Mapper::trackCandidate(Candidate* cand){
-  return true;
+
+EpipolarLine* CamCouple::trackCandidate(Candidate* candidate){
+  EpipolarLine* ep_segment = getEpSegment( candidate );
+
+  return ep_segment;
 }
 
 void Mapper::trackExistingCandidates(){
+
+  CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
+
   //iterate through active keyframes
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
     int idx = dtam_->keyframe_vector_->at(i);
     CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
+
+    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
     // iterate through all candidates
     for(Candidate* cand : *(keyframe->candidates_)){
+      // compute epipolar segment of candidate in new keyframe
+      EpipolarLine* epSegment = cam_couple->trackCandidate(cand);
+      epSegment->searchMin(cand );
 
+      epSegment->showEpipolarWithMin(cand->level_);
+      keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1));
+
+      // cam_couple->compareEpSegmentWithGt(cand);
+      // cam_couple->showEpSegment(cand);
+      cv::waitKey(0);
     }
 
   }
@@ -188,7 +193,7 @@ bool Mapper::initializeCandidates(const CameraForMapping* cam_r,
     Candidate* curr_cand=cam_r->candidates_->back();
     cam_r->candidates_->pop_back();
     // get epipolar segment
-    cam_couple->getEpSegment(curr_cand->first[0],curr_cand->first[1]);
+    // cam_couple->getEpSegment(curr_cand->uv_[0],curr_cand->uv_[1]);
     // search along epipolar line
 
     // compute mse with c,dd,dh,dv
@@ -231,143 +236,5 @@ void Mapper::doMapping(){
   //   // locker.unlock();
   //
   // }
-
-}
-
-
-void Mapper::getParametersABCD(EpipolarLine* ep_line_source, EpipolarLine* ep_line_range,
-                                float depth, Eigen::Vector4f& abcd){
-
-  // from cam_2 to cam_1
-  Eigen::Isometry3f T = (*(ep_line_range->cam->frame_world_wrt_camera_))*(*(ep_line_source->cam->frame_camera_wrt_world_));
-  Eigen::Matrix3f r=T.linear();
-  Eigen::Vector3f t=T.translation();
-
-  float slope1 = ep_line_source->slope;
-  float slope2 = ep_line_range->slope;
-  float f = ep_line_source->cam->cam_parameters_->lens;
-  float f2 = f*f;
-  float w = ep_line_source->cam->cam_parameters_->width;
-  float h = ep_line_source->cam->cam_parameters_->height;
-  float w2 = w*w;
-  float h2 = h*h;
-  float d1;
-  bool u_or_v = ep_line_source->u_or_v;
-  float c0 = ep_line_source->c0;
-
-  // max depth
-  d1=depth;
-  if(u_or_v){
-
-
-    abcd[0]=-d1 * (2*f*r(0,0) - r(2,0)*w - 2*f*r(0,1)*slope1 + r(1,2)* slope1*w)*2;
-
-    abcd[1]= 2*f*t(2)*w - d1*r(2,0)*w2 - 4*f2 *t(0) + 4*d1*f2 *r(0,2) - 2*d1*f*h*r(0,1) + 4*d1*f*r(0,1)*c0
-    + 2*d1*f*r(0,0)*w - 2*d1*f*r(2,2)*w + d1*h*r(1,2)*w - 2*d1*r(1,2)*c0*w;
-
-    abcd[2]=4*d1*(r(2,0) - r(1,2)*slope1);
-
-    abcd[3]=4*f*t(2) - 4*d1*f*r(2,2) + 2*d1*h*r(1,2) - 4*d1*r(1,2)*c0 - 2*d1*r(2,0)*w;
-
-  }
-  else{
-
-
-    abcd[0]= d1*(2*f*r(1,0) + h*r(2,0) - 2*f*r(1,1)*slope1 - h*r(1,2)*slope1)*2;
-
-    abcd[1]=  slope1*(4*f2 *t(1) + 2*f*h*t(2) - 4*d1*f2* r(1,2) + d1*h2* r(1,2) + 2*d1*f*h*r(1,1) - 2*d1*f*h*r(2,2)
-    + 4*d1*f*r(1,0)*c0 - 2*d1*f*r(1,0)*w + 2*d1*h*r(2,0)*c0 - d1*h*r(2,0)*w);
-
-    abcd[2]=4*d1*(r(2,0) - r(1,2)*slope1);
-
-    abcd[3]=slope1*(2*f*t(2) - 2*d1*f*r(2,2) + d1*h*r(1,2) + 2*d1*r(2,0)*c0 - d1*r(2,0)*w)*2;
-
-  }
-
-}
-
-float Mapper::coord2FromCoord1(float coord1, Eigen::Vector4f& abcd){
-  float coord2 = (abcd[0]*coord1+abcd[1])/(abcd[2]*coord1+abcd[3]);
-  return coord2;
-}
-
-void Mapper::showRangeStudy(EpipolarLine* ep_line_source, EpipolarLine* ep_line_range, int uvs_idx, float size){
-
-
-    ///////////////////////////////////////
-    Image<cv::Vec3b>* img_source=ep_line_source->createEpipolarImg("source");
-    Image<cv::Vec3b>* img_gt=ep_line_range->createEpipolarImg("gt");
-    Image<cv::Vec3b>* img_query=ep_line_range->createEpipolarImg("query");
-
-    // 1 range with projection
-
-    Eigen::Vector2i pixel_coords;
-    Eigen::Vector2f uv_source= ep_line_source->uvs->at(uvs_idx);
-    ep_line_source->cam->uv2pixelCoords(uv_source, pixel_coords);
-    img_source->setPixel(pixel_coords,black);
-
-    Eigen::Vector3f p;
-    Eigen::Vector2f uv_range;
-
-    float max_depth = ep_line_source->cam->cam_parameters_->max_depth;
-    const cv::Vec3b& cl1=blue;
-
-    float min_depth = ep_line_source->cam->cam_parameters_->min_depth;
-    const cv::Vec3b& cl2=red;
-
-    // project uv at max depth and set pxl
-    ep_line_source->cam->pointAtDepth(uv_source, max_depth, p);
-    ep_line_range->cam->projectPoint(p,uv_range);
-    ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
-    img_gt->setPixel(pixel_coords,cl1);
-    sharedCoutDebug("pxl coords u gt: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
-
-    // project uv at min depth and set pxl
-    ep_line_source->cam->pointAtDepth(uv_source, min_depth, p);
-    ep_line_range->cam->projectPoint(p,uv_range);
-    ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
-    img_gt->setPixel(pixel_coords,cl2);
-    sharedCoutDebug("pxl coords v gt: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
-
-    ////////////////////////////////////////
-
-    // // 2 range with formula
-    float coord_source;
-    ep_line_source->UVToCoord( uv_source, coord_source);
-
-    float coord_range;
-
-    Eigen::Vector4f abcd_m;
-    Eigen::Vector4f abcd_M;
-
-    // min depth
-    getParametersABCD( ep_line_source, ep_line_range, min_depth, abcd_m);
-
-    // max depth
-    getParametersABCD( ep_line_source, ep_line_range, max_depth, abcd_M);
-
-
-    // formula for max depth
-    coord_range=coord2FromCoord1( coord_source, abcd_M);
-    ep_line_range->coordToUV( coord_range, uv_range);
-    ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
-    img_query->setPixel(pixel_coords,cl1);
-    sharedCoutDebug("pxl coords u: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
-
-
-    coord_range = coord2FromCoord1( coord_source, abcd_m);
-    ep_line_range->coordToUV( coord_range, uv_range);
-    ep_line_range->cam->uv2pixelCoords(uv_range, pixel_coords);
-    img_query->setPixel(pixel_coords,cl2);
-    sharedCoutDebug("pxl coords v: "+std::to_string(pixel_coords.x())+", "+std::to_string(pixel_coords.y()));
-
-
-
-
-    /////////////////////////////////////////
-    // hconcat
-    img_source->show(size);
-    img_gt->show(size);
-    img_query->show(size);
 
 }

@@ -42,22 +42,22 @@ slv_u2 = collect(slv_u2,[u1,v1,d1])
 CN = coeffs(N,[u1,v1]);
 CD = coeffs(D,[u1,v1]);
 
-% A=CN(2);
-% B=CN(1);
-% C=CD(2);
-% D=CD(1);
-% A=simplify(A,'Steps',1000);
-% B=simplify(B,'Steps',1000);
-% C=simplify(C,'Steps',1000);
-% D=simplify(D,'Steps',1000);
-% disp("A")
-% pretty(A);
-% disp("B")
-% pretty(B);
-% disp("C")
-% pretty(C);
-% disp("D")
-% pretty(D);
+A=CN(2);
+B=CN(1);
+C=CD(2);
+D=CD(1);
+A=simplify(A,'Steps',1000);
+B=simplify(B,'Steps',1000);
+C=simplify(C,'Steps',1000);
+D=simplify(D,'Steps',1000);
+disp("A")
+pretty(A);
+disp("B")
+pretty(B);
+disp("C")
+pretty(C);
+disp("D")
+pretty(D);
 
 
 
