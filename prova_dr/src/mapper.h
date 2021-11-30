@@ -61,9 +61,10 @@ class CamCouple{
 class Mapper{
 
   public:
-    Mapper(Dtam* dtam, float threshold, int num_candidates):
+    Mapper(Dtam* dtam, float grad_threshold, float cost_threshold, int num_candidates):
       dtam_(dtam),
-      threshold_(threshold),
+      grad_threshold_(grad_threshold),
+      cost_threshold_(cost_threshold),
       num_candidates_(num_candidates)
       {};
 
@@ -73,7 +74,8 @@ class Mapper{
 
   private:
     Dtam* const dtam_;
-    const float threshold_;
+    const float grad_threshold_;
+    const float cost_threshold_;
     const int num_candidates_;
     int current_frame_;
 

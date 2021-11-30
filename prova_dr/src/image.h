@@ -32,11 +32,22 @@ class Image{
       image_ = color;
     }
 
-    inline void show(float image_scale=1, const std::string& name_ext="") const{
+    // inline void show(float image_scale=1, const std::string& name_ext="") const{
+    //   cv::Mat_< T > resized_image;
+    //   cv::resize(image_, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
+    //   cv::imshow(name_+name_ext, resized_image);
+    // }
+
+    inline void show(float image_scale, const std::string& name) const{
       cv::Mat_< T > resized_image;
       cv::resize(image_, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
-      cv::imshow(name_+name_ext, resized_image);
+      cv::imshow(name, resized_image);
     }
+
+    inline void show(float image_scale=1) const{
+      show(image_scale, name_);
+    }
+
     inline void showWithOtherImage(const Image<T>* image_2, float image_scale=1) const{
       cv::Mat_<T> collage;
       cv::hconcat(image_,image_2->image_,collage);
@@ -238,9 +249,9 @@ class Image{
       // cv::rectangle(image_,rect, color, type);
     }
 
-    inline void showImgWithColoredPixel(const Eigen::Vector2i pixel, float size=1) const{
+    inline void showImgWithColoredPixel(const Eigen::Vector2i pixel, float size, const std::string& name) const{
       Image< colorRGB >* out =this->clone();
       out->setPixel( pixel, red);
-      out->show(size);
+      out->show(size, name);
     }
 };

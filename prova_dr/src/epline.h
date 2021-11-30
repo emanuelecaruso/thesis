@@ -23,7 +23,7 @@ class EpipolarLine{
 
     const CameraForMapping* cam; // camera associated to epipolar line
     std::vector<Eigen::Vector2f>* uvs;  // vector of interpoled uvs along epipolar line
-    int uv_idx_colored;  // idx of the uv colored along epipolar line (to plot max)
+    std::vector<int>* uv_idxs_mins;  // idx of the min costs along epipolar line
 
     EpipolarLine( const CameraForMapping* cam_, float slope_, float c_start_, float c_end_, float c0_, int level=-1 ):
     slope( slope_ ),
@@ -34,6 +34,7 @@ class EpipolarLine{
       start=c_start_;
       end=c_end_;
       uvs = new std::vector<Eigen::Vector2f>;
+      uv_idxs_mins = new std::vector<int>;
       lineTraverse(level);
 
     }
@@ -56,7 +57,7 @@ class EpipolarLine{
     }
 
     void printMembers() const;
-    void updateBounds(colorRGB magnitude3C );
+    void updateBounds(Candidate* candidate, float cost_threshold, float grad_threshold );
 
     // show
     void showEpipolar(int level=-1, float size=1);
@@ -65,8 +66,8 @@ class EpipolarLine{
     void showEpipolarComparison(EpipolarLine* ep_line_2, const std::string& name, bool print, float size);
 
 
-    void searchMin(Candidate* candidate );
-    float getCost(colorRGB magnitude3C_r, colorRGB magnitude3C_m,colorRGB color_r, colorRGB color_m );
+    void searchMin(Candidate* candidate, float cost_threshold, float grad_threshold );
+    float getCost(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,const colorRGB& color_r, const colorRGB& color_m );
 
   private:
 

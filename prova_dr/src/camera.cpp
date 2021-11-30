@@ -312,7 +312,7 @@ Image<float>* CameraForStudy::gradientintensity(){
 }
 
 
-void CameraForMapping::collectRegions(float threshold){
+void CameraForMapping::collectRegions(float grad_threshold){
   Wvlt_lvl* wvlt_last_lvl= wavelet_dec_->vector_wavelets->back();
 
   int levels= wavelet_dec_->levels_;
@@ -347,9 +347,14 @@ void CameraForMapping::collectRegions(float threshold){
             Eigen::Vector2f uv;
             pixelCoords2uv(pixel_coords, uv, level);
 
-            if(magnitude>threshold){
+            if(magnitude>grad_threshold){
+              std::cout << name_ << ": "<< magnitude << std::endl;
               Candidate* candidate = new Candidate(level,pixel_coords,uv,magnitude,
                                                    min_depth, max_depth,magnitude3C, c  );
+
+              // std::vector<bound>* bounds = new std::vector<bound>{ ( min_depth, max_depth ) };
+              // Candidate* candidate = new Candidate(level,pixel_coords,uv,magnitude,
+              //                                      ,magnitude3C, c, bounds );
 
               auto it = std::lower_bound(reg->begin(), reg->end(), magnitude, lb_cmp);
 

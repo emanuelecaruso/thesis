@@ -60,38 +60,76 @@ void EpipolarLine::lineTraverse(int level)
     }
 }
 
-float EpipolarLine::getCost(colorRGB magnitude3C_r, colorRGB magnitude3C_m,colorRGB color_r, colorRGB color_m){
+float EpipolarLine::getCost(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,const colorRGB& color_r, const colorRGB& color_m) {
   float cost_magn = abs(magnitude3C_r[0]-magnitude3C_m[0])+abs(magnitude3C_r[1]-magnitude3C_m[1])+abs(magnitude3C_r[2]-magnitude3C_m[2]);
-  float cost_col = abs(color_r[0]-color_m[0])+abs(color_r[1]-color_m[1])+abs(color_r[2]-color_m[2]);
+  // float cost_col = abs(color_r[0]-color_m[0])+abs(color_r[1]-color_m[1])+abs(color_r[2]-color_m[2]);
   return cost_magn;
   // return cost_magn+cost_col;
 }
 
-void EpipolarLine::updateBounds(colorRGB magnitude3C ){
+void EpipolarLine::updateBounds(Candidate* candidate, float cost_threshold, float grad_threshold ){
+  searchMin( candidate, cost_threshold, grad_threshold );
 
 }
 
-void EpipolarLine::searchMin(Candidate* candidate ){
+void EpipolarLine::searchMin(Candidate* candidate, float cost_threshold, float grad_threshold ){
   // iterate through uvs
-  float min_cost = FLT_MAX;
+  float prev_cost = FLT_MAX;
   int min_uv_idx;
+
+  colorRGB color_r = candidate->color_;
+  float magnitude_r = candidate->grad_magnitude_;
+  colorRGB magnitude3C_r = candidate->grad3C_magnitude_;
+  // cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(candidate->pixel_, magnitude_m);
+
   // for(Eigen::Vector2f uv : *uvs){
+
+  bool sign=true;
+
   for(int i=0; i<uvs->size(); i++){
     Eigen::Vector2f uv = uvs->at(i);
     Eigen::Vector2i pixel;
     cam->uv2pixelCoords(uv,pixel,candidate->level_);
+
+    colorRGB color_m;
+    float magnitude_m;
     colorRGB magnitude3C_m;
-    colorRGB color;
+
+    if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(pixel, magnitude_m))
+    {
+      // if(magnitude_m<magnitude_r*0.5 || !prev_good){
+      if(magnitude_m<magnitude_r*0.8){
+        if(sign && prev_cost<(magnitude_r*cost_threshold)){
+          uv_idxs_mins->push_back(i-1);
+        }
+        sign=false;
+        prev_cost = FLT_MAX;
+
+        continue;
+      }
+
+    }
+
     if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude3C_img->evalPixel(pixel, magnitude3C_m))
     {
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, color);
-      float cost = getCost(candidate->grad3C_magnitude_,magnitude3C_m, candidate->color_,color );
-      if (cost<min_cost){
-        min_cost=cost;
-        uv_idx_colored=i;
+
+
+
+      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, color_m);
+      float cost = getCost(magnitude3C_r,magnitude3C_m, color_r,color_m );
+      if (cost<prev_cost){
+        sign=true;
       }
+      else{
+        if(sign && prev_cost<(magnitude_r*cost_threshold)){
+          uv_idxs_mins->push_back(i-1);
+        }
+        sign=false;
+      }
+      prev_cost = cost;
     }
   }
+  // std::cout << prev_cost << std::endl;
 
 
 }
@@ -105,11 +143,15 @@ void EpipolarLine::showEpipolar(int level,float size){
 
 void EpipolarLine::showEpipolarWithMin(int level,float size){
     Image<colorRGB>* image_rgb_new = createEpipolarImg(level);
-    Eigen::Vector2i pixel;
-    cam->uv2pixelCoords(uvs->at(uv_idx_colored),pixel,level);
 
-    image_rgb_new->setPixel(pixel,blue);
-    image_rgb_new->show(size*(pow(2,level+1)));
+    if(!uv_idxs_mins->empty()){
+      for (int idx : *uv_idxs_mins){
+        Eigen::Vector2i pixel;
+        cam->uv2pixelCoords(uvs->at(idx),pixel,level);
+        image_rgb_new->setPixel(pixel,blue);
+      }
+    }
+    image_rgb_new->show(size*(pow(2,level+1)), cam->name_);
 }
 
 void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2, bool print=false, float size=1){

@@ -56,4 +56,5 @@ void KeyframeHandler::marginalize_keyframe_select(){
 
 void KeyframeHandler::push_keyframe(){
   dtam_->keyframe_vector_->push_back(dtam_->frame_current_);
+  sharedCoutDebug("   - Keyframe added (frame "+ std::to_string(dtam_->frame_current_) +")");
 }

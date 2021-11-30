@@ -16,6 +16,7 @@ int main (int argc, char * argv[]) {
   // parameters
   int wavelet_levels=4;
   float gradient_threshold = 1;
+  float cost_threshold = 0.3;
   // int num_candidates = 0;
   int num_candidates = 1000;
   // int num_candidates = 10000;
@@ -25,7 +26,7 @@ int main (int argc, char * argv[]) {
   // initialization
   Environment* environment = new Environment(path_name,
                     dataset_name, wavelet_levels); // environment generator object (pointer)
-  Dtam* dtam = new Dtam(environment, gradient_threshold,
+  Dtam* dtam = new Dtam(environment, gradient_threshold, cost_threshold,
             num_candidates,num_active_keyframes,wavelet_levels); // dense mapper and tracker
 
   //############################################################################

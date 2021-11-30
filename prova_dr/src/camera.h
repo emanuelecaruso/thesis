@@ -7,7 +7,7 @@
 
 using namespace pr;
 
-typedef std::pair<float,float> depthRange;
+typedef std::pair<float,float> bound;
 
 class Candidate{
   public:
@@ -21,6 +21,15 @@ class Candidate{
       min_depth_=min_depth;
     }
 
+    // Candidate(int level, Eigen::Vector2i pixel, Eigen::Vector2f uv,
+    //           float grad_magnitude, colorRGB grad3C_magnitude, colorRGB color,
+    //           std::vector<bound>* bounds):
+    // level_(level), pixel_(pixel), uv_(uv), grad_magnitude_(grad_magnitude),
+    // grad3C_magnitude_(grad3C_magnitude), color_(color)
+    // {
+    //   bounds=bounds_;
+    // }
+
     const int level_;
     const Eigen::Vector2i pixel_;
     const Eigen::Vector2f uv_;
@@ -29,6 +38,7 @@ class Candidate{
     const colorRGB color_;
     float min_depth_;
     float max_depth_;
+    std::vector<bound>* bounds_;
 
 
 };
@@ -244,7 +254,7 @@ class CameraForMapping: public Camera{
            };
 
   private:
-    void collectRegions(float threshold);
+    void collectRegions(float grad_threshold);
     void selectNewCandidates(int max_num_candidates);
     void showCandidates_1(float size);
     void showCandidates_2(float size);

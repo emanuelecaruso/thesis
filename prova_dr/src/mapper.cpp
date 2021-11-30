@@ -136,9 +136,9 @@ void CamCouple::showEpSegment(Candidate* candidate){
 void Mapper::selectNewCandidates(){
   int idx=dtam_->keyframe_vector_->back();
   CameraForMapping* cam_r= dtam_->camera_vector_->at(idx);
-  cam_r->collectRegions(threshold_);
+  cam_r->collectRegions(grad_threshold_);
   cam_r->selectNewCandidates(num_candidates_);
-
+  sharedCoutDebug("   - New candidates added");
 }
 
 
@@ -151,25 +151,38 @@ EpipolarLine* CamCouple::trackCandidate(Candidate* candidate){
 void Mapper::trackExistingCandidates(){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  sharedCoutDebug("   - tracking existing candidates");
 
   //iterate through active keyframes
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
+
     int idx = dtam_->keyframe_vector_->at(i);
+
+    sharedCoutDebug("      - keyframe "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->size()-1)+
+                    " (frame "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->back())+")");
+
     CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
+
+    // std::cout << keyframe->name_ << " on " << last_keyframe->name_ << std::endl;
+    // sharedCoutDebug(std::to_string(keyframe->name_));
+    // sharedCoutDebug(" on ");
+    // sharedCoutDebug(std::to_string(last_keyframe->name_));
 
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
     // iterate through all candidates
+
     for(Candidate* cand : *(keyframe->candidates_)){
+
       // compute epipolar segment of candidate in new keyframe
       EpipolarLine* epSegment = cam_couple->trackCandidate(cand);
-      epSegment->searchMin(cand );
+      epSegment->updateBounds(cand, cost_threshold_ , grad_threshold_);
 
       epSegment->showEpipolarWithMin(cand->level_);
-      keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1));
+      keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
+      cv::waitKey(0);
 
       // cam_couple->compareEpSegmentWithGt(cand);
       // cam_couple->showEpSegment(cand);
-      cv::waitKey(0);
     }
 
   }

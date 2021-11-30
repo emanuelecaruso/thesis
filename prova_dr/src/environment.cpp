@@ -76,10 +76,13 @@ std::vector<CameraForStudy*>* Environment::loadCameraVector(const std::string& p
     if( stat( path_depth, &info__ ) != 0 ){
       CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_, wavelet_levels_ );
       camera_vector->push_back(camera);
+      std::cout << camera->name_ << " added in env" << std::endl;
     }
     else{
       CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_, path_depth_, wavelet_levels_);
       camera_vector->push_back(camera);
+      std::cout << camera->name_ << " added in env" << std::endl;
+
     }
 
   }

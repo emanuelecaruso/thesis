@@ -13,11 +13,11 @@
 
 class Dtam{
   public:
-    Dtam(Environment* environment, float grad_threshold,
+    Dtam(Environment* environment, float grad_threshold, float cost_threshold,
           int num_candidates, int num_active_keyframes, int wavelet_levels) :
     environment_(environment),
     keyframe_handler_(new KeyframeHandler(this, num_active_keyframes)),
-    mapper_(new Mapper(this,grad_threshold,num_candidates)),
+    mapper_(new Mapper(this,grad_threshold, cost_threshold, num_candidates)),
     tracker_(new Tracker(this)),
     bundle_adj_(new BundleAdj(this)),
     wavelet_levels_(wavelet_levels)
@@ -62,7 +62,7 @@ class Dtam{
     std::thread tracking_thread_;
 
 
-    void addCamera();
+    void addCamera(int counter);
 
     void updateCamerasFromEnvironment();
     void updateCamerasFromVideostream();

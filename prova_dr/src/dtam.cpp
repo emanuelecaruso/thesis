@@ -23,9 +23,9 @@ void Dtam::debugAllCameras(bool show_imgs){
   cv::waitKey(0);
 }
 
-void Dtam::addCamera(){
+void Dtam::addCamera(int counter){
 
-  CameraForStudy* env_cam=environment_->camera_vector_->at(frame_current_);
+  CameraForStudy* env_cam=environment_->camera_vector_->at(counter);
   CameraForMapping* new_cam=new CameraForMapping (env_cam, wavelet_levels_);
 
   camera_vector_->push_back(new_cam);
@@ -50,8 +50,14 @@ void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
     double t_start=getTime();
 
     frame_current_=camera_vector_->size()-1;
-    if(frame_current_<=0)
+    sharedCoutDebug("Frame current: "+std::to_string(frame_current_));
+
+    if(frame_current_==0){
+      tracker_->trackCam(takeGtPoses);
+      keyframe_handler_->addKeyframe(all_keyframes);
+      mapper_->selectNewCandidates();
       continue;
+    }
 
     sharedCoutDebug("Initialization of frame: "+std::to_string(frame_current_)+" ...");
 
@@ -93,7 +99,7 @@ void Dtam::updateCamerasFromEnvironment(){
     double t_start=getTime();
 
     sharedCout("\nFrame: "+ std::to_string(counter));
-    addCamera();
+    addCamera(counter);
 
     frame_updated_.notify_one();
 
@@ -129,14 +135,16 @@ void Dtam::test_mapping(){
 
 
   initialization_thread.join();
-  // mapping_thread_.detach();
+  // initialization_thread.detach();
   update_cameras_thread_.join();
 
   // debugAllCameras();
 
 
-  camera_vector_->at(keyframe_vector_->back())->showCandidates_1(2);
-  camera_vector_->at(keyframe_vector_->back())->showCandidates_2(2);
+  // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"0");
+  // camera_vector_->at(1)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"1");
+  // camera_vector_->at(keyframe_vector_->back())->showCandidates_1(2);
+  // camera_vector_->at(keyframe_vector_->back())->showCandidates_2(2);
   cv::waitKey(0);
 
 
