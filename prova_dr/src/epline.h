@@ -13,8 +13,8 @@ class EpipolarLine{
     // line parameters
 
     // defines wether start, end and x0 are expressed as  u or v coordinate, true->u, false->v
-    const bool u_or_v;
     const float slope;  // slope of the line
+    const bool u_or_v;
     const float c0;     // v at u=0, or u at v=0
 
     // slope is kept const, start and end can be moved
@@ -29,14 +29,12 @@ class EpipolarLine{
     slope( slope_ ),
     u_or_v( (slope_<1 && slope_>-1) ),
     c0( c0_ ),
-    cam(cam_)
+    cam(cam_),
+    start(c_start_), end(c_end_),
+    uvs(new std::vector<Eigen::Vector2f>),
+    uv_idxs_mins(new std::vector<int>)
     {
-      start=c_start_;
-      end=c_end_;
-      uvs = new std::vector<Eigen::Vector2f>;
-      uv_idxs_mins = new std::vector<int>;
       lineTraverse(level);
-
     }
 
     EpipolarLine( const CameraForMapping* cam_, float slope_, float c_start_,
@@ -46,8 +44,8 @@ class EpipolarLine{
 
     EpipolarLine( const CameraForMapping* cam_, Eigen::Vector2f& start_, Eigen::Vector2f& end_, int level=-1):
     slope( (end_-start_).y()/(end_-start_).x() ),
-    u_or_v( computeUOrV(start_, end_) ),
-    c0( computeC0(start_, end_) ),
+    u_or_v( (slope<1 && slope>-1) ),
+    c0( u_or_v ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ),
     cam(cam_)
     {
       UVToCoord(start_,start);
@@ -57,7 +55,6 @@ class EpipolarLine{
     }
 
     void printMembers() const;
-    void updateBounds(Candidate* candidate, float cost_threshold, float grad_threshold );
 
     // show
     void showEpipolar(int level=-1, float size=1);
@@ -84,17 +81,17 @@ class EpipolarLine{
     Image<colorRGB>* createRangeStudyImg();
 
 
-    inline bool computeUOrV(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
-      float slope_ = (end_-start_).y()/(end_-start_).x();
-      bool out = (slope_<1 && slope_>-1);
-      return out;
-    }
-    inline float computeC0(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
-      float slope_ = (end_-start_).y()/(end_-start_).x();
-      bool u_or_v_ = computeUOrV(start_, end_);
-      float out = u_or_v_ ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ;
-      return out;
-    }
+    // inline bool computeUOrV(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
+    //   float slope_ = (end_-start_).y()/(end_-start_).x();
+    //   bool out = (slope<1 && slope>-1);
+    //   return out;
+    // }
+    // inline float computeC0(Eigen::Vector2f& start_, Eigen::Vector2f& end_){
+    //   float slope_ = (end_-start_).y()/(end_-start_).x();
+    //   bool u_or_v_ = computeUOrV(start_, end_);
+    //   float out = u_or_v_ ? start_.y()-slope*start_.x() : start_.x()-start_.y()/slope ;
+    //   return out;
+    // }
     inline float computeC0(Eigen::Vector2f& p, float slope_){
       bool u_or_v_ = (slope_<1 && slope_>-1);
       float out = u_or_v_ ? p.y()-slope_*p.x() : p.x()-p.y()/slope_ ;

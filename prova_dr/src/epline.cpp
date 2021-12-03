@@ -67,10 +67,6 @@ float EpipolarLine::getCost(const colorRGB& magnitude3C_r, const colorRGB& magni
   // return cost_magn+cost_col;
 }
 
-void EpipolarLine::updateBounds(Candidate* candidate, float cost_threshold, float grad_threshold ){
-  searchMin( candidate, cost_threshold, grad_threshold );
-
-}
 
 void EpipolarLine::searchMin(Candidate* candidate, float cost_threshold, float grad_threshold ){
   // iterate through uvs
@@ -133,6 +129,9 @@ void EpipolarLine::searchMin(Candidate* candidate, float cost_threshold, float g
 
 
 }
+
+
+
 
 
 // show

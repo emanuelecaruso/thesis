@@ -39,7 +39,7 @@ disp("u2")
 expr2 = mlt(1) == a(1);
 slv_u2 = solve(expr2,u2);
 slv_u2 = subs(slv_u2,d2,slv_d2);
-slv_u2 = collect(slv_u2,[u1,v1,d1]);
+slv_u2 = collect(slv_u2,[u1,v1,d1])
 
 [N,D] = numden(slv_u2);
 CN = coeffs(N,[u1,v1,d1]);

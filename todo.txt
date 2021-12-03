@@ -2,3 +2,5 @@
 - cv::Mat pointer in image.h
 - synchronize better threads
 - why thread keeps going during showing of epSegments?
+- better class distribution
+- cam parameters get pixel width

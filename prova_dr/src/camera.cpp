@@ -144,6 +144,15 @@ bool Camera::projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv )
 
 }
 
+bool Camera::projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv, float& p_cam_z  ) const {
+
+  Eigen::Vector3f p = cam_to_be_projected->frame_camera_wrt_world_->translation();
+
+  bool out = projectPoint(p, uv, p_cam_z);
+  return out;
+
+}
+
 void Camera::saveRGB(const std::string& path) const {
   cv::imwrite(path+ "/rgb_" +name_+".png", image_rgb_->image_);
 }
@@ -348,13 +357,11 @@ void CameraForMapping::collectRegions(float grad_threshold){
             pixelCoords2uv(pixel_coords, uv, level);
 
             if(magnitude>grad_threshold){
-              std::cout << name_ << ": "<< magnitude << std::endl;
-              Candidate* candidate = new Candidate(level,pixel_coords,uv,magnitude,
-                                                   min_depth, max_depth,magnitude3C, c  );
 
-              // std::vector<bound>* bounds = new std::vector<bound>{ ( min_depth, max_depth ) };
-              // Candidate* candidate = new Candidate(level,pixel_coords,uv,magnitude,
-              //                                      ,magnitude3C, c, bounds );
+              bound bound_(min_depth,max_depth);
+              std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
+              Candidate* candidate = new Candidate(level,pixel_coords,uv,magnitude,
+                                                   magnitude3C, c, bounds );
 
               auto it = std::lower_bound(reg->begin(), reg->end(), magnitude, lb_cmp);
 

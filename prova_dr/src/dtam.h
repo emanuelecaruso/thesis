@@ -20,12 +20,12 @@ class Dtam{
     mapper_(new Mapper(this,grad_threshold, cost_threshold, num_candidates)),
     tracker_(new Tracker(this)),
     bundle_adj_(new BundleAdj(this)),
-    wavelet_levels_(wavelet_levels)
-    {
-      frame_current_=0;
-      camera_vector_= new std::vector<CameraForMapping*>;
-      keyframe_vector_= new std::vector<int>;
-    };
+    wavelet_levels_(wavelet_levels),
+    camera_vector_(new std::vector<CameraForMapping*>),
+    keyframe_vector_(new std::vector<int>),
+    frame_current_(0)
+
+    { };
 
 
     void test_mapping();
@@ -43,16 +43,15 @@ class Dtam{
     Mapper* const mapper_;
     Tracker* const tracker_;
     BundleAdj* const bundle_adj_;
+    const int wavelet_levels_;
+    std::vector<CameraForMapping*>* camera_vector_;
+    std::vector<int>* keyframe_vector_;
+    int frame_current_;
 
     friend class BundleAdj;
     friend class KeyframeHandler;
     friend class Mapper;
     friend class Tracker;
-
-    const int wavelet_levels_;
-    std::vector<CameraForMapping*>* camera_vector_;
-    std::vector<int>* keyframe_vector_;
-    int frame_current_;
 
     std::mutex mu_frame_;
     std::condition_variable frame_updated_;

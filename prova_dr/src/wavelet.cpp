@@ -51,7 +51,6 @@ Image<colorRGB>* Wvlt_lvl::getMagnitude3C(const Image<colorRGB>* dh,
 void Wvlt_lvl::WaveletDecHaar(const Image<colorRGB>* img){
   c=new Image<colorRGB>("c");
 
-  dd=new Image<colorRGB>("dd");
   dh=new Image<colorRGB>("dh");
   dv=new Image<colorRGB>("dv");
   magnitude3C_img=new Image<colorRGB>("magnitude3C");
@@ -66,9 +65,6 @@ void Wvlt_lvl::WaveletDecHaar(const Image<colorRGB>* img){
   magnitude_img->initImage(height/2, width/2);
   dh->initImage(height/2, width/2);
   dv->initImage(height/2, width/2);
-
-  dd->initImage(height/2, width/2);
-  dd->setAllPixels(black);
 
 
   for (int y=0;y<(height/2);y++)
@@ -95,16 +91,11 @@ void Wvlt_dec::showWaveletDec(const std::string& name, float size){
   Image<colorRGB>* out = new Image<colorRGB>(name);
   int cols=image_->image_.cols;
   int rows=image_->image_.rows;
-  // initImage(rows, cols);
 
 
-  // Wvlt_lvl* wvlt_curr=vector_wavelets->at(levels_-1);
   out->image_= vector_wavelets->at(levels_-1)->c->image_;
 
-  // unsigned char offset=UCHAR_MAX/2;
   float offset=0.5;
-  // out->image_= wvlt_curr->c->image_;
-
 
   for (int i=levels_-1; i>=0; i--){
     int cur_rows=rows>>i;
