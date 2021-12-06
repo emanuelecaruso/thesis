@@ -10,6 +10,9 @@ using namespace pr;
 typedef std::pair<float,float> bound;
 
 class ActivePoint{
+  public:
+
+    ActivePoint(){}
 
 };
 
@@ -37,8 +40,9 @@ class Candidate{
     std::vector<bound>* bounds_;
     bool ready_;
 
-
 };
+
+
 
 typedef std::vector<Candidate*> Region;
 

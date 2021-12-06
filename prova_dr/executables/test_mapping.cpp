@@ -22,7 +22,7 @@ int main (int argc, char * argv[]) {
   float cost_threshold = 0.2;
   int num_candidates = 4650;
   // int num_candidates = INT_MAX;
-  int num_active_keyframes = 5;
+  int num_active_keyframes = 7;
   float max_depth_var = 0.2; // maximum depth variance for the initilizer
 
 
@@ -44,7 +44,7 @@ int main (int argc, char * argv[]) {
   // dtam->testFeatures();
   // cv::waitKey(0);
 
-  cout << "Press Enter to exit"<< endl;
+  cout << "\nPress Enter to exit"<< endl;
   cin.ignore();
   // // --------------------------------------
   return 1;

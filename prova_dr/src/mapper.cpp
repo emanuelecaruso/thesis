@@ -207,6 +207,7 @@ bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
     candidate->bounds_->push_back(bound_);
 
   }
+
   return 1;
 
 }
@@ -214,7 +215,7 @@ bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 void Mapper::trackExistingCandidates(){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
-  sharedCoutDebug("   - tracking existing candidates");
+  sharedCoutDebug("   - Tracking existing candidates");
 
   int num_of_ready_candidates=0;
 
@@ -223,17 +224,17 @@ void Mapper::trackExistingCandidates(){
 
     int idx = dtam_->keyframe_vector_->at(i);
 
-    sharedCoutDebug("      - keyframe "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->size()-1)+
+    sharedCoutDebug("      - Keyframe "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->size()-1)+
                     " (frame "+std::to_string(idx)+" on "+std::to_string(dtam_->keyframe_vector_->back())+")");
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
 
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
 
-    sharedCoutDebug("         - n. candidates: "+std::to_string(keyframe->candidates_->size()));
+    sharedCoutDebug("         - N. candidates: "+std::to_string(keyframe->candidates_->size()));
 
     bool keep_cand = false;
-    // bool flag = 1;
+    bool flag = 1;
 
     // keyframe->showCandidates_2(2);
     // cv::waitKey(0);
@@ -250,15 +251,16 @@ void Mapper::trackExistingCandidates(){
         continue;
       }
 
+      int bounds_size =cand->bounds_->size();
       // iterate along all bounds
-      for(int j=0; j<cand->bounds_->size(); j++){
+      for(int j=0; j<bounds_size; j++){
 
         EpipolarLine* ep_segment = cam_couple->trackCandidate(cand, j);
         ep_segment->searchMin(cand, parameters_);
 
         // if (dtam_->frame_current_==1){
         // if (flag){
-        //   if(j==bounds_size-1)
+        //   if(j==cand->bounds_->size()-1)
         //     flag=0;
         //   ep_segment->showEpipolarWithMin(cand->level_);
         //   keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
@@ -269,29 +271,24 @@ void Mapper::trackExistingCandidates(){
         // cam_couple->compareEpSegmentWithGt(cand);
         // cam_couple->showEpSegment(cand);
 
-
-        if(!updateBounds(cand,ep_segment,cam_couple)){
-          // remove bound
-          // cand->bounds_->erase(cand->bounds_->begin()+j);
-          // j--;
-          continue;
-        }
-        else
+        if(updateBounds(cand,ep_segment,cam_couple)){
           keep_cand=true;
+        }
+
       }
       if (keep_cand)
-        cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+cand->bounds_->size());
-      // else{
-      //   keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
-      //   k--;
-      //   delete cand;
-      // }
+        cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
+      else{
+        keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
+        k--;
+        delete cand;
+      }
 
 
     }
 
   }
-  sharedCoutDebug("   - num of ready candidates: "+ std::to_string(num_of_ready_candidates));
+  sharedCoutDebug("   - Num of ready candidates: "+ std::to_string(num_of_ready_candidates));
 
 }
 
@@ -325,35 +322,4 @@ bool Mapper::initializeCandidates(const CameraForMapping* cam_r,
 
 
   return false;
-}
-
-void Mapper::doMapping(){
-
-  // int frame_idx_r;
-  // int frame_idx_m;
-  //
-  // while(true){
-  //   // frameCouplingRandom(frame_idx_r, frame_idx_m );
-  //   // frameCouplingLast(frame_idx_r, frame_idx_m );
-  //   frameCouplingOpposite(frame_idx_r, frame_idx_m );
-  //   // sharedCoutDebug("chosen frames: "+std::to_string(frame_idx_r)+ " " +std::to_string(frame_idx_m));
-  //
-  //   CameraForMapping* cam_r = dtam_->camera_vector_->at(frame_idx_r);
-  //   CameraForMapping* cam_m = dtam_->camera_vector_->at(frame_idx_m);
-  //   EpipolarLine* ep_line_r; EpipolarLine* ep_line_m;
-  //
-  //
-  //
-  //   // float size = 1;
-  //   // float size = 1.3;
-  //   // float size = 2;
-  //   // locker.lock();
-  //   //
-  //   // cam_r->showCandidates_1(size);
-  //   // cv::waitKey(0);
-  //   // // cv::destroyAllWindows();
-  //   // locker.unlock();
-  //
-  // }
-
 }

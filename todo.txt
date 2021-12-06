@@ -4,3 +4,4 @@
 - better class distribution
 - check well TODO (camera.cpp)
 - multiscale searching
+- regions separate

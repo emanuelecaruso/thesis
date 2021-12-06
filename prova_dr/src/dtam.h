@@ -37,6 +37,7 @@ class Dtam{
     void debugAllCameras(bool show_imgs=false);
     int getFrameCurrent();
     void waitForNewFrame();
+    void waitForTrackedCandidates();
 
 
   private:
@@ -57,6 +58,7 @@ class Dtam{
 
     std::mutex mu_frame_;
     std::condition_variable frame_updated_;
+    std::condition_variable cand_tracked_;
 
     std::thread update_cameras_thread_;
     std::thread mapping_thread_;
@@ -68,8 +70,8 @@ class Dtam{
     void updateCamerasFromEnvironment();
     void updateCamerasFromVideostream();
     void doMapping();
-    void doInitialization(bool all_keyframes=false, bool takeGtPoses=false);
-    void doOptimization();
+    void doInitialization(bool all_keyframes=false, bool take_gt_poses=false);
+    void doOptimization(bool active_all_candidates=false);
     void doTracking();
     void showFeatures(int idx, float size);
 

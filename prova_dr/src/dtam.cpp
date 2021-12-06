@@ -41,8 +41,13 @@ void Dtam::waitForNewFrame(){
   locker.unlock();
 }
 
+void Dtam::waitForTrackedCandidates(){
+  std::unique_lock<std::mutex> locker(mu_frame_);
+  cand_tracked_.wait(locker);
+  locker.unlock();
+}
 
-void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
+void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
   while(true){
 
     if(frame_current_==camera_vector_->size()-1)
@@ -54,7 +59,7 @@ void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
     sharedCoutDebug("Frame current: "+std::to_string(frame_current_));
 
     if(frame_current_==0){
-      tracker_->trackCam(takeGtPoses);
+      tracker_->trackCam(take_gt_poses);
       keyframe_handler_->addKeyframe(all_keyframes);
       mapper_->selectNewCandidates();
       continue;
@@ -62,10 +67,11 @@ void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
 
     sharedCoutDebug("Initialization of frame: "+std::to_string(frame_current_)+" ...");
 
-    tracker_->trackCam(takeGtPoses);
+    tracker_->trackCam(take_gt_poses);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
-      bundle_adj_->projectAndMarginalizeActivePoints();
+      // bundle_adj_->projectAndMarginalizeActivePoints();
       mapper_->trackExistingCandidates();
+      cand_tracked_.notify_all();
       mapper_->selectNewCandidates();
       // bundle_adj_->activateNewPoints(); in other thread
       // bundle_adj_->optimize(); in other thread
@@ -78,13 +84,13 @@ void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
 
 }
 
-void Dtam::doOptimization(){
+void Dtam::doOptimization(bool active_all_candidates){
+  while(true){
 
+    bundle_adj_->activateNewPoints(active_all_candidates);
+  }
 }
 
-void Dtam::doMapping(){
-  mapper_->doMapping();
-}
 
 void Dtam::doTracking(){
 
@@ -104,7 +110,7 @@ void Dtam::updateCamerasFromEnvironment(){
     sharedCout("\nFrame: "+ std::to_string(counter));
     addCamera(counter);
 
-    frame_updated_.notify_one();
+    frame_updated_.notify_all();
 
     double t_end=getTime();
     locker.unlock();
@@ -128,19 +134,17 @@ void Dtam::updateCamerasFromEnvironment(){
 
 void Dtam::test_mapping(){
 
-  bool takeGtPoses=true;
-  bool allKeyframes=true;
+  bool take_gt_poses=true;
+  bool all_keyframes=true;
+  bool active_all_candidates=true;
 
-  std::thread optimization_thread(&Dtam::doOptimization, this);
-  std::thread initialization_thread(&Dtam::doInitialization, this, allKeyframes, takeGtPoses);
+  std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
+  std::thread initialization_thread(&Dtam::doInitialization, this, all_keyframes, take_gt_poses);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
-  // std::thread track
-  // std::thread mapping_thread_(&Dtam::doMapping, this);
 
 
   optimization_thread.detach();
   initialization_thread.detach();
-  // initialization_thread.detach();
   update_cameras_thread_.join();
 
   // debugAllCameras();

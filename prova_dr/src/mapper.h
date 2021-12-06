@@ -66,7 +66,6 @@ class Mapper{
       parameters_(parameters)
       {};
 
-    void doMapping();
     void selectNewCandidates();
     void trackExistingCandidates();
 
