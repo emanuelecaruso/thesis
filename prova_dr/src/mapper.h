@@ -38,6 +38,9 @@ class CamCouple{
 
     EpipolarLine* trackCandidate(Candidate* candidate, int bound_idx);
 
+    void getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v);
+    void getBound(float u1, float v1, float d1, float& bound, bool u_or_v);
+    void getDepth(float u1, float v1, float& d1, float u2, bool u_or_v);
   private:
     //Parameters for slope
     float A_s,B_s,C_s, D_s,E_s,F_s;
@@ -49,9 +52,7 @@ class CamCouple{
     void getSlopeParameters();
     void getBoundsParameters();
     void getSlope(float u1, float v1, float& slope_m);
-    void getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v);
-    void getBound(float u1, float v1, float d1, float& bound, bool u_or_v);
-    void getDepth(float u1, float v1, float& d1, float u2, bool u_or_v);
+
 
 
 
@@ -60,12 +61,9 @@ class CamCouple{
 class Mapper{
 
   public:
-    Mapper(Dtam* dtam, float grad_threshold, float cost_threshold, int num_candidates):
+    Mapper(Dtam* dtam, Params* parameters):
       dtam_(dtam),
-      grad_threshold_(grad_threshold),
-      cost_threshold_(cost_threshold),
-      num_candidates_(num_candidates),
-      current_frame_(0)
+      parameters_(parameters)
       {};
 
     void doMapping();
@@ -74,15 +72,12 @@ class Mapper{
 
   private:
     Dtam* const dtam_;
-    const float grad_threshold_;
-    const float cost_threshold_;
-    const int num_candidates_;
-    int current_frame_;
+    Params* const parameters_;
 
 
     bool initializeCandidates(const CameraForMapping* cam_r,
                             const CameraForMapping* cam_m, int& current_r_idx);
 
-    void updateBounds(Candidate* candidate, EpipolarLine* ep_line);
+    bool updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple);
 
 };

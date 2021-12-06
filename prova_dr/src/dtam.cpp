@@ -45,11 +45,12 @@ void Dtam::waitForNewFrame(){
 void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
   while(true){
 
-    waitForNewFrame();
+    if(frame_current_==camera_vector_->size()-1)
+      waitForNewFrame();
 
     double t_start=getTime();
 
-    frame_current_=camera_vector_->size()-1;
+    frame_current_++;
     sharedCoutDebug("Frame current: "+std::to_string(frame_current_));
 
     if(frame_current_==0){
@@ -66,16 +67,18 @@ void Dtam::doInitialization(bool all_keyframes, bool takeGtPoses){
       bundle_adj_->projectAndMarginalizeActivePoints();
       mapper_->trackExistingCandidates();
       mapper_->selectNewCandidates();
-      bundle_adj_->activateNewPoints();
+      // bundle_adj_->activateNewPoints(); in other thread
       // bundle_adj_->optimize(); in other thread
     }
     double t_end=getTime();
     int deltaTime=(t_end-t_start);
     sharedCoutDebug("Initialization of frame: "+std::to_string(frame_current_)+", time: "+ std::to_string(deltaTime)+" ms");
 
-
   }
 
+}
+
+void Dtam::doOptimization(){
 
 }
 
@@ -128,13 +131,15 @@ void Dtam::test_mapping(){
   bool takeGtPoses=true;
   bool allKeyframes=true;
 
+  std::thread optimization_thread(&Dtam::doOptimization, this);
   std::thread initialization_thread(&Dtam::doInitialization, this, allKeyframes, takeGtPoses);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
   // std::thread track
   // std::thread mapping_thread_(&Dtam::doMapping, this);
 
 
-  initialization_thread.join();
+  optimization_thread.detach();
+  initialization_thread.detach();
   // initialization_thread.detach();
   update_cameras_thread_.join();
 

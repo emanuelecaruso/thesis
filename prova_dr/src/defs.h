@@ -233,11 +233,13 @@ namespace pr {
     const float lens;
     const float min_depth;
     const float max_depth;
+    const float pixel_width;
 
     CamParameters(int resolution_x_, int resolution_y_,
       float width_,float height_,float aspect_,float lens_,float min_depth_,float max_depth_):
     resolution_x(resolution_x_), resolution_y(resolution_y_), width(width_), height(height_),
-    aspect(aspect_), lens(lens_), min_depth(min_depth_), max_depth(max_depth_)
+    aspect(aspect_), lens(lens_), min_depth(min_depth_), max_depth(max_depth_),
+    pixel_width(width/(float)resolution_x)
     { };
 
     void printMembers() const {
@@ -264,6 +266,30 @@ namespace pr {
   // typedef cv::Vec3b colorRGB;
   // const float colorRGB_maxval = 255;
   // const int colorRGB_CODE = CV_8UC3;
+
+struct Params{
+
+  int wavelet_levels;
+  float grad_threshold;
+  float grad_perc_threshold;
+  float cost_threshold;
+  int num_candidates;
+  int num_active_keyframes;
+  float max_depth_var;
+
+  Params(int wavelet_levels_, float grad_threshold_, float grad_perc_threshold_,
+         float cost_threshold_, int num_candidates_, int num_active_keyframes_,
+         float max_depth_var_):
+         wavelet_levels(wavelet_levels_),
+         grad_threshold(grad_threshold_),
+         grad_perc_threshold(grad_perc_threshold_),
+         cost_threshold(cost_threshold_),
+         num_candidates(num_candidates_),
+         num_active_keyframes(num_active_keyframes_),
+         max_depth_var(max_depth_var_)
+         {}
+
+};
 
   struct Cp // Colored point (in 3D)
   {

@@ -33,14 +33,19 @@ void Camera::sampleRandomUv(Eigen::Vector2f& uv){
 
 
 // access
-void Camera::getCenterAsUV(Eigen::Vector2f& uv){
+void Camera::getCenterAsUV(Eigen::Vector2f& uv) const{
   uv.x() = cam_parameters_->width/2;
   uv.y() = cam_parameters_->height/2;
 }
 
-void Camera::getCentreAsPixel(Eigen::Vector2i& pixel_coords){
+void Camera::getCentreAsPixel(Eigen::Vector2i& pixel_coords) const{
   pixel_coords.x() = cam_parameters_->resolution_x/2;
   pixel_coords.y() = cam_parameters_->resolution_y/2;
+}
+
+float Camera::getPixelWidth(int level) const{
+  float pixel_width= cam_parameters_->pixel_width*pow(2,level+1);
+  return pixel_width;
 }
 
 void Camera::clearImgs(){
@@ -356,6 +361,9 @@ void CameraForMapping::collectRegions(float grad_threshold){
             Eigen::Vector2f uv;
             pixelCoords2uv(pixel_coords, uv, level);
 
+            // check well TODO
+            magnitude*=pow(0.9,level);
+
             if(magnitude>grad_threshold){
 
               bound bound_(min_depth,max_depth);
@@ -412,7 +420,7 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
 
       }
       idx++;
-      alpha*=0.9;
+      alpha*=1;
       // break;
     }
     else

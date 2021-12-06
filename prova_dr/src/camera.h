@@ -9,6 +9,10 @@ using namespace pr;
 
 typedef std::pair<float,float> bound;
 
+class ActivePoint{
+
+};
+
 class Candidate{
   public:
 
@@ -16,8 +20,13 @@ class Candidate{
               float grad_magnitude, colorRGB grad3C_magnitude, colorRGB color,
               std::vector<bound>* bounds):
     level_(level), pixel_(pixel), uv_(uv), grad_magnitude_(grad_magnitude),
-    grad3C_magnitude_(grad3C_magnitude), color_(color), bounds_(bounds)
+    grad3C_magnitude_(grad3C_magnitude), color_(color), bounds_(bounds),
+    ready_(false)
     {}
+
+    ~Candidate(){
+      delete bounds_;
+    };
 
     const int level_;
     const Eigen::Vector2i pixel_;
@@ -26,6 +35,7 @@ class Candidate{
     const colorRGB grad3C_magnitude_;
     const colorRGB color_;
     std::vector<bound>* bounds_;
+    bool ready_;
 
 
 };
@@ -103,8 +113,9 @@ class Camera{
     void sampleRandomPixel(Eigen::Vector2i& pixel_coords);
 
     // access
-    void getCenterAsUV(Eigen::Vector2f& uv);
-    void getCentreAsPixel(Eigen::Vector2i& pixel_coords);
+    void getCenterAsUV(Eigen::Vector2f& uv) const;
+    void getCentreAsPixel(Eigen::Vector2i& pixel_coords) const;
+    float getPixelWidth(int level=-1) const;
 
     // functions for projections/transformations
     void pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv, int level) const;
@@ -197,6 +208,7 @@ class CameraForMapping: public Camera{
     Wvlt_dec* wavelet_dec_;
     std::vector<Region*>* regions_;
     std::vector<Candidate*>* candidates_;
+    std::vector<ActivePoint*>* active_points_;
     int n_candidates_;
     friend class Mapper;
     friend class Dtam;
@@ -207,6 +219,7 @@ class CameraForMapping: public Camera{
            wavelet_dec_(new Wvlt_dec(wav_levels,new Image<colorRGB>(image_rgb_))),
            regions_(new std::vector<Region*>),
            candidates_(new std::vector<Candidate*>),
+           active_points_(new std::vector<ActivePoint*>),
            n_candidates_(0)
            {  };
 

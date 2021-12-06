@@ -13,17 +13,19 @@
 
 class Dtam{
   public:
-    Dtam(Environment* environment, float grad_threshold, float cost_threshold,
-          int num_candidates, int num_active_keyframes, int wavelet_levels) :
+    Dtam(Environment* environment, Params* parameters):
+
+    // Dtam(Environment* environment, float grad_threshold, float cost_threshold,
+    //       int num_candidates, int num_active_keyframes, int wavelet_levels) :
     environment_(environment),
-    keyframe_handler_(new KeyframeHandler(this, num_active_keyframes)),
-    mapper_(new Mapper(this,grad_threshold, cost_threshold, num_candidates)),
+    keyframe_handler_(new KeyframeHandler(this, parameters->num_active_keyframes)),
+    mapper_(new Mapper(this,parameters)),
     tracker_(new Tracker(this)),
     bundle_adj_(new BundleAdj(this)),
-    wavelet_levels_(wavelet_levels),
+    wavelet_levels_(parameters->wavelet_levels),
     camera_vector_(new std::vector<CameraForMapping*>),
     keyframe_vector_(new std::vector<int>),
-    frame_current_(0)
+    frame_current_(-1)
 
     { };
 
@@ -67,6 +69,7 @@ class Dtam{
     void updateCamerasFromVideostream();
     void doMapping();
     void doInitialization(bool all_keyframes=false, bool takeGtPoses=false);
+    void doOptimization();
     void doTracking();
     void showFeatures(int idx, float size);
 

@@ -33,7 +33,6 @@ bool KeyframeHandler::marginalize_keyframe(bool all_keyframes){
   bool marginalize=false;
   if(dtam_->keyframe_vector_->size()>num_active_keyframes_){
     marginalize=true;
-
     if (all_keyframes){
       marginalize_keyframe_all();
     }else{
@@ -45,7 +44,9 @@ bool KeyframeHandler::marginalize_keyframe(bool all_keyframes){
 }
 
 void KeyframeHandler::marginalize_keyframe_all(){
+  sharedCoutDebug("   - Keyframe marginalized (frame "+ std::to_string(dtam_->keyframe_vector_->at(0)) +")");
   dtam_->keyframe_vector_->erase(dtam_->keyframe_vector_->begin());
+
 }
 
 void KeyframeHandler::marginalize_keyframe_select(){

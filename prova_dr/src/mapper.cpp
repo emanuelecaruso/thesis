@@ -150,8 +150,8 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
 void Mapper::selectNewCandidates(){
   int idx=dtam_->keyframe_vector_->back();
   CameraForMapping* cam_r= dtam_->camera_vector_->at(idx);
-  cam_r->collectRegions(grad_threshold_);
-  cam_r->selectNewCandidates(num_candidates_);
+  cam_r->collectRegions(parameters_->grad_threshold);
+  cam_r->selectNewCandidates(parameters_->num_candidates);
   sharedCoutDebug("   - New candidates added");
 }
 
@@ -163,18 +163,23 @@ EpipolarLine* CamCouple::trackCandidate(Candidate* candidate, int bound_idx){
   return ep_segment;
 }
 
-void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line){
+bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple){
+
+
+  int num_mins = ep_line->uv_idxs_mins->size();
+  if (num_mins<=0)
+    return 0;
 
   float bound_min;
-  float bound_end;
+  float bound_max;
   float coord;
-  float sign = ep_line->start<ep_line->end;
-  flat pixel_width = ep_line->cam->cam_parameters_->;  // GET PIXEL WIDTH
-  int num_mins = ep_line->uv_idxs_mins->size();
+  int sign = pow(-1,(ep_line->start>ep_line->end));
+  float pixel_width = ep_line->cam->getPixelWidth(candidate->level_);  // GET PIXEL WIDTH
+
   // iterate through mins
   for (int i=0; i<num_mins; i++){
     // uv min
-    Eigen::Vector2f uv_curr=ep_line->uv_idxs_mins->at(i);
+    Eigen::Vector2f uv_curr=ep_line->uvs->at(ep_line->uv_idxs_mins->at(i));
 
     if(ep_line->u_or_v)
       coord=uv_curr.x();
@@ -182,12 +187,18 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line){
       coord=uv_curr.y();
 
     // from uv to bound
-    getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord-sign*pixel_width, ep_line->u_or_v)
-    getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_end, coord+sign*pixel_width, ep_line->u_or_v)
+    float coord_min = coord-sign*pixel_width*0.5;
+    float coord_max = coord+sign*pixel_width*0.5;
+    // std::cout << coord_min<< " "<< coord_max << std::endl;
 
-    if ((bound_max-bound_min)< certainthreshold && num_mins==1){
-      // point is ready
+    cam_couple->getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
+    cam_couple->getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
 
+    if ((bound_max-bound_min)< parameters_->max_depth_var && num_mins==1){
+
+      // point is ready to be activate
+      candidate->ready_=true;
+      break;
     }
     // update bound
     bound bound_{bound_min,bound_max};
@@ -196,6 +207,7 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line){
     candidate->bounds_->push_back(bound_);
 
   }
+  return 1;
 
 }
 
@@ -204,41 +216,82 @@ void Mapper::trackExistingCandidates(){
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
   sharedCoutDebug("   - tracking existing candidates");
 
+  int num_of_ready_candidates=0;
+
   //iterate through active keyframes
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
 
     int idx = dtam_->keyframe_vector_->at(i);
 
     sharedCoutDebug("      - keyframe "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->size()-1)+
-                    " (frame "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->back())+")");
+                    " (frame "+std::to_string(idx)+" on "+std::to_string(dtam_->keyframe_vector_->back())+")");
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
 
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
-    // iterate through all candidates
 
-    for(Candidate* cand : *(keyframe->candidates_)){
+    sharedCoutDebug("         - n. candidates: "+std::to_string(keyframe->candidates_->size()));
+
+    bool keep_cand = false;
+    // bool flag = 1;
+
+    // keyframe->showCandidates_2(2);
+    // cv::waitKey(0);
+
+    // iterate through all candidates
+    for(int k=0; k<keyframe->candidates_->size(); k++){
+
+      Candidate* cand = keyframe->candidates_->at(k);
+
+
+      if(cand->ready_){
+        num_of_ready_candidates++;
+        // break;
+        continue;
+      }
 
       // iterate along all bounds
-      int bounds_size = cand->bounds_->size();
-      for(int i=0; i<bounds_size; i++){
-        EpipolarLine* epSegment = cam_couple->trackCandidate(cand, i);
-        epSegment->searchMin(cand, cost_threshold_ , grad_threshold_);
+      for(int j=0; j<cand->bounds_->size(); j++){
 
-        epSegment->showEpipolarWithMin(cand->level_);
-        keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
-        cv::waitKey(0);
+        EpipolarLine* ep_segment = cam_couple->trackCandidate(cand, j);
+        ep_segment->searchMin(cand, parameters_);
+
+        // if (dtam_->frame_current_==1){
+        // if (flag){
+        //   if(j==bounds_size-1)
+        //     flag=0;
+        //   ep_segment->showEpipolarWithMin(cand->level_);
+        //   keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
+        //   cv::waitKey(0);
+        //   cv::destroyAllWindows();
+        // }
 
         // cam_couple->compareEpSegmentWithGt(cand);
         // cam_couple->showEpSegment(cand);
 
-        updateBounds(cand,epSegment);
+
+        if(!updateBounds(cand,ep_segment,cam_couple)){
+          // remove bound
+          // cand->bounds_->erase(cand->bounds_->begin()+j);
+          // j--;
+          continue;
+        }
+        else
+          keep_cand=true;
       }
-      cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
+      if (keep_cand)
+        cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+cand->bounds_->size());
+      // else{
+      //   keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
+      //   k--;
+      //   delete cand;
+      // }
+
 
     }
 
   }
+  sharedCoutDebug("   - num of ready candidates: "+ std::to_string(num_of_ready_candidates));
 
 }
 

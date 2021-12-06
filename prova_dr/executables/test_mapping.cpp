@@ -14,20 +14,26 @@ int main (int argc, char * argv[]) {
   const std::string path_name = "./dataset/"+dataset_name;
 
   // parameters
-  int wavelet_levels=4;
-  float gradient_threshold = 1;
-  float cost_threshold = 0.3;
-  // int num_candidates = 0;
-  int num_candidates = 1000;
-  // int num_candidates = 10000;
+  int wavelet_levels=3;
+
+  float grad_threshold = 1;
+  // float grad_threshold = 1.5;
+  float grad_perc_threshold = 0.8;
+  float cost_threshold = 0.2;
+  int num_candidates = 4650;
   // int num_candidates = INT_MAX;
   int num_active_keyframes = 5;
+  float max_depth_var = 0.2; // maximum depth variance for the initilizer
+
 
   // initialization
-  Environment* environment = new Environment(path_name,
-                    dataset_name, wavelet_levels); // environment generator object (pointer)
-  Dtam* dtam = new Dtam(environment, gradient_threshold, cost_threshold,
-            num_candidates,num_active_keyframes,wavelet_levels); // dense mapper and tracker
+  Params* parameters = new Params(wavelet_levels, grad_threshold, grad_perc_threshold,
+                              cost_threshold, num_candidates, num_active_keyframes,
+                              max_depth_var);
+
+  Environment* environment = new Environment(path_name, dataset_name, wavelet_levels);
+
+  Dtam* dtam = new Dtam(environment, parameters); // dense mapper and tracker
 
   //############################################################################
   // compute depth map
@@ -38,7 +44,8 @@ int main (int argc, char * argv[]) {
   // dtam->testFeatures();
   // cv::waitKey(0);
 
-
+  cout << "Press Enter to exit"<< endl;
+  cin.ignore();
   // // --------------------------------------
   return 1;
 }

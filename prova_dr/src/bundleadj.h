@@ -5,6 +5,7 @@
 
 class Dtam; //forward declaration
 
+
 class BundleAdj{
 
   public:
