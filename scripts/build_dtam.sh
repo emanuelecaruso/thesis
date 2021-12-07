@@ -1,4 +1,4 @@
 cd prova_dr/build
 cmake ..
-make -j8
+make -j12
 cd ..

@@ -194,7 +194,7 @@ bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
     cam_couple->getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
     cam_couple->getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
 
-    if ((bound_max-bound_min)< parameters_->max_depth_var && num_mins==1){
+    if ((bound_max-bound_min)< parameters_->max_depth_var*pow(2,candidate->level_) && num_mins==1){
 
       // point is ready to be activate
       candidate->ready_=true;

@@ -44,7 +44,6 @@ class Candidate{
 
 
 
-typedef std::vector<Candidate*> Region;
 
 class Camera{
   public:
@@ -203,6 +202,19 @@ class CameraForStudy: public Camera{
 };
 
 class Mapper; // forward declaration
+typedef std::vector<Candidate*> Region;
+
+class RegionsWithCandidates{
+  public:
+    std::vector<RegionWithCandidates> region_vec;
+    int level;
+
+    // collectRegions()
+};
+
+class RegionWithCandidates{
+
+};
 
 class CameraForMapping: public Camera{
 

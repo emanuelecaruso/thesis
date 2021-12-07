@@ -25,6 +25,7 @@ class BundleAdj{
     void sortRegions();
     // void projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
     void selectNewActivePoints();
+    void selectNewActivePointsAll();
     void activateNewPointsAllCand();
     void activateNewPoints();
 

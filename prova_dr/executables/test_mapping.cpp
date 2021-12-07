@@ -21,15 +21,16 @@ int main (int argc, char * argv[]) {
   float grad_perc_threshold = 0.8;
   float cost_threshold = 0.2;
   int num_candidates = 4650;
+  int num_active_points = num_candidates;
   // int num_candidates = INT_MAX;
   int num_active_keyframes = 7;
-  float max_depth_var = 0.2; // maximum depth variance for the initilizer
+  float max_depth_var = 0.05; // maximum depth variance for the initilizer
 
 
   // initialization
   Params* parameters = new Params(wavelet_levels, grad_threshold, grad_perc_threshold,
-                              cost_threshold, num_candidates, num_active_keyframes,
-                              max_depth_var);
+                                  cost_threshold, num_candidates, num_active_points,
+                                  num_active_keyframes, max_depth_var);
 
   Environment* environment = new Environment(path_name, dataset_name, wavelet_levels);
 

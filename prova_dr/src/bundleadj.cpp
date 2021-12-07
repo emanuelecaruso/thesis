@@ -44,6 +44,11 @@ void BundleAdj::activateNewPoints(){
 
 }
 
+void BundleAdj::selectNewActivePointsAll(){
+  // iterate through sorted regions
+
+}
+
 void BundleAdj::activateNewPointsAllCand(){
   // iterate through keyframes
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
@@ -71,7 +76,7 @@ void BundleAdj::projectActivePoints(CameraForMapping* keyframe, CameraForMapping
 
 
 void BundleAdj::projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe){
-  // iterate through all keyframe candidates
+  // iterate through all candidates
 
     // project candidates in new keyframe
 
