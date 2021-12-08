@@ -68,7 +68,7 @@ float EpipolarLine::getCost(const colorRGB& magnitude3C_r, const colorRGB& magni
 }
 
 
-void EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
+bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
   // iterate through uvs
   float prev_cost = FLT_MAX;
   int min_uv_idx;
@@ -122,7 +122,9 @@ void EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
     }
   }
   // std::cout << prev_cost << std::endl;
-
+  if(uv_idxs_mins->empty())
+    return 0;
+  return 1;
 
 }
 

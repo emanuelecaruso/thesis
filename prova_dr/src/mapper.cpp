@@ -103,56 +103,6 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
   return ep_seg;
 }
 
-// EpipolarLine* CamCouple::getEpSegmentGt(Candidate* candidate){
-//
-//
-//
-//   Eigen::Vector2f uv = candidate->uv_;
-//
-//   float min_depth = candidate->min_depth_;
-//   float max_depth = candidate->max_depth_;
-//
-//   Eigen::Vector3f p_min;
-//   cam_r_->pointAtDepth( uv, min_depth, p_min);
-//   Eigen::Vector2f uv_min;
-//   cam_m_->projectPoint(p_min,uv_min);
-//
-//   Eigen::Vector3f p_max;
-//   cam_r_->pointAtDepth( uv, max_depth, p_max);
-//   Eigen::Vector2f uv_max;
-//   cam_m_->projectPoint(p_max,uv_max);
-//
-//   float slope = (uv_max.y()-uv_min.y())/(uv_max.x()-uv_min.x());
-//
-//   EpipolarLine* ep_seg_gt= new EpipolarLine( cam_m_, uv_min, uv_max, candidate->level_);
-//
-//   return ep_seg_gt;
-// }
-
-// void CamCouple::compareEpSegmentWithGt(Candidate* candidate){
-//   std::cout << "camCouple: " << cam_r_->name_ << " " << cam_m_->name_ << std::endl;
-//
-//   EpipolarLine* ep_query = getEpSegment( candidate);
-//   EpipolarLine* ep_gt = getEpSegmentGt(candidate);
-//
-//
-//   ep_gt->showEpipolarComparison(ep_query, true, 2);
-// }
-
-// void CamCouple::showEpSegment(Candidate* candidate){
-//   // std::cout << "camCouple: " << cam_r_->name_ << " " << cam_m_->name_ << std::endl;
-//   EpipolarLine* ep_query = getEpSegment( candidate);
-//
-//   // sharedCoutDebug(", slope query: "+std::to_string(ep_query->slope));
-//   // sharedCoutDebug(", start query: "+std::to_string(ep_query->start));
-//   // sharedCoutDebug(", end query: "+std::to_string(ep_query->end));
-//   // sharedCoutDebug(", c0 query: "+std::to_string(ep_query->c0));
-//   // sharedCoutDebug(", u_or_v query: "+std::to_string(ep_query->u_or_v));
-//   // sharedCoutDebug(","+std::to_string(cam_r_projected_in_cam_m.y()));
-//
-//
-//   ep_query->showEpipolar(candidate->level_,2);
-// }
 
 
 
@@ -165,13 +115,10 @@ void Mapper::selectNewCandidates(){
 
 
 
-bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple){
-
+void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple,
+                          CandidateProjected*& projected_cand, bool no_mins){
 
   int num_mins = ep_line->uv_idxs_mins->size();
-  if (num_mins<=0)
-    return 0;
-
   float bound_min;
   float bound_max;
   float d1;
@@ -203,21 +150,22 @@ bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 
     bound bound_{bound_min,bound_max};
 
-    if (num_mins==1){
+    if (num_mins==1 && no_mins){
 
       Eigen::Vector2i pixel_curr;
       cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
 
       // create projected
-      CandidateProjected* projected_cand = new CandidateProjected(candidate->level_, pixel_curr, uv_curr, d2, (bound_max-bound_min));
-      // push inside "candidates projected vec" in new keyframe
-      cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+      projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, d2, (bound_max-bound_min));
 
-      if ( (bound_max-bound_min)< parameters_->max_depth_var*pow(2,candidate->level_) ){
-        // point is ready to be activate
-        candidate->ready_=true;
-        break;
-      }
+      // // push inside "candidates projected vec" in new keyframe
+      // cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+      //
+      // if ( (bound_max-bound_min)< parameters_->max_depth_var*pow(2,candidate->level_) ){
+      //   // point is ready to be activate
+      //   candidate->ready_=true;
+      //   break;
+      // }
     }
 
 
@@ -226,7 +174,6 @@ bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 
   }
 
-  return 1;
 
 }
 
@@ -252,7 +199,7 @@ void Mapper::trackExistingCandidates(){
     sharedCoutDebug("         - N. candidates: "+std::to_string(keyframe->candidates_->size()));
 
     bool keep_cand = false;
-    bool flag = 1;
+    // bool flag = 1;
 
     // keyframe->showCandidates_2(2);
     // cv::waitKey(0);
@@ -269,13 +216,21 @@ void Mapper::trackExistingCandidates(){
         continue;
       }
 
+      CandidateProjected* projected_cand;
+      int num_mins=0;
+
       int bounds_size =cand->bounds_->size();
       // iterate along all bounds
       for(int j=0; j<bounds_size; j++){
 
         EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
 
-        ep_segment->searchMin(cand, parameters_);
+        if(ep_segment->uvs->empty()){
+          continue;
+        }
+
+        if (!ep_segment->searchMin(cand, parameters_))
+          continue;
 
         // if (dtam_->frame_current_==1){
         // // if (flag){
@@ -291,17 +246,31 @@ void Mapper::trackExistingCandidates(){
         // cam_couple->compareEpSegmentWithGt(cand);
         // cam_couple->showEpSegment(cand);
 
-        if(updateBounds(cand,ep_segment,cam_couple)){
-          keep_cand=true;
-        }
+        keep_cand=true;
+
+        updateBounds(cand,ep_segment,cam_couple, projected_cand, num_mins==0);
+
+        num_mins+=ep_segment->uv_idxs_mins->size();
+
+
 
       }
-      if (keep_cand)
+      if (keep_cand){
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
+        if(num_mins==1){
+          // push inside "candidates projected vec" in new keyframe
+          cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+
+          if ( projected_cand->depth_var_< parameters_->max_depth_var*pow(2,projected_cand->level_) ){
+            // point is ready to be activate
+            cand->ready_=true;
+          }
+        }
+      }
       else{
-        // keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
-        // k--;
-        // delete cand;
+        keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
+        k--;
+        delete cand;
       }
 
 

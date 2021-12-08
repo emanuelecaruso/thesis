@@ -21,7 +21,7 @@ class Dtam{
     keyframe_handler_(new KeyframeHandler(this, parameters->num_active_keyframes)),
     mapper_(new Mapper(this,parameters)),
     tracker_(new Tracker(this)),
-    bundle_adj_(new BundleAdj(this)),
+    bundle_adj_(new BundleAdj(this, parameters)),
     parameters_(parameters),
     camera_vector_(new std::vector<CameraForMapping*>),
     keyframe_vector_(new std::vector<int>),

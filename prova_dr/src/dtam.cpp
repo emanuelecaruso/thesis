@@ -87,7 +87,7 @@ void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
 void Dtam::doOptimization(bool active_all_candidates){
   while(frame_current_<camera_vector_->size() || !end_flag_ ){
 
-    bundle_adj_->activateNewPoints(active_all_candidates);
+    bundle_adj_->activateNewPoints();
   }
 }
 
@@ -156,6 +156,7 @@ void Dtam::test_mapping(){
   // camera_vector_->at(1)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"1");
   // camera_vector_->at(0)->showCandidates_1(2);
   // camera_vector_->at(0)->showCandidates_2(2);
+  camera_vector_->at(camera_vector_->size()-2)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
 
   cv::waitKey(0);

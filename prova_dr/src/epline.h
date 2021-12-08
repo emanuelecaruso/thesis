@@ -63,7 +63,7 @@ class EpipolarLine{
     void showEpipolarComparison(EpipolarLine* ep_line_2, const std::string& name, bool print, float size);
 
 
-    void searchMin(Candidate* candidate, Params* parameters);
+    bool searchMin(Candidate* candidate, Params* parameters);
     float getCost(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,const colorRGB& color_r, const colorRGB& color_m );
 
   private:

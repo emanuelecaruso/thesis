@@ -78,6 +78,7 @@ class Mapper{
     bool initializeCandidates(const CameraForMapping* cam_r,
                             const CameraForMapping* cam_m, int& current_r_idx);
 
-    bool updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple);
+    void updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple,
+                      CandidateProjected*& projected_cand, bool no_mins);
 
 };
