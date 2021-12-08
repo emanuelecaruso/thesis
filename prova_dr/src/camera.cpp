@@ -325,90 +325,118 @@ Image<float>* CameraForStudy::gradientintensity(){
   return out;
 }
 
+bool RegionWithCandidates::collectCandidates(){
 
-void CameraForMapping::collectRegions(float grad_threshold){
-  Wvlt_lvl* wvlt_last_lvl= wavelet_dec_->vector_wavelets->back();
+  int wav_levels= cam_->wavelet_dec_->levels_;
 
-  int levels= wavelet_dec_->levels_;
-  int rows=wvlt_last_lvl->c->image_.rows;
-  int cols=wvlt_last_lvl->c->image_.cols;
-
-  float min_depth = cam_parameters_->min_depth;
-  float max_depth = cam_parameters_->max_depth;
+  float min_depth = cam_->cam_parameters_->min_depth;
+  float max_depth = cam_->cam_parameters_->max_depth;
 
   auto lb_cmp = [](Candidate* const & x, float d) -> bool
     { return x->grad_magnitude_ < d; };
 
-  for (int row=0; row<rows; row++){
-    for (int col=0; col<cols; col++){
-      Region* reg= new Region;
-      for (int level=levels-1; level>=0; level--){
-        int lev_opp=levels-1-level;
-        for (int row_offs=0; row_offs<(pow(2,lev_opp)); row_offs++){
-          for (int col_offs=0; col_offs<(pow(2,lev_opp)); col_offs++){
 
-            Wvlt_lvl* wvlt_lvl= wavelet_dec_->vector_wavelets->at(level);
-            // int row_curr=(row<<lev_opp)+row_offs;
-            // int col_curr=(col<<lev_opp)+col_offs;
-            int row_curr=(row*(pow(2,lev_opp)))+row_offs;
-            int col_curr=(col*(pow(2,lev_opp)))+col_offs;
+  for (int wav_level=wav_levels-1; wav_level>=0; wav_level--){
+    int n_pxls = pow(2,reg_level_-wav_level);
+    int x_ref = x_*n_pxls;
+    int y_ref = y_*n_pxls;
+    Wvlt_lvl* wvlt_lvl= cam_->wavelet_dec_->vector_wavelets->at(wav_level);
 
-            float magnitude = wvlt_lvl->magnitude_img->evalPixel(row_curr,col_curr);
-            colorRGB magnitude3C = wvlt_lvl->magnitude3C_img->evalPixel(row_curr,col_curr);
-            colorRGB c = wvlt_lvl->c->evalPixel(row_curr,col_curr);
 
-            Eigen::Vector2i pixel_coords{col_curr,row_curr};
-            Eigen::Vector2f uv;
-            pixelCoords2uv(pixel_coords, uv, level);
+    for (int x_offs=0; x_offs<n_pxls; x_offs++){
+      for (int y_offs=0; y_offs<n_pxls; y_offs++){
+        // x_ref+x_offs
 
-            // check well TODO
-            magnitude*=pow(0.9,level);
+        int y_curr=y_ref+y_offs;
+        int x_curr=x_ref+x_offs;
 
-            if(magnitude>grad_threshold){
+        float magnitude = wvlt_lvl->magnitude_img->evalPixel(y_curr,x_curr);
+        colorRGB magnitude3C = wvlt_lvl->magnitude3C_img->evalPixel(y_curr,x_curr);
+        colorRGB c = wvlt_lvl->c->evalPixel(y_curr,x_curr);
 
-              bound bound_(min_depth,max_depth);
-              std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
-              Candidate* candidate = new Candidate(level,pixel_coords,uv,magnitude,
-                                                   magnitude3C, c, bounds );
+        Eigen::Vector2i pixel_coords{x_curr,y_curr};
+        Eigen::Vector2f uv;
+        cam_->pixelCoords2uv(pixel_coords, uv, wav_level);
 
-              auto it = std::lower_bound(reg->begin(), reg->end(), magnitude, lb_cmp);
+        // check well TODO
+        magnitude*=pow(0.9,wav_level);
 
-              reg->insert ( it , candidate );
-            }
+        if(magnitude>grad_threshold_){
 
-          }
+          bound bound_(min_depth,max_depth);
+          std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
+          Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,magnitude,
+                                               magnitude3C, c, bounds );
+
+
+          auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), magnitude, lb_cmp);
+
+          cands_vec_->insert ( it , candidate );
         }
-      }
-      if(!reg->empty()){
-        regions_->push_back(reg);
       }
     }
   }
+  if (cands_vec_->empty())
+    return 0;
+  return 1;
 
 }
+
+// void RegionWithCandidatesBase::showRegion(int size){
+//
+//   double alpha = 0.3;
+//
+//   Image<colorRGB>* show_img = new Image<colorRGB>(cam_->image_rgb_);
+//
+//   int wav_levels= cam_->wavelet_dec_->levels_;
+//   std::vector<colorRGB> color_map{black,red_,green_,blue_,magenta_,cyan_};
+//
+//   for (int wav_level=wav_levels-1; wav_level>=0; wav_level--){
+//     int n_pxls = pow(2,reg_level_-wav_level);
+//     int x_ref = x_*n_pxls;
+//     int y_ref = y_*n_pxls;
+//
+//     // compute corners
+//     cv::Rect r= cv::Rect(x_ref*pow(2,wav_level+1),y_*pow(2,wav_level+1),pow(2,wav_level+1),pow(2,wav_level+1));
+//
+//     show_img->drawRectangle(r, color_map[wav_level], cv::FILLED, alpha);
+//     // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+//
+//   }
+//
+//
+//   show_img->show(size);
+//   // selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
+//
+// }
 
 
 void CameraForMapping::selectNewCandidates(int max_num_candidates){
   int idx=0;
   float alpha=1;
+  std::vector<RegionWithCandidates*>* region_vec = regions_->region_vec_;
+
   while(n_candidates_<max_num_candidates){
-    if(!regions_->empty()){
-      for(int i=0; i<regions_->size(); i++){
+    if(!region_vec->empty()){
+      for(int i=0; i<region_vec->size(); i++){
         if (n_candidates_>=max_num_candidates)
           break;
 
-        Region* region= regions_->at(i);
+        RegionWithCandidates* region= region_vec->at(i);
+        std::vector<Candidate*>* cands_vec = region->cands_vec_;
 
-        if (1+idx>region->size()){
-          regions_->erase (regions_->begin() + i);
+        // if there are no more candidates, remove the region
+        if (cands_vec->size()<1+idx){
+          region_vec->erase (region_vec->begin() + i);
         }
+        // otherwise
         else{
-          Candidate* candidate = region->at(region->size()-1-idx);
+          Candidate* candidate = cands_vec->at(cands_vec->size()-1-idx);
           if(idx==0){
             candidates_->push_back(candidate);
             n_candidates_++;
           }else{
-            Candidate* candidate_prev = region->back();
+            Candidate* candidate_prev = cands_vec->back();
             // Candidate* candidate = region->back();
             // region->pop_back();
             if(candidate->grad_magnitude_>candidate_prev->grad_magnitude_*alpha){
@@ -420,13 +448,21 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
 
       }
       idx++;
-      alpha*=1;
+      alpha*=0.95;
       // break;
     }
     else
       break;
 
   }
+}
+
+void CameraForMapping::selectActivePoints(int max_num_active_points){
+
+}
+
+void CameraForMapping::projectCandidate(Candidate* candidate){
+
 }
 
 void CameraForMapping::showCandidates_1(float size){
@@ -455,7 +491,7 @@ void CameraForMapping::showCandidates_2(float size){
 
   double alpha = 0.5;
 
-  Image<colorRGB>* show_img = new Image<colorRGB>(wavelet_dec_->image_);
+  Image<colorRGB>* show_img = new Image<colorRGB>(image_rgb_);
   for(Candidate* candidate : *candidates_){
     // get level
     int level = candidate->level_;
@@ -471,6 +507,52 @@ void CameraForMapping::showCandidates_2(float size){
   }
 
   show_img->show(size);
+  // selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
+
+}
+
+void CameraForMapping::showProjCandidates_1(float size){
+  // Wvlt_dec* selected = new Wvlt_dec(wavelet_dec_);
+  //
+  // for(Candidate* candidate : *candidates_){
+  //
+  //   int levels= wavelet_dec_->levels_;
+  //   int level = candidate->level_;
+  //   int lev_opp=levels-1-level;
+  //
+  //   Eigen::Vector2i pixel_coords=candidate->pixel_;
+  //
+  //   Wvlt_lvl* wvlt_curr_=selected->vector_wavelets->at(level);
+  //   // wvlt_curr_->dh->setPixel(pixel_coords,white*8);
+  //   // wvlt_curr_->dv->setPixel(pixel_coords,white*8);
+  //   wvlt_curr_->magnitude3C_img->setPixel(pixel_coords,white*8);
+  // }
+  // selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
+
+}
+
+void CameraForMapping::showProjCandidates_2(float size){
+
+  std::vector<colorRGB> color_map{black,red_,green_,blue_,magenta_,cyan_};
+
+  double alpha = 0.5;
+
+  Image<colorRGB>* show_img = new Image<colorRGB>(image_rgb_);
+  // for(Candidate* candidate : *candidates_){
+  //   // get level
+  //   int level = candidate->level_;
+  //
+  //   Eigen::Vector2i pixel= candidate->pixel_;
+  //   pixel*=pow(2,level+1);
+  //
+  //   // compute corners
+  //   cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
+  //
+  //   show_img->drawRectangle(r, color_map[level], cv::FILLED, alpha);
+  //   // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+  // }
+  //
+  // show_img->show(size);
   // selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
 
 }

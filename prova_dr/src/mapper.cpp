@@ -38,7 +38,12 @@ void CamCouple::getBoundsParameters(){
   H_bv=4*f*t(2);
 
 }
-
+void CamCouple::getDepthParameters(){
+  A_d=-r(2,0)/f;
+  B_d=r(1,2)/f;
+  C_d=r(2,2) - (h*r(1,2) - r(2,0)*w)/(2*f);
+  D_d=-t(2);
+}
 
 void CamCouple::getSlope(float u1, float v1, float& slope_m){
   slope_m=(A_s*u1+B_s*v1+C_s)/(D_s*u1+E_s*v1+F_s);
@@ -63,7 +68,7 @@ void CamCouple::getBound(float u1, float v1, float d1, float& bound, bool u_or_v
 
 }
 
-void CamCouple::getDepth(float u1, float v1, float& d1, float coord, bool u_or_v){
+void CamCouple::getD1(float u1, float v1, float& d1, float coord, bool u_or_v){
   // u2
   if (u_or_v){
     d1=((-H_bu)*coord + D_bu)/(E_bu*coord*u1 + F_bu*coord*v1 + G_bu*coord + (-A_bu)*u1 + (-B_bu)*v1 - C_bu);
@@ -73,6 +78,10 @@ void CamCouple::getDepth(float u1, float v1, float& d1, float coord, bool u_or_v
   else{
     d1=((-H_bv)*coord + D_bv)/(E_bv*coord*u1 + F_bv*coord*v1 + G_bv*coord + (-A_bv)*u1 + (-B_bv)*v1 - C_bv);
   }
+}
+
+void CamCouple::getD2(float u1, float v1, float d1, float& d2){
+  d2=(A_d*u1*d1+B_d*v1*d1+C_d*d1+D_d);
 }
 
 EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
@@ -150,18 +159,11 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
 void Mapper::selectNewCandidates(){
   int idx=dtam_->keyframe_vector_->back();
   CameraForMapping* cam_r= dtam_->camera_vector_->at(idx);
-  cam_r->collectRegions(parameters_->grad_threshold);
   cam_r->selectNewCandidates(parameters_->num_candidates);
-  sharedCoutDebug("   - New candidates added");
+  sharedCoutDebug("   - New candidates selected");
 }
 
 
-EpipolarLine* CamCouple::trackCandidate(Candidate* candidate, int bound_idx){
-
-  EpipolarLine* ep_segment = getEpSegment( candidate, bound_idx );
-
-  return ep_segment;
-}
 
 bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple){
 
@@ -172,6 +174,8 @@ bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 
   float bound_min;
   float bound_max;
+  float d1;
+  float d2;
   float coord;
   int sign = pow(-1,(ep_line->start>ep_line->end));
   float pixel_width = ep_line->cam->getPixelWidth(candidate->level_);  // GET PIXEL WIDTH
@@ -189,19 +193,33 @@ bool Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
     // from uv to bound
     float coord_min = coord-sign*pixel_width*0.5;
     float coord_max = coord+sign*pixel_width*0.5;
-    // std::cout << coord_min<< " "<< coord_max << std::endl;
 
-    cam_couple->getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
-    cam_couple->getDepth(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
 
-    if ((bound_max-bound_min)< parameters_->max_depth_var*pow(2,candidate->level_) && num_mins==1){
+    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
+    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), d1, coord, ep_line->u_or_v);
+    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
 
-      // point is ready to be activate
-      candidate->ready_=true;
-      break;
-    }
-    // update bound
+    cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), d1, d2);
+
     bound bound_{bound_min,bound_max};
+
+    if (num_mins==1){
+
+      Eigen::Vector2i pixel_curr;
+      cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
+
+      // create projected
+      CandidateProjected* projected_cand = new CandidateProjected(candidate->level_, pixel_curr, uv_curr, d2, (bound_max-bound_min));
+      // push inside "candidates projected vec" in new keyframe
+      cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+
+      if ( (bound_max-bound_min)< parameters_->max_depth_var*pow(2,candidate->level_) ){
+        // point is ready to be activate
+        candidate->ready_=true;
+        break;
+      }
+    }
+
 
     // push back new bound
     candidate->bounds_->push_back(bound_);
@@ -255,17 +273,19 @@ void Mapper::trackExistingCandidates(){
       // iterate along all bounds
       for(int j=0; j<bounds_size; j++){
 
-        EpipolarLine* ep_segment = cam_couple->trackCandidate(cand, j);
+        EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
+
         ep_segment->searchMin(cand, parameters_);
 
         // if (dtam_->frame_current_==1){
-        // if (flag){
+        // // if (flag){
         //   if(j==cand->bounds_->size()-1)
-        //     flag=0;
+        //   flag=0;
+        //   // ep_segment->showEpipolar(cand->level_);
         //   ep_segment->showEpipolarWithMin(cand->level_);
         //   keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
         //   cv::waitKey(0);
-        //   cv::destroyAllWindows();
+        //   // cv::destroyAllWindows();
         // }
 
         // cam_couple->compareEpSegmentWithGt(cand);
@@ -279,9 +299,9 @@ void Mapper::trackExistingCandidates(){
       if (keep_cand)
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
       else{
-        keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
-        k--;
-        delete cand;
+        // keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
+        // k--;
+        // delete cand;
       }
 
 

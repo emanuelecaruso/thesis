@@ -22,10 +22,11 @@ class Dtam{
     mapper_(new Mapper(this,parameters)),
     tracker_(new Tracker(this)),
     bundle_adj_(new BundleAdj(this)),
-    wavelet_levels_(parameters->wavelet_levels),
+    parameters_(parameters),
     camera_vector_(new std::vector<CameraForMapping*>),
     keyframe_vector_(new std::vector<int>),
-    frame_current_(-1)
+    frame_current_(-1),
+    end_flag_(false)
 
     { };
 
@@ -46,10 +47,11 @@ class Dtam{
     Mapper* const mapper_;
     Tracker* const tracker_;
     BundleAdj* const bundle_adj_;
-    const int wavelet_levels_;
+    Params* const parameters_;
     std::vector<CameraForMapping*>* camera_vector_;
     std::vector<int>* keyframe_vector_;
     int frame_current_;
+    bool end_flag_;
 
     friend class BundleAdj;
     friend class KeyframeHandler;

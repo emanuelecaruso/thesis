@@ -594,10 +594,6 @@ camera.h
 image.h
 /home/manu/Desktop/thesis/prova_dr/src/image.h
 
-/home/manu/Desktop/thesis/prova_dr/src/image.cpp
-image.h
-/home/manu/Desktop/thesis/prova_dr/src/image.h
-
 /home/manu/Desktop/thesis/prova_dr/src/image.h
 defs.h
 /home/manu/Desktop/thesis/prova_dr/src/defs.h
@@ -683,10 +679,6 @@ thread
 -
 vector
 -
-
-/home/manu/Desktop/thesis/prova_dr/src/wavelet.cpp
-wavelet.h
-/home/manu/Desktop/thesis/prova_dr/src/wavelet.h
 
 /home/manu/Desktop/thesis/prova_dr/src/wavelet.h
 defs.h

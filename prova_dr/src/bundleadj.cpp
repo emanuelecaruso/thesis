@@ -27,20 +27,20 @@ void BundleAdj::activateNewPoints(bool active_all_candidates){
 }
 
 void BundleAdj::activateNewPoints(){
-  // iterate through keyframes
-  for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
-
-    int idx = dtam_->keyframe_vector_->at(i);
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
-    CameraForMapping* new_keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
-    // project active points in new keyframe
-    projectActivePoints(keyframe, new_keyframe);
-    projectCandidates(keyframe, new_keyframe);
-
-  }
-  sortRegions();
-  selectNewActivePoints();
-  // select new active points
+  // // iterate through keyframes
+  // for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
+  //
+  //   int idx = dtam_->keyframe_vector_->at(i);
+  //   CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
+  //   CameraForMapping* new_keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  //   // project active points in new keyframe
+  //   projectActivePoints(keyframe, new_keyframe);
+  //   projectCandidates(keyframe, new_keyframe);
+  //
+  // }
+  // sortRegions();
+  // selectNewActivePoints();
+  // // select new active points
 
 }
 
@@ -66,21 +66,23 @@ void BundleAdj::optimize(){
 
 }
 
-void BundleAdj::projectActivePoints(CameraForMapping* keyframe, CameraForMapping* new_keyframe){
-  // iterate through all keyframe candidates
-
-  // project active point in new keyframe
-
-  // put it in the relative region
-}
+// void BundleAdj::projectActivePoints(CameraForMapping* keyframe, CameraForMapping* new_keyframe){
+//   // iterate through all keyframe candidates
+//
+//   // project active point in new keyframe
+//
+//   // put it in the relative region
+// }
 
 
 void BundleAdj::projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe){
   // iterate through all candidates
-
-    // project candidates in new keyframe
-
+  for(Candidate* cand : *(keyframe->candidates_)){
+    // project candidate in new keyframe
+    new_keyframe->projectCandidate(cand);
     // put it in the relative region, sorted by depth var
+  }
+
 }
 
 void BundleAdj::sortRegions(){

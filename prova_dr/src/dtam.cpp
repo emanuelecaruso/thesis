@@ -26,8 +26,8 @@ void Dtam::debugAllCameras(bool show_imgs){
 void Dtam::addCamera(int counter){
 
   CameraForStudy* env_cam=environment_->camera_vector_->at(counter);
-  CameraForMapping* new_cam=new CameraForMapping (env_cam, wavelet_levels_);
-
+  CameraForMapping* new_cam=new CameraForMapping (env_cam, parameters_);
+  new_cam->regions_->collectCandidates();
   camera_vector_->push_back(new_cam);
 }
 
@@ -48,7 +48,7 @@ void Dtam::waitForTrackedCandidates(){
 }
 
 void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
-  while(true){
+  while( true ){
 
     if(frame_current_==camera_vector_->size()-1)
       waitForNewFrame();
@@ -85,7 +85,7 @@ void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
 }
 
 void Dtam::doOptimization(bool active_all_candidates){
-  while(true){
+  while(frame_current_<camera_vector_->size() || !end_flag_ ){
 
     bundle_adj_->activateNewPoints(active_all_candidates);
   }
@@ -128,6 +128,8 @@ void Dtam::updateCamerasFromEnvironment(){
 
     counter++;
   }
+  end_flag_=true;
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   sharedCout("\nVideo stream ended");
 
 }
@@ -152,8 +154,10 @@ void Dtam::test_mapping(){
 
   // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"0");
   // camera_vector_->at(1)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"1");
-  // camera_vector_->at(keyframe_vector_->back())->showCandidates_1(2);
-  // camera_vector_->at(keyframe_vector_->back())->showCandidates_2(2);
+  // camera_vector_->at(0)->showCandidates_1(2);
+  // camera_vector_->at(0)->showCandidates_2(2);
+  // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
+
   cv::waitKey(0);
 
 

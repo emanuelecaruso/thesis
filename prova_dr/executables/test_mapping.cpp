@@ -14,13 +14,13 @@ int main (int argc, char * argv[]) {
   const std::string path_name = "./dataset/"+dataset_name;
 
   // parameters
-  int wavelet_levels=3;
-
+  int wavelet_levels=3; // ex: 3 levels -> lev 0,1,2
+  int reg_level=2;  // ex reg level = 3 -> 0,1,2,*3* (fourth level)
   float grad_threshold = 1;
   // float grad_threshold = 1.5;
   float grad_perc_threshold = 0.8;
   float cost_threshold = 0.2;
-  int num_candidates = 4650;
+  int num_candidates = 4000;
   int num_active_points = num_candidates;
   // int num_candidates = INT_MAX;
   int num_active_keyframes = 7;
@@ -28,7 +28,7 @@ int main (int argc, char * argv[]) {
 
 
   // initialization
-  Params* parameters = new Params(wavelet_levels, grad_threshold, grad_perc_threshold,
+  Params* parameters = new Params(wavelet_levels ,reg_level, grad_threshold, grad_perc_threshold,
                                   cost_threshold, num_candidates, num_active_points,
                                   num_active_keyframes, max_depth_var);
 
