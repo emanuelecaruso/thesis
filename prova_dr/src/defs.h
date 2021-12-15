@@ -275,12 +275,12 @@ struct Params{
   float grad_perc_threshold;
   float cost_threshold;
   int num_candidates;
-  int num_active_points;
+  int max_num_active_points;
   int num_active_keyframes;
   float max_depth_var;
 
   Params(int wavelet_levels_,int reg_level_, float grad_threshold_, float grad_perc_threshold_,
-         float cost_threshold_, int num_candidates_, int num_active_points_,
+         float cost_threshold_, int num_candidates_, int max_num_active_points_,
          int num_active_keyframes_, float max_depth_var_):
          wavelet_levels(wavelet_levels_),
          reg_level(reg_level_),
@@ -288,7 +288,7 @@ struct Params{
          grad_perc_threshold(grad_perc_threshold_),
          cost_threshold(cost_threshold_),
          num_candidates(num_candidates_),
-         num_active_points(num_active_points_),
+         max_num_active_points(max_num_active_points_),
          num_active_keyframes(num_active_keyframes_),
          max_depth_var(max_depth_var_)
          {}

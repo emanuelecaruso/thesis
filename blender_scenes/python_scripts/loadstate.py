@@ -45,32 +45,35 @@ vertices = []
 edges = []
 faces = []
 
-cols=640
-rows=480
+count =0
+for value in dict2:
+    
+    position=value['position']
+    depth_var=value['depth_var']
+    level=value['level']
+    
+    if depth_var<0.1:
+        len=size*(pow(2,level))
+        
+        vertices.append( (position[0]+len,position[1]+len,position[2]+len) ) #rtf
+        vertices.append( (position[0]+len,position[1]+len,position[2]-len) ) #rtc
+        vertices.append( (position[0]+len,position[1]-len,position[2]+len) ) #rdf
+        vertices.append( (position[0]+len,position[1]-len,position[2]-len) ) #rdc
+        vertices.append( (position[0]-len,position[1]+len,position[2]+len) ) #ltf
+        vertices.append( (position[0]-len,position[1]+len,position[2]-len) ) #ltc
+        vertices.append( (position[0]-len,position[1]-len,position[2]+len) ) #lcf
+        vertices.append( (position[0]-len,position[1]-len,position[2]-len) ) #lcc
+        
+        faces.append( (count,count+1,count+2,count+3) ) #r
+        faces.append( (count+4,count+5,count+6,count+7) ) #l
+        faces.append( (count,count+1,count+4,count+5) ) #t
+        faces.append( (count+2,count+3,count+6,count+7) ) #d
+        faces.append( (count,count+2,count+4,count+6) ) #f
+        faces.append( (count+1,count+3,count+5,count+7) ) #c
 
-for col in range( cols ):
-    for row in range( rows ):
+    
+    count+=8
 
-        ul=row+col*rows
-        
-        value=dict2[ul]
-        color=value['color']
-        position=value['position']
-        valid=value['valid']
-        
-        vertices.append( (position[0],position[1],position[2]) )
-        
-        if (col==cols-1 or row==rows-1 or not valid):
-            continue
-        
-        ur=row+(col+1)*rows
-        dl=row+1+col*rows
-        dr=row+1+(col+1)*rows
-        
-        if dict2[ur]['valid'] and dict2[dl]['valid']:
-            faces.append( (ul,ur,dl) )
-            if dict2[dr]['valid']:
-                faces.append( (ur,dr,dl) )
         
         
 mesh = bpy.data.meshes.new("mymesh")

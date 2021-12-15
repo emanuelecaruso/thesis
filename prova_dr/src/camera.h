@@ -216,6 +216,7 @@ class Candidate : public CandidateBase{
     const colorRGB color_;
     bool ready_;
 
+
 };
 
 
@@ -362,7 +363,7 @@ class CameraForMapping: public Camera{
 
     Wvlt_dec* wavelet_dec_;
     std::vector<Candidate*>* candidates_;
-    // std::vector<KFPoint*>* active_points_;
+    std::vector<KFPoint*>* active_points_;
     std::vector<KFPoint*>* marginalized_points_;
     RegionsWithCandidates* regions_;
     RegionsWithProjCandidates* regions_projected_cands_;
@@ -375,7 +376,7 @@ class CameraForMapping: public Camera{
            Camera( name, cam_parameters, image_rgb),
            wavelet_dec_(new Wvlt_dec(parameters->wavelet_levels,new Image<colorRGB>(image_rgb_))),
            candidates_(new std::vector<Candidate*>),
-           // active_points_(new std::vector<KFPoint*>),
+           active_points_(new std::vector<KFPoint*>),
            marginalized_points_(new std::vector<KFPoint*>),
            regions_(new RegionsWithCandidates(parameters, this,
                       cam_parameters->resolution_x, cam_parameters->resolution_y)),

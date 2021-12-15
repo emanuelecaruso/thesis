@@ -5,3 +5,5 @@
 - check well TODO (camera.cpp)
 - multiscale searching
 - regions separate
+- try with just intensities
+- TODO remove (dtam.cpp)

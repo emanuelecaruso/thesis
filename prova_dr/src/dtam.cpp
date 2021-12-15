@@ -1,10 +1,13 @@
 #include "mapper.h"
 #include "dtam.h"
+#include "json.hpp"
 #include <math.h>
 #include "utils.h"
 #include <thread>
 #include <chrono>
 #include <stdlib.h>
+#include <fstream>.
+using json = nlohmann::json;
 
 
 
@@ -145,8 +148,8 @@ void Dtam::test_mapping(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
 
-  optimization_thread.detach();
-  initialization_thread.detach();
+  optimization_thread.join();
+  initialization_thread.join();
   update_cameras_thread_.join();
 
   // debugAllCameras();
@@ -156,8 +159,13 @@ void Dtam::test_mapping(){
   // camera_vector_->at(1)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"1");
   // camera_vector_->at(0)->showCandidates_1(2);
   // camera_vector_->at(0)->showCandidates_2(2);
-  camera_vector_->at(camera_vector_->size()-2)->showProjCandidates_2(2);
+  // camera_vector_->at(camera_vector_->size()-2)->showProjCandidates_2(2);
+  camera_vector_->at(1)->showProjCandidates_2(2);
+  // camera_vector_->at(1)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
+
+  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(camera_vector_->size()-2));
+  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(1));
 
   cv::waitKey(0);
 
@@ -193,3 +201,87 @@ void Dtam::showFeatures(int idx, float size=1){
 
 
 };
+
+// TODO remove
+bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* camera){
+
+
+    const char* path_name_ = path_name.c_str(); // dataset name
+    struct stat info;
+    if( stat( path_name_, &info ) != 0 )
+    { }
+    else if( info.st_mode & S_IFDIR )
+    {
+      // isdir
+      return 0;
+    }
+    else
+    {
+      // printf( "%s is not a directory\n", path_name );
+      std::string st = "rm " + path_name;
+      const char *str = st.c_str();
+      // std::string
+      system(str);
+    }
+
+    std::string st = "touch "+path_name;
+    const char *str = st.c_str();
+    system(str);
+
+    json j;
+
+    j["cameras"][camera->name_];
+    int count=0;
+    for(RegionWithProjCandidates* reg : *(camera->regions_projected_cands_->region_vec_) ){
+      for(CandidateProjected* cand : *(reg->cands_vec_)){
+        int level = cand->level_;
+        Eigen::Vector2f uv = cand->uv_ ;
+        Eigen::Vector3f p;
+        camera->pointAtDepth( uv, cand->depth_, p);
+        std::stringstream ss;
+        ss << std::setw(6) << std::setfill('0') << count;
+        std::string idx = ss.str();
+        j["cameras"][camera->name_]["p"+idx] = {
+          {"level", level},
+          {"depth_var", cand->depth_var_},
+          {"position", {p[0],p[1],p[2]}}
+        };
+        count++;
+      }
+
+    }
+    // write prettified JSON to another file
+    std::ofstream o(path_name);
+    o << std::setw(4) << j << std::endl;
+    o.close();
+
+    return 1;
+    // int rows=camera->parameters_->resolution_y;
+    // int cols=camera->parameters_->resolution_x;
+    // int n_pixels=rows*cols;
+    //
+    // for
+    //
+    // for (int i=0; i<n_pixels; i++){
+    //   Cp_gpu cp= camera->cp_array_[i];
+    //   if (cp.valid){
+    //     std::stringstream ss;
+    //     ss << std::setw(6) << std::setfill('0') << i;
+    //     std::string idx = ss.str();
+    //     j["cameras"][camera->name_]["p"+idx] = {
+    //       {"color", {cp.color[0],cp.color[1],cp.color[2]}},
+    //       {"position", {cp.point[0],cp.point[1],cp.point[2]}}
+    //     };
+    //   }
+    // }
+    // // write prettified JSON to another file
+    // std::ofstream o(path_name);
+    // o << std::setw(4) << j << std::endl;
+    // o.close();
+    //
+    // double t_e=getTime();
+    // double delta=t_e-t_s;
+    // return delta;
+
+
+}

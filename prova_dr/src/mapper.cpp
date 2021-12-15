@@ -199,7 +199,7 @@ void Mapper::trackExistingCandidates(){
     sharedCoutDebug("         - N. candidates: "+std::to_string(keyframe->candidates_->size()));
 
     bool keep_cand = false;
-    // bool flag = 1;
+    bool flag = 1;
 
     // keyframe->showCandidates_2(2);
     // cv::waitKey(0);
@@ -232,16 +232,18 @@ void Mapper::trackExistingCandidates(){
         if (!ep_segment->searchMin(cand, parameters_))
           continue;
 
-        // if (dtam_->frame_current_==1){
-        // // if (flag){
-        //   if(j==cand->bounds_->size()-1)
-        //   flag=0;
-        //   // ep_segment->showEpipolar(cand->level_);
-        //   ep_segment->showEpipolarWithMin(cand->level_);
-        //   keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
-        //   cv::waitKey(0);
-        //   // cv::destroyAllWindows();
-        // }
+        if (ep_segment->uv_idxs_mins->size()==1){
+        // if (dtam_->frame_current_==1){2.^(level)
+        // if (flag){
+        if(j==cand->bounds_->size()-1)
+        flag=0;
+        // ep_segment->showEpipolar(cand->level_);
+        ep_segment->showEpipolarWithMin(cand->level_);
+        keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
+        cv::waitKey(0);
+        std::cout << k << "-th candidate" << std::endl;
+        // cv::destroyAllWindows();
+        }
 
         // cam_couple->compareEpSegmentWithGt(cand);
         // cam_couple->showEpSegment(cand);

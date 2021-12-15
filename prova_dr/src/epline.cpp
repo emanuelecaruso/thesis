@@ -62,9 +62,9 @@ void EpipolarLine::lineTraverse(int level)
 
 float EpipolarLine::getCost(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,const colorRGB& color_r, const colorRGB& color_m) {
   float cost_magn = abs(magnitude3C_r[0]-magnitude3C_m[0])+abs(magnitude3C_r[1]-magnitude3C_m[1])+abs(magnitude3C_r[2]-magnitude3C_m[2]);
-  // float cost_col = abs(color_r[0]-color_m[0])+abs(color_r[1]-color_m[1])+abs(color_r[2]-color_m[2]);
-  return cost_magn;
-  // return cost_magn+cost_col;
+  float cost_col = abs(color_r[0]-color_m[0])+abs(color_r[1]-color_m[1])+abs(color_r[2]-color_m[2]);
+  // return cost_magn;
+  return cost_magn+cost_col;
 }
 
 
@@ -93,8 +93,8 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
     if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(pixel, magnitude_m))
     {
-      if(magnitude_m<magnitude_r*parameters->grad_perc_threshold){
-        if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
+      if(magnitude_m<magnitude_r*parameters->grad_perc_threshold*pow(2,candidate->level_)){
+        if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
           uv_idxs_mins->push_back(i-1);
         }
         sign=false;

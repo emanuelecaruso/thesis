@@ -77,4 +77,6 @@ class Dtam{
     void doTracking();
     void showFeatures(int idx, float size);
 
+    bool makeJsonForCands(const std::string& path_name, CameraForMapping* camera);
+
 };
