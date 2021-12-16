@@ -64,7 +64,15 @@ class EpipolarLine{
 
 
     bool searchMin(Candidate* candidate, Params* parameters);
-    float getCost(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,const colorRGB& color_r, const colorRGB& color_m );
+    float getCost(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,
+                  const colorRGB& phase3C_r, const colorRGB& phase3C_m,
+                  const colorRGB& color_r, const colorRGB& color_m );
+    float getCostNew(const colorRGB& dh_r, const colorRGB& dh_m,
+                  const colorRGB& dv_r, const colorRGB& dv_m,
+                  const colorRGB& color_r, const colorRGB& color_m );
+    float getCostMagn(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,
+                      const colorRGB& color_r, const colorRGB& color_m );
+    float getCostPhase( const colorRGB& phase3C_r, const colorRGB& phase3C_m);
 
   private:
 

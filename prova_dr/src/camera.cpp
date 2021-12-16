@@ -352,6 +352,8 @@ bool RegionWithCandidates::collectCandidates(){
 
         float magnitude = wvlt_lvl->magnitude_img->evalPixel(y_curr,x_curr);
         colorRGB magnitude3C = wvlt_lvl->magnitude3C_img->evalPixel(y_curr,x_curr);
+        colorRGB dh = wvlt_lvl->dh->evalPixel(y_curr,x_curr);
+        colorRGB dv = wvlt_lvl->dv->evalPixel(y_curr,x_curr);
         colorRGB c = wvlt_lvl->c->evalPixel(y_curr,x_curr);
 
         Eigen::Vector2i pixel_coords{x_curr,y_curr};
@@ -359,14 +361,14 @@ bool RegionWithCandidates::collectCandidates(){
         cam_->pixelCoords2uv(pixel_coords, uv, wav_level);
 
         // check well TODO
-        magnitude*=pow(0.9,wav_level);
+        magnitude*=pow(0.8,wav_level);
 
         if(magnitude>grad_threshold_){
 
           bound bound_(min_depth,max_depth);
           std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
           Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,magnitude,
-                                               magnitude3C, c, bounds, this );
+                                               magnitude3C, dh, dv, c, bounds, this );
 
 
           auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), magnitude, lb_cmp);
@@ -476,7 +478,7 @@ void CameraForMapping::showCandidates_1(float size){
     Wvlt_lvl* wvlt_curr_=selected->vector_wavelets->at(level);
     // wvlt_curr_->dh->setPixel(pixel_coords,white*8);
     // wvlt_curr_->dv->setPixel(pixel_coords,white*8);
-    wvlt_curr_->magnitude3C_img->setPixel(pixel_coords,white*8);
+    wvlt_curr_->c->setPixel(pixel_coords,white*8);
   }
   selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
 

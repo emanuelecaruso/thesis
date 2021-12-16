@@ -14,36 +14,45 @@ class Wvlt_lvl{
 
     Image<colorRGB>* magnitude3C_img;
     Image<float>* magnitude_img;
+    Image<colorRGB>* phase3C_img;
+    Image<float>* phase_img;
 
-
+    // clone
     Wvlt_lvl(Image<colorRGB>* c_, Image<colorRGB>* dh_,
             Image<colorRGB>* dv_,
             Image<float>* magnitude_img_, Image<colorRGB>* magnitude3C_img_,
+            Image<float>* phase_img_, Image<colorRGB>* phase3C_img_,
            const int level_):
               level(level_),
               c(c_->clone()),
               dh(dh_->clone()),
               dv(dv_->clone()),
               magnitude3C_img(magnitude3C_img_->clone()),
-              magnitude_img(magnitude_img_->clone())
+              magnitude_img(magnitude_img_->clone()),
+              phase3C_img(phase3C_img_->clone()),
+              phase_img(phase_img_->clone())
     {  };
 
+    // create first level
     Wvlt_lvl(const Image<colorRGB>* img ):
     level(0){
       WaveletDecHaar(img);
     };
 
+    // create next level
     Wvlt_lvl(Wvlt_lvl* wvlt_lvl_previous):
     level(wvlt_lvl_previous->level+1){
       // WaveletDecHaar( wvlt_lvl_previous);
       WaveletDecHaar( wvlt_lvl_previous->c);
     };
     inline Wvlt_lvl* clone(){
-      return new Wvlt_lvl(c,dh,dv, magnitude_img,magnitude3C_img, level);};
+      return new Wvlt_lvl(c,dh,dv, magnitude_img,magnitude3C_img, phase_img,phase3C_img, level);};
   private:
     void WaveletDecHaar(const Image<colorRGB>* img);
     Image<colorRGB>* getMagnitude3C(const Image<colorRGB>* img1, const Image<colorRGB>* img2);
+    Image<colorRGB>* getPhase3C(const Image<colorRGB>* img1, const Image<colorRGB>* img2);
     Image<float>* getMagnitude(const Image<colorRGB>* magnitude_img_);
+    Image<float>* getPhase(const Image<colorRGB>* phase_img_);
     // void WaveletDecHaar(Wvlt_lvl* wvlt_lvl_previous);
 
 };

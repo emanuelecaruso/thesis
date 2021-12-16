@@ -195,13 +195,18 @@ class Candidate : public CandidateBase{
 
 
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
-              float grad_magnitude, colorRGB& grad3C_magnitude, colorRGB& color,
+              float grad_magnitude, colorRGB& grad3C_magnitude,
+              colorRGB& dh, colorRGB& dv, colorRGB& color,
               std::vector<bound>* bounds, RegionWithCandidates* region ):
     CandidateBase( level, pixel, uv),
     bounds_(bounds),
     region_(region),
     grad_magnitude_(grad_magnitude),
-    grad3C_magnitude_(grad3C_magnitude), color_(color),
+    grad3C_magnitude_(grad3C_magnitude),
+    grad3C_phase_(grad3C_magnitude),
+    dh_(dh),
+    dv_(dv),
+    color_(color),
     ready_(false)
     {};
 
@@ -213,6 +218,9 @@ class Candidate : public CandidateBase{
     const RegionWithCandidates* region_;
     const float grad_magnitude_;
     const colorRGB grad3C_magnitude_;
+    const colorRGB grad3C_phase_;
+    const colorRGB dh_;
+    const colorRGB dv_;
     const colorRGB color_;
     bool ready_;
 
