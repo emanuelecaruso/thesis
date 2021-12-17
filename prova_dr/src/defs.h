@@ -220,9 +220,14 @@ namespace pr {
 
 
 
+  inline float extractRollingAngle(Eigen::Isometry3f T){
+    Eigen::Matrix3f R=T.linear();
+    float r10 = R(1,0);
+    float r00 = R(0,0);
+    return atan2(r10,r00);
+  }
 
-
-  #define PI 3.141592
+  #define PI 3.14159265
 
   struct CamParameters{
     const int resolution_x;
