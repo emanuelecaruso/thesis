@@ -10,7 +10,7 @@ samples=128
 cd ./blender_scenes
 
 #Render with CYCLES engine
-blender --background ./${dataset_name}.blend --python ./python_scripts/script.py CYCLES ${samples}
+# blender --background ./${dataset_name}.blend --python ./python_scripts/script.py CYCLES ${samples}
 
 #Render with EEVEE engine
-# blender --background ./${dataset_name}.blend --python ./python_scripts/script.py
+blender --background ./${dataset_name}.blend --python ./python_scripts/script.py

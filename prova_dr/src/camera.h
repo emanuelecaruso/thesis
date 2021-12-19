@@ -117,53 +117,6 @@ class Camera{
 
 };
 
-class CameraForStudy: public Camera{
-  public:
-    const Image<colorRGB>* curvature_;
-    const Image<colorRGB>* grad_x_;
-    const Image<colorRGB>* grad_y_;
-    const Image<colorRGB>* grad_robust_x_;
-    const Image<float>* grad_intensity_;
-    Wvlt_dec* wavelet_dec_;
-
-    CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
-           const std::string& path_rgb, int wav_levels):
-           Camera( name, cam_parameters, path_rgb),
-           curvature_( computeCurvature(100) ),
-           grad_x_( gradientX() ),
-           grad_y_( gradientY() ),
-           grad_robust_x_( gradientRobustX() ),
-           grad_intensity_( gradientintensity() ),
-           wavelet_dec_(new Wvlt_dec(wav_levels,new Image<colorRGB>(image_rgb_)))
-           { };
-
-    CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
-           nlohmann::basic_json<>::value_type f,
-           const std::string& path_rgb, int wav_levels):
-           CameraForStudy( name,cam_parameters, path_rgb, wav_levels )
-           {
-             loadPoseFromJsonVal(f);
-             invdepth_map_ = new Image< float >("invdepth_"+name_);
-             loadWhiteDepth();
-           };
-
-    CameraForStudy(const std::string& name, const CamParameters* cam_parameters,
-           nlohmann::basic_json<>::value_type f,
-           const std::string& path_rgb,  const std::string& path_depth, int wav_levels ):
-           CameraForStudy( name,cam_parameters, f, path_rgb, wav_levels )
-           {
-             loadDepthMap(path_depth);
-           };
-
-  private:
-    //feature types
-    Image<colorRGB>* computeCurvature(float gain=1);
-    Image<colorRGB>* gradientX();
-    Image<colorRGB>* gradientY();
-    Image<colorRGB>* gradientRobustX();
-    Image<float>* gradientintensity();
-
-};
 
 class Mapper; // forward declaration
 
@@ -203,7 +156,6 @@ class Candidate : public CandidateBase{
     region_(region),
     grad_magnitude_(grad_magnitude),
     grad3C_magnitude_(grad3C_magnitude),
-    grad3C_phase_(grad3C_magnitude),
     dh_(dh),
     dv_(dv),
     color_(color),
@@ -218,12 +170,12 @@ class Candidate : public CandidateBase{
     const RegionWithCandidates* region_;
     const float grad_magnitude_;
     const colorRGB grad3C_magnitude_;
-    const colorRGB grad3C_phase_;
     const colorRGB dh_;
     const colorRGB dv_;
+    colorRGB dh_robust_;
+    colorRGB dv_robust_;
     const colorRGB color_;
     bool ready_;
-
 
 };
 
@@ -382,7 +334,7 @@ class CameraForMapping: public Camera{
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
            const Image<colorRGB>* image_rgb, Params* parameters):
            Camera( name, cam_parameters, image_rgb),
-           wavelet_dec_(new Wvlt_dec(parameters->wavelet_levels,new Image<colorRGB>(image_rgb_))),
+           wavelet_dec_(new Wvlt_dec(parameters->wavelet_levels,new Image<colorRGB>(image_rgb_), this)),
            candidates_(new std::vector<Candidate*>),
            active_points_(new std::vector<KFPoint*>),
            marginalized_points_(new std::vector<KFPoint*>),
@@ -391,7 +343,7 @@ class CameraForMapping: public Camera{
            regions_projected_cands_(new RegionsWithProjCandidates(parameters, this,
                       cam_parameters->resolution_x, cam_parameters->resolution_y)),
            n_candidates_(0)
-           {  };
+           {};
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
             const Image<colorRGB>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,

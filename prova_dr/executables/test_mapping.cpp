@@ -1,4 +1,4 @@
-#include "environment.h"
+// #include "environment.h"
 #include "dtam.h"
 #include <stdio.h>
 
@@ -20,13 +20,13 @@ int main (int argc, char * argv[]) {
   // float grad_threshold = 1;
   // float grad_threshold = 1.5;
   float grad_perc_threshold = 0.75;
-  // float cost_threshold = 0.3; // if cost is below this threshold, is keeped
+  // float cost_threshold = 0.8; // if cost is below this threshold, is keeped
   float cost_threshold = 0.2; // if cost is below this threshold, is keeped
   // int num_candidates = 300;
   int num_candidates = 4000;
   int max_num_active_points = num_candidates;
   // int num_candidates = INT_MAX;
-  int num_active_keyframes = 5;
+  int num_active_keyframes = 7;
   float max_depth_var = 0.01; // maximum depth variance for the initilizer
 
 

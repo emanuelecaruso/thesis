@@ -1,8 +1,8 @@
 #Name of the .blend file inside "blender_scenes" directory
 
-dataset_name='bunny_scene'
+# dataset_name='bunny_scene'
 # dataset_name='bunny_scene_exposure'
-# dataset_name='bunny_scene_roll'
+dataset_name='bunny_scene_roll'
 # dataset_name='bunny_scene_zoom'
 
 

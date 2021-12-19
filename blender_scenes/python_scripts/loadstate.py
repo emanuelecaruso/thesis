@@ -52,7 +52,8 @@ for value in dict2:
     depth_var=value['depth_var']
     level=value['level']
     
-    if depth_var<0.1:
+    if True:
+    #if depth_var<0.1:
         len=size*(pow(2,level))
         
         vertices.append( (position[0]+len,position[1]+len,position[2]+len) ) #rtf
@@ -64,12 +65,18 @@ for value in dict2:
         vertices.append( (position[0]-len,position[1]-len,position[2]+len) ) #lcf
         vertices.append( (position[0]-len,position[1]-len,position[2]-len) ) #lcc
         
-        faces.append( (count,count+1,count+2,count+3) ) #r
-        faces.append( (count+4,count+5,count+6,count+7) ) #l
-        faces.append( (count,count+1,count+4,count+5) ) #t
-        faces.append( (count+2,count+3,count+6,count+7) ) #d
-        faces.append( (count,count+2,count+4,count+6) ) #f
-        faces.append( (count+1,count+3,count+5,count+7) ) #c
+        faces.append( (count+1,count+2,count+3) ) #r
+        faces.append( (count,count+1,count+2) ) #r
+        faces.append( (count+5,count+6,count+7) ) #l
+        faces.append( (count+4,count+5,count+6) ) #l
+        faces.append( (count+1,count+4,count+5) ) #t
+        faces.append( (count,count+1,count+4) ) #t
+        faces.append( (count+3,count+6,count+7) ) #d
+        faces.append( (count+2,count+3,count+6) ) #d
+        faces.append( (count+2,count+4,count+6) ) #f
+        faces.append( (count,count+2,count+4) ) #f
+        faces.append( (count+3,count+5,count+7) ) #c
+        faces.append( (count+1,count+3,count+5) ) #c
 
     
     count+=8

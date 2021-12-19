@@ -8,9 +8,9 @@
 using json = nlohmann::json;
 
 
-std::vector<CameraForStudy*>* Environment::loadCameraVector(const std::string& path_name, const std::string& dataset_name){
+std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name, const std::string& dataset_name){
 
-  std::vector<CameraForStudy*>* camera_vector = nullptr;
+  std::vector<Camera*>* camera_vector = nullptr;
 
   const char* path_name_ = path_name.c_str(); // dataset name
 
@@ -34,7 +34,7 @@ std::vector<CameraForStudy*>* Environment::loadCameraVector(const std::string& p
 
   auto cameras = j.at("cameras");
 
-  camera_vector = new std::vector<CameraForStudy*>;
+  camera_vector = new std::vector<Camera*>;
 
   for (json::iterator it = cameras.begin(); it != cameras.end(); ++it) {
 
@@ -74,12 +74,12 @@ std::vector<CameraForStudy*>* Environment::loadCameraVector(const std::string& p
     std::string path_depth_=(path_name+"/depth_"+name+".exr");
     const char* path_depth = path_depth_.c_str(); // dataset name
     if( stat( path_depth, &info__ ) != 0 ){
-      CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_, wavelet_levels_ );
+      Camera* camera = new Camera(name,cam_parameters_, f, path_rgb_ );
       camera_vector->push_back(camera);
       std::cout << camera->name_ << " added in env" << std::endl;
     }
     else{
-      CameraForStudy* camera = new CameraForStudy(name,cam_parameters_, f, path_rgb_, path_depth_, wavelet_levels_);
+      Camera* camera = new Camera(name,cam_parameters_, f, path_rgb_, path_depth_);
       camera_vector->push_back(camera);
       std::cout << camera->name_ << " added in env" << std::endl;
     }
@@ -152,7 +152,7 @@ void Environment::debugAllCameras(bool show_imgs) const {
   std::cout << "DEBUGGING ALL CAMERAS:" << std::endl;
   std::cout << "camera vector size: " << camera_vector_->size() << std::endl;
 
-  for(CameraForStudy* camera : *camera_vector_){
+  for(Camera* camera : *camera_vector_){
     camera->printMembers();
     if (show_imgs){
       camera->showRGB();

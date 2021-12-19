@@ -6,7 +6,7 @@
 #include "defs.h"
 
 void Tracker::trackGroundtruth(){
-  const std::vector<CameraForStudy*>* cam_vec_env = dtam_->environment_->camera_vector_;
+  const std::vector<Camera*>* cam_vec_env = dtam_->environment_->camera_vector_;
 
   Camera* cam_gt = cam_vec_env->at(dtam_->frame_current_);
   CameraForMapping* cam = dtam_->camera_vector_->at(dtam_->frame_current_);

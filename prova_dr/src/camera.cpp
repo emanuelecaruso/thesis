@@ -222,109 +222,6 @@ void Camera::showDepthMap(int image_scale) const {
 
 
 
-
-Image<colorRGB>* CameraForStudy::computeCurvature(float gain){
-
-  Image<colorRGB>* img = new Image<colorRGB>(image_rgb_);
-
-  Image<colorRGB>* fx = img->compute_sobel_x();
-  Image<colorRGB>* fx_sqrd = fx->squared();
-  Image<colorRGB>* fxx = fx->compute_sobel_x();
-  Image<colorRGB>* fy = img->compute_sobel_y();
-  Image<colorRGB>* fy_sqrd = fy->squared();
-  Image<colorRGB>* fyy = fy->compute_sobel_y();
-  Image<colorRGB>* fxy = fx->compute_sobel_y();
-
-  // curvature
-  Image<colorRGB>* k = new Image<colorRGB>("curvature_"+name_);
-  // curvature -> κ = fy^2 fxx − 2*fx fy fxy + fx^2 fyy ,
-  k->image_=fy_sqrd->image_.mul(fxx->image_)-2*fx->image_.mul(fy->image_.mul(fxy->image_))+fx_sqrd->image_.mul(fyy->image_);
-  // k->image_/=(image_rgb_->image_.mul(image_rgb_->image_.mul(image_rgb_->image_)));
-  k->image_*=gain;
-
-  return k;
-}
-
-
-
-Image<colorRGB>* CameraForStudy::gradientX(){
-
-  Image<colorRGB>* img = new Image<colorRGB>(image_rgb_);
-
-  Image<colorRGB>* fx = img->compute_sobel_x();
-  Image<colorRGB>* fxx = fx->compute_sobel_x();
-  Image<colorRGB>* fxxx = fxx->compute_sobel_x();
-
-  Image<colorRGB>* out = fx;
-
-  std::vector<cv::Mat> channels_i(3);
-  split(out->image_, channels_i);
-  // channels_i[2]*=1.0/(4);
-  // channels_i[1]*=1.0/(4);
-  // channels_i[0]*=1.0/(4);
-  merge(channels_i, out->image_);
-
-
-  return out;
-  // return fx;
-}
-
-Image<colorRGB>* CameraForStudy::gradientY(){
-
-  Image<colorRGB>* img = new Image<colorRGB>(image_rgb_);
-
-  Image<colorRGB>* fy = img->compute_sobel_y();
-  Image<colorRGB>* fyy = fy->compute_sobel_y();
-  Image<colorRGB>* fyyy = fyy->compute_sobel_y();
-
-  Image<colorRGB>* out = fy;
-
-  std::vector<cv::Mat> channels_i(3);
-  split(out->image_, channels_i);
-  // channels_i[2]*=1.0/(4);
-  // channels_i[1]*=1.0/(4);
-  // channels_i[0]*=1.0/(4);
-  merge(channels_i, out->image_);
-
-  return out;
-  // return fy;
-}
-
-Image<colorRGB>* CameraForStudy::gradientRobustX(){
-
-  Image<colorRGB>* img = new Image<colorRGB>(image_rgb_);
-
-  float offset=0.1;
-  img->image_+=cv::Scalar(offset,offset,offset);
-
-  Image<colorRGB>* fx = img->compute_sobel_x();
-
-  Image<colorRGB>* fxr = new Image<colorRGB>("grad_x_rob_"+name_);
-
-  fxr->image_=fx->image_/(img->image_);
-  // fxr->image_*=5;
-
-  return fxr;
-}
-
-Image<float>* CameraForStudy::gradientintensity(){
-
-  Image<colorRGB>* img = new Image<colorRGB>(image_rgb_);
-
-  Image<colorRGB>* fx = img->compute_sobel_x();
-  Image<colorRGB>* fy = img->compute_sobel_y();
-  Image<colorRGB>* fx_sqrd = fx->squared();
-  Image<colorRGB>* fy_sqrd = fy->squared();
-
-  Image<colorRGB>* f = new Image<colorRGB>();
-  Image<float>* out = new Image<float>("grad_intensity_"+name_);
-  // curvature -> κ = fy^2 fxx − 2*fx fy fxy + fx^2 fyy ,
-  f->image_=(1./8.)*(fx_sqrd->image_+fy_sqrd->image_);
-  out=f->getComponentSum();
-
-  return out;
-}
-
 bool RegionWithCandidates::collectCandidates(){
 
   int wav_levels= cam_->wavelet_dec_->levels_;
@@ -367,8 +264,9 @@ bool RegionWithCandidates::collectCandidates(){
 
           bound bound_(min_depth,max_depth);
           std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
+
           Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,magnitude,
-                                               magnitude3C, dh, dv, c, bounds, this );
+                                              magnitude3C, dh, dv, c, bounds, this );
 
 
           auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), magnitude, lb_cmp);
@@ -459,6 +357,7 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
   }
 }
 
+
 void CameraForMapping::selectActivePoints(int max_num_active_points){
 
 }
@@ -491,6 +390,7 @@ void CameraForMapping::showCandidates_2(float size){
   double alpha = 0.5;
 
   Image<colorRGB>* show_img = new Image<colorRGB>(image_rgb_);
+
   for(Candidate* candidate : *candidates_){
     // get level
     int level = candidate->level_;

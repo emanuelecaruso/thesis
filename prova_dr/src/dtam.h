@@ -33,7 +33,6 @@ class Dtam{
 
     void test_mapping();
     void test_tracking(Environment* environment);
-    void testFeatures();
 
     void debugAllCameras(bool show_imgs=false);
     int getFrameCurrent();
@@ -75,8 +74,8 @@ class Dtam{
     void doInitialization(bool all_keyframes=false, bool take_gt_poses=false);
     void doOptimization(bool active_all_candidates=false);
     void doTracking();
-    void showFeatures(int idx, float size);
 
     bool makeJsonForCands(const std::string& path_name, CameraForMapping* camera);
 
+    void testRotationalInvariance();
 };

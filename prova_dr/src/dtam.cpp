@@ -28,7 +28,8 @@ void Dtam::debugAllCameras(bool show_imgs){
 
 void Dtam::addCamera(int counter){
 
-  CameraForStudy* env_cam=environment_->camera_vector_->at(counter);
+  // CameraForStudy* env_cam=environment_->camera_vector_->at(counter);
+  Camera* env_cam=environment_->camera_vector_->at(counter);
   CameraForMapping* new_cam=new CameraForMapping (env_cam, parameters_);
   new_cam->regions_->collectCandidates();
   camera_vector_->push_back(new_cam);
@@ -64,6 +65,7 @@ void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
     if(frame_current_==0){
       tracker_->trackCam(take_gt_poses);
       keyframe_handler_->addKeyframe(all_keyframes);
+      mapper_->updateRotationalInvariantGradients();
       mapper_->selectNewCandidates();
       continue;
     }
@@ -72,6 +74,8 @@ void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
 
     tracker_->trackCam(take_gt_poses);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
+
+      mapper_->updateRotationalInvariantGradients();
       // bundle_adj_->projectAndMarginalizeActivePoints();
       mapper_->trackExistingCandidates();
       cand_tracked_.notify_all();
@@ -130,11 +134,60 @@ void Dtam::updateCamerasFromEnvironment(){
 
 
     counter++;
+
   }
   end_flag_=true;
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   sharedCout("\nVideo stream ended");
 
+}
+
+void Dtam::testRotationalInvariance(){
+
+  CameraForMapping* cam0=camera_vector_->at(0);
+  for( int i=1; i<camera_vector_->size(); i++)
+  {
+    CameraForMapping* cam=camera_vector_->at(i);
+
+    Image<colorRGB>* dv_ = new Image<colorRGB>("dh");
+    Image<colorRGB>* dh_ = new Image<colorRGB>("dv");
+    Image<colorRGB>* dv_inv = new Image<colorRGB>("dh inv");
+    Image<colorRGB>* dh_inv = new Image<colorRGB>("dv inv");
+    dv_->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dv->image_.clone();
+    dh_->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dh->image_.clone();
+    dv_inv->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dv_robust->image_.clone();
+    dh_inv->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dh_robust->image_.clone();
+
+    Eigen::Isometry3f T = (*(cam->frame_camera_wrt_world_));
+    Eigen::Matrix3f R=T.linear();
+
+    // float rollAngle_= -atan2(-R(0,1),R(0,0));
+    // float rollAngleCam0= -atan2(-Rcam0(0,1),Rcam0(0,0));
+    float rollAngle= -atan2(R(1,0),R(1,1));
+
+    float c=cos(rollAngle);
+    float s=sin(rollAngle);
+
+    cv::multiply(dh_->image_, cv::Scalar(1./8.,1./8.,1./8.), dh_->image_);
+    cv::multiply(dv_->image_, cv::Scalar(1./8.,1./8.,1./8.), dv_->image_);
+    cv::add(dh_->image_, cv::Scalar(0.5,0.5,0.5), dh_->image_);
+    cv::add(dv_->image_, cv::Scalar(0.5,0.5,0.5), dv_->image_);
+    dv_->show(2,"dv");
+    dh_->show(2,"dh");
+
+
+    cv::multiply(dh_inv->image_, cv::Scalar(1./8.,1./8.,1./8.), dh_inv->image_);
+    cv::multiply(dv_inv->image_, cv::Scalar(1./8.,1./8.,1./8.), dv_inv->image_);
+    cv::add(dh_inv->image_, cv::Scalar(0.5,0.5,0.5), dh_inv->image_);
+    cv::add(dv_inv->image_, cv::Scalar(0.5,0.5,0.5), dv_inv->image_);
+
+    dh_inv->show(2,"dh_inv");
+    dv_inv->show(2,"dv_inv");
+
+    // cam->wavelet_dec_->vector_wavelets->at(0)->magnitude_img->show();
+    cv::waitKey(0);
+  }
+  cv::waitKey(0);
 }
 
 void Dtam::test_mapping(){
@@ -161,48 +214,20 @@ void Dtam::test_mapping(){
   // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(camera_vector_->size()-2)->showProjCandidates_2(2);
   camera_vector_->at(0)->showCandidates_2(2);
-  // camera_vector_->at(1)->showProjCandidates_2(2);
-  camera_vector_->at(5)->showProjCandidates_2(2);
+  // camera_vector_->at(0)->showCandidates_2(2);
+  // camera_vector_->at(7)->showProjCandidates_2(2);
+  // camera_vector_->at(5)->showProjCandidates_2(2);
   // camera_vector_->at(1)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(camera_vector_->size()-2));
   makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
-  cv::waitKey(0);
+  testRotationalInvariance();
 
 
 }
 
-void Dtam::testFeatures(){
-  CameraForStudy* cam_1=environment_->camera_vector_->at(0);
-  float size=1;
-  // float size=1.3;image_
-  // float size=2;
-
-  for (int i=1; i<environment_->camera_vector_->size(); i++){
-    showFeatures(i, size);
-    cv::waitKey(0);
-  }
-};
-
-void Dtam::showFeatures(int idx, float size=1){
-  CameraForStudy* cam_1=environment_->camera_vector_->at(0);
-  CameraForStudy* cam_2=environment_->camera_vector_->at(idx);
-  // cam_1->image_rgb_->showWithOtherImage(cam_2->image_rgb_,"image comparison",size);
-  cam_2->wavelet_dec_->showWaveletDec(size);
-  // cam_1->wavelet_dec_->compareThreshold(0.1,size);
-  // cam_1->curvature_->showWithOtherImage(cam_2->curvature_,"curvature comparison",size);
-  // cam_1->grad_intensity_->showWithOtherImage(cam_2->grad_intensity_,"grad intensity comparison",size);
-  // cam_1->grad_x_->showWithOtherImage(cam_2->grad_x_,"grad x comparison",size);
-  // cam_1->grad_x_->getChannel(2)->showWithOtherImage(cam_2->grad_x_->getChannel(2),"r grad x comparison",size);
-  // cam_1->grad_x_->getChannel(1)->showWithOtherImage(cam_2->grad_x_->getChannel(1),"g grad x comparison",size);
-  // cam_1->grad_x_->getChannel(0)->showWithOtherImage(cam_2->grad_x_->getChannel(0),"b grad x comparison",size);
-  // cam_1->grad_y_->showWithOtherImage(cam_2->grad_y_,"grad y comparison",size);
-  // cam_1->grad_robust_x_->showWithOtherImage(cam_2->grad_robust_x_,"grad x rob comparison",size);
-
-
-};
 
 // TODO remove
 bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* camera){

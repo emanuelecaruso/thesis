@@ -2772,6 +2772,8 @@ executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o: /usr/local/include
 executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.o: ../src/utils.cpp
 executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.o: ../src/utils.h
 
+executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o: ../libs/json.hpp
+executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o: ../src/camera.h
 executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o: ../src/defs.h
 executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o: ../src/image.h
 executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o: ../src/wavelet.cpp

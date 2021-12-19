@@ -25,7 +25,7 @@ width_millimeters=width_meters*1000
 render.resolution_x=resolution_x
 render.resolution_y=resolution_y
 
-cams_num=120
+cams_num=60
 scene.frame_start=0
 scene.frame_end=cams_num-1
 
@@ -98,44 +98,44 @@ for obj_ in bpy.data.objects:
         scl=0.03
 
         #########################
-        # #ELLIPSE
-        # #rays
-        # Rx=0.3
-        # Ry=1
-        # Rz=0
-        #
-        # #location
-        # x_center=-3
-        # y_center=0
-        # z_center=1.80
-        #
-        # x=math.cos(angle)*Rx+x_center
-        # y=math.sin(angle)*Ry+y_center
-        # z=math.cos(angle)*Rz+z_center
-        #
-        # roll=0
-        #########################
-        #ROLL
+        #ELLIPSE
         #rays
-        Rx=0.1
-        Ry=0.1
-        Rz=0.1
-
+        Rx=0.3
+        Ry=1.5
+        Rz=0.3
+        
         #location
-        x_center=-3
+        x_center=-2.5
         y_center=0
-        z_center=1.80
-
+        z_center=1.
+        
         x=math.cos(angle)*Rx+x_center
         y=math.sin(angle)*Ry+y_center
         z=math.cos(angle)*Rz+z_center
+        
+        roll=0
+        #########################
+#        #ROLL
+#        #rays
+#        Rx=0.1
+#        Ry=0.1
+#        Rz=0.1
 
-        roll=angle
+#        #location
+#        x_center=-3
+#        y_center=0
+#        z_center=1.80
+
+#        x=math.cos(angle)*Rx+x_center
+#        y=math.sin(angle)*Ry+y_center
+#        z=math.cos(angle)*Rz+z_center
+
+#        roll=angle
         #########################
 
 
         obj_.location=(x,y,z)
-
+        obj_.rotation_mode='ZXY'
 
 
         slide=0.5

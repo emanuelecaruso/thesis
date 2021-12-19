@@ -160,25 +160,12 @@ for obj_ in bpy.data.objects:
 
         pi=math.pi
 
-        eul_ang_=obj_.rotation_euler
-        ex_=eul_ang_.x
-        ey_=eul_ang_.y
-        ez_=eul_ang_.z
-
-
-        Rx_ = np.matrix([[1, 0, 0],[0, math.cos(ex_), -math.sin(ex_)],[0, math.sin(ex_), math.cos(ex_)]])
-        Ry_ = np.matrix([[math.cos(ey_), 0, math.sin(ey_)],[0, 1, 0],[-math.sin(ey_), 0, math.cos(ey_)]])
-        Rz_ = np.matrix([[math.cos(ez_), -math.sin(ez_), 0],[math.sin(ez_), math.cos(ez_), 0],[0, 0, 1]])
-
-
-        # here euler angles are applyied in zyx order
-        Rzy_=np.dot(Rz_,Ry_)
-        R_=np.dot(Rzy_,Rx_)
+        R_=obj_.rotation_euler.to_matrix()
         l_=obj_.location
 
-        pose_=[ R_.item(0), R_.item(1), R_.item(2),
-                R_.item(3), R_.item(4), R_.item(5),
-                R_.item(6), R_.item(7), R_.item(8),
+        pose_=[ R_[0][0], R_[0][1], R_[0][2],
+                R_[1][0], R_[1][1], R_[1][2],
+                R_[2][0], R_[2][1], R_[2][2],
                 l_[0], l_[1], l_[2] ]
 
 

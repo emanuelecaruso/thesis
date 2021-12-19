@@ -1,4 +1,5 @@
 #include "wavelet.h"
+#include "camera.h"
 
 Image<float>* Wvlt_lvl::getMagnitude(const Image<colorRGB>* magnitude_img_)
 {
@@ -49,61 +50,40 @@ Image<colorRGB>* Wvlt_lvl::getMagnitude3C(const Image<colorRGB>* dh,
   return magn;
 }
 
-Image<float>* Wvlt_lvl::getPhase(const Image<colorRGB>* phase_img_)
-{
-  Image<float>* out = new Image<float>("phase");
-  Image<colorRGB>* phase = new Image<colorRGB>();
+Image<float>* Wvlt_lvl::compute_robust_sobels(){
+  Eigen::Matrix3f R = wvlt_dec->cam_->frame_camera_wrt_world_->linear();
 
-  int width=dh->image_.cols;
-  int height=dh->image_.rows;
+  float rollAngle= -atan2(R(1,0),R(1,1));
 
-  out->initImage(height/2, width/2);
+  float c=cos(rollAngle);
+  float s=sin(rollAngle);
 
-  std::vector<cv::Mat> channels_iPhase(3);
-  split(phase_img_->image_, channels_iPhase);
-
-  out->image_=channels_iPhase[0]+channels_iPhase[1]+channels_iPhase[2];
-
-  return out;
+  cv::Mat_<colorRGB> dv_ = dv->image_.clone();
+  cv::Mat_<colorRGB> dh_ = dh->image_.clone();
+  cv::Mat_<colorRGB> dvs;
+  cv::Mat_<colorRGB> dvc;
+  cv::Mat_<colorRGB> dhs;
+  cv::Mat_<colorRGB> dhc;
+  cv::multiply(dv_, cv::Scalar(s,s,s), dvs);
+  cv::multiply(dv_, cv::Scalar(c,c,c), dvc);
+  cv::multiply(dh_, cv::Scalar(s,s,s), dhs);
+  cv::multiply(dh_, cv::Scalar(c,c,c), dhc);
+  cv::add(dhc,-dvs,dh_robust->image_);
+  cv::add(dvc,dhs,dv_robust->image_);
+  // dh_robust->image_+= cv::Scalar(1,1,1);
+  // dv_robust->image_+= cv::Scalar(1,1,1);
 }
 
-Image<colorRGB>* Wvlt_lvl::getPhase3C(const Image<colorRGB>* dh,
-                                        const Image<colorRGB>* dv)
-{
-  Image<colorRGB>* phase = new Image<colorRGB>("phase3C");
-
-  int width=dh->image_.cols;
-  int height=dh->image_.rows;
-
-  phase->initImage(height/2, width/2);
-
-  std::vector<cv::Mat> channels_iPhase(3);
-  split(phase->image_, channels_iPhase);
-
-  std::vector<cv::Mat> channels_dh(3);
-  split(dh->image_, channels_dh);
-
-  std::vector<cv::Mat> channels_dv(3);
-  split(dv->image_, channels_dv);
-
-  for(int i=0; i<3; i++){
-    cv::phase(channels_dh[i], channels_dv[i], channels_iPhase[i]);
-  }
-
-  merge(channels_iPhase, phase->image_);
-
-  return phase;
-}
 
 void Wvlt_lvl::WaveletDecHaar(const Image<colorRGB>* img){
   c=new Image<colorRGB>("c");
 
   dh=new Image<colorRGB>("dh");
   dv=new Image<colorRGB>("dv");
+  dh_robust=new Image<colorRGB>("dh_robust");
+  dv_robust=new Image<colorRGB>("dv_robust");
   magnitude3C_img=new Image<colorRGB>("magnitude3C");
   magnitude_img=new Image<float>("magnitude");
-  phase3C_img=new Image<colorRGB>("phase3C");
-  phase_img=new Image<float>("phase");
 
   int width=img->image_.cols;
   int height=img->image_.rows;
@@ -112,10 +92,10 @@ void Wvlt_lvl::WaveletDecHaar(const Image<colorRGB>* img){
 
   magnitude3C_img->initImage(height/2, width/2);
   magnitude_img->initImage(height/2, width/2);
-  phase3C_img->initImage(height/2, width/2);
-  phase_img->initImage(height/2, width/2);
   dh->initImage(height/2, width/2);
   dv->initImage(height/2, width/2);
+  dh_robust->initImage(height/2, width/2);
+  dv_robust->initImage(height/2, width/2);
 
 
   for (int y=0;y<(height/2);y++)
@@ -129,10 +109,10 @@ void Wvlt_lvl::WaveletDecHaar(const Image<colorRGB>* img){
 
   dh=c->compute_sobel_x();
   dv=c->compute_sobel_y();
+
   magnitude3C_img=getMagnitude3C(dh,dv);
   magnitude_img=getMagnitude(magnitude3C_img);
-  phase3C_img=getPhase3C(dh,dv);
-  phase_img=getPhase(phase3C_img);
+
 
 }
 

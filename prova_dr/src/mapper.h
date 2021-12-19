@@ -69,6 +69,7 @@ class Mapper{
 
     void selectNewCandidates();
     void trackExistingCandidates();
+    void updateRotationalInvariantGradients();
 
   private:
     Dtam* const dtam_;
@@ -80,5 +81,8 @@ class Mapper{
 
     void updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple,
                       CandidateProjected*& projected_cand, bool no_mins);
+
+    void rotateDhAndDvInCands(CameraForMapping* keyframe);
+    void rotateDhAndDvInWvltDec(CameraForMapping* keyframe);
 
 };

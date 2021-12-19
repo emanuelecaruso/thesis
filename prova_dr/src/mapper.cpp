@@ -110,7 +110,7 @@ void Mapper::selectNewCandidates(){
   int idx=dtam_->keyframe_vector_->back();
   CameraForMapping* cam_r= dtam_->camera_vector_->at(idx);
   cam_r->selectNewCandidates(parameters_->num_candidates);
-  sharedCoutDebug("   - New candidates selected");
+  sharedCoutDebug("   - New candidates selected: ("+std::to_string(cam_r->n_candidates_)+")");
 }
 
 
@@ -177,6 +177,65 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 
 }
 
+void Mapper::rotateDhAndDvInCands(CameraForMapping* keyframe){
+  // cand
+  Eigen::Matrix3f R = keyframe->frame_camera_wrt_world_->linear();
+  float rollAngle= -atan2(R(1,0),R(1,1));
+  float c=cos(rollAngle);
+  float s=sin(rollAngle);
+
+
+  for(Candidate* cand : *(keyframe->candidates_)){
+    // rotate dh and dv in current candidate
+    colorRGB dh = cand->dh_;
+    colorRGB dv = cand->dv_;
+    cand->dh_robust_=dh*c-dv*s;
+    cand->dv_robust_=dv*c+dh*s;
+
+  }
+}
+
+void Mapper::rotateDhAndDvInWvltDec(CameraForMapping* keyframe){
+
+  Eigen::Matrix3f R = keyframe->frame_camera_wrt_world_->linear();
+  float rollAngle= -atan2(R(1,0),R(1,1));
+  float c=cos(rollAngle);
+  float s=sin(rollAngle);
+
+  // iterate through wavelet levels
+  for (Wvlt_lvl* wvlt_lvl : *(keyframe->wavelet_dec_->vector_wavelets)){
+    cv::Mat_<colorRGB> dv_ = wvlt_lvl->dv->image_.clone();
+    cv::Mat_<colorRGB> dh_ = wvlt_lvl->dh->image_.clone();
+    cv::Mat_<colorRGB> dvs;
+    cv::Mat_<colorRGB> dvc;
+    cv::Mat_<colorRGB> dhs;
+    cv::Mat_<colorRGB> dhc;
+    cv::multiply(dv_, cv::Scalar(s,s,s), dvs);
+    cv::multiply(dv_, cv::Scalar(c,c,c), dvc);
+    cv::multiply(dh_, cv::Scalar(s,s,s), dhs);
+    cv::multiply(dh_, cv::Scalar(c,c,c), dhc);
+    cv::add(dhc,-dvs,wvlt_lvl->dh_robust->image_);
+    cv::add(dvc,dhs,wvlt_lvl->dv_robust->image_);
+  }
+
+
+}
+
+void Mapper::updateRotationalInvariantGradients(){
+  // get current keyframe
+  CameraForMapping* keyframe_current = dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  rotateDhAndDvInWvltDec(keyframe_current);
+
+  if(dtam_->frame_current_>0){
+    // get previous keyframe
+    CameraForMapping* keyframe_prev = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(dtam_->keyframe_vector_->size()-2));
+    rotateDhAndDvInCands(keyframe_prev);
+  }
+
+
+
+}
+
 void Mapper::trackExistingCandidates(){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
@@ -233,21 +292,18 @@ void Mapper::trackExistingCandidates(){
           continue;
 
         // // if (ep_segment->uv_idxs_mins->size()==1){
-        //   // if (dtam_->frame_current_==1){2.^(level)
+        //   if (dtam_->frame_current_==7){
         //   // if (flag){
-        //   if(j==cand->bounds_->size()-1)
+        //   // if(j==cand->bounds_->size()-1)
         //   flag=0;
         //   // ep_segment->showEpipolar(cand->level_);
         //   ep_segment->showEpipolarWithMin(cand->level_);
-        //   keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
-        //
+        //   keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"_dv_rob");
         //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
-        //
         //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude3C_img->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"_phase");
         //   cv::waitKey(0);
-        //   std::cout << k << "-th candidate, phase r: " << cand->grad3C_phase_[2] << ", g: " << cand->grad3C_phase_[1] << ", b: " << cand->grad3C_phase_[0] << std::endl;
         //   // cv::destroyAllWindows();
-        // // }
+        // }
 
         // cam_couple->compareEpSegmentWithGt(cand);
         // cam_couple->showEpSegment(cand);
