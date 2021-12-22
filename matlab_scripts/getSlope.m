@@ -45,7 +45,7 @@ cam1_in_cam2=simplify(cam1_in_cam2,'Steps',1000);
 
 % d2 function as d1
 % disp("d2")
-expr1 = mlt(3) == a(3);
+expr1 = mlt(3) == a(3)
 slv_d2 = solve(expr1,d2);
 % pretty(simplify(slv_d2,'Steps',1000));
 

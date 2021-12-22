@@ -16,9 +16,6 @@ slv = collect(slv,[u2,u1,v1])
 CN = coeffs(N,u2);
 CD = coeffs(D,u2);
 
-% A*u2 + B
-% ----------------------------
-% C*u2 + D
 
 A=CN(2);
 B=CN(1);

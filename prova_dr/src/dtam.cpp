@@ -216,15 +216,15 @@ void Dtam::test_mapping(){
   camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(7)->showProjCandidates_2(2);
-  // camera_vector_->at(5)->showProjCandidates_2(2);
+  camera_vector_->at(5)->showProjCandidates_2(2);
   // camera_vector_->at(1)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(camera_vector_->size()-2));
   makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
-  testRotationalInvariance();
-
+  // testRotationalInvariance();
+  cv::waitKey(0);
 
 }
 

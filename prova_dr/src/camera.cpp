@@ -266,7 +266,22 @@ bool RegionWithCandidates::collectCandidates(){
           std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
 
           Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,magnitude,
-                                              magnitude3C, dh, dv, c, bounds, this );
+            magnitude3C, dh, dv, c, bounds, this );
+
+          // add children
+          std::vector<Candidate*>* children = new std::vector<Candidate*>;
+          for(Candidate* cand : *cands_vec_){
+            //  if older cand is at an higher level ...
+            int level_diff = cand->level_-wav_level;
+            if(level_diff>0){
+              // ... and contains current candidate
+              if( (x_curr/pow(2,level_diff))==cand->pixel_.x() &&
+                  (y_curr/pow(2,level_diff))==cand->pixel_.y()){
+                cand->children_->push_back(candidate);
+              }
+            }
+          }
+
 
 
           auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), magnitude, lb_cmp);
@@ -275,6 +290,7 @@ bool RegionWithCandidates::collectCandidates(){
         }
       }
     }
+
   }
   if (cands_vec_->empty())
     return 0;
@@ -333,7 +349,14 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
         else{
           Candidate* candidate = cands_vec->at(cands_vec->size()-1-idx);
           if(idx==0){
-            candidates_->push_back(candidate);
+            // // push back best candidate
+            // candidates_->push_back(candidate);
+            // // remove children
+            // for( Candidate* child_cand : *(candidate->children_)){
+            //   remove(cands_vec->begin(), cands_vec->end(), child_cand);
+            // }
+            // delete candidate->children_;
+
             n_candidates_++;
           }else{
             Candidate* candidate_prev = cands_vec->back();

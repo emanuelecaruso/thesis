@@ -159,6 +159,7 @@ class Candidate : public CandidateBase{
     dh_(dh),
     dv_(dv),
     color_(color),
+    children_(new std::vector<Candidate*>),
     ready_(false)
     {};
 
@@ -175,6 +176,7 @@ class Candidate : public CandidateBase{
     colorRGB dh_robust_;
     colorRGB dv_robust_;
     const colorRGB color_;
+    std::vector<Candidate*>* children_;
     bool ready_;
 
 };

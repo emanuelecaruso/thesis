@@ -138,7 +138,8 @@ for obj_ in bpy.data.objects:
 
         if( (con and not os.path.isfile(path_rgb+".png")) or not con ):
             render.image_settings.file_format='PNG'
-            render.image_settings.color_mode='RGB'
+            #render.image_settings.color_mode='RGB'
+            render.image_settings.color_mode='BW'
             render.image_settings.color_depth='16'
             scene.view_settings.view_transform = 'Standard'
             render.engine=engine

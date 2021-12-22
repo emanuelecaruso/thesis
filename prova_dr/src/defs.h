@@ -340,21 +340,13 @@ struct Params{
   const colorRGB cyan_ = colorRGB(colorRGB_maxval,colorRGB_maxval,colorRGB_maxval/2);
   const colorRGB magenta_ = colorRGB(colorRGB_maxval,colorRGB_maxval/2,colorRGB_maxval);
 
-  inline float radiansSub(float rad1, float rad2, bool positive_range){
-
-    // if radians are normalized between 0 and 2pi
-    if(positive_range){
-      float sub = rad1-rad2;
-      if (sub<-PI){
-        sub+=2*PI;
-      }else if(sub>PI){
-        sub-=2*PI;
-      }
-      return sub;
+  inline float radiansSub(float rad1, float rad2){
+    float sub = rad1-rad2;
+    if (sub<-PI){
+      sub+=2*PI;
+    }else if(sub>PI){
+      sub-=2*PI;
     }
-    // else if radians are normalized between -pi and pi
-    else{
-
-    }
+    return sub;
   }
 }

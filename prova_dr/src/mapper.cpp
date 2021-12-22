@@ -100,7 +100,10 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
   getBounds(u1, v1, min_depth, max_depth, bound_low, bound_up, u_or_v);
 
   EpipolarLine* ep_seg = new EpipolarLine(  cam_m_, slope_m, bound_low, bound_up, cam_r_projected_in_cam_m, candidate->level_);
+
+
   return ep_seg;
+
 }
 
 
@@ -181,6 +184,21 @@ void Mapper::rotateDhAndDvInCands(CameraForMapping* keyframe){
   // cand
   Eigen::Matrix3f R = keyframe->frame_camera_wrt_world_->linear();
   float rollAngle= -atan2(R(1,0),R(1,1));
+
+  // float slope_r, slope_m;
+  // CameraForMapping* cam_r = dtam_->camera_vector_->at(0);
+  // CameraForMapping* cam_m = keyframe;
+  // CamCouple* cam_couple_rm = new CamCouple(cam_r,cam_m);
+  // CamCouple* cam_couple_mr = new CamCouple(cam_m,cam_r);
+  // Eigen::Vector2f uv_m{cam_m->cam_parameters_->width*0.5,cam_m->cam_parameters_->height*0.5};
+  // Eigen::Vector3f p; Eigen::Vector2f uv_r;
+  // cam_m->pointAtDepth(uv_m,1,p);
+  // cam_r->projectPoint( p, uv_r );
+  // cam_couple_rm->getSlope(uv_m.x(),uv_m.y(),slope_r);
+  // cam_couple_mr->getSlope(uv_r.x(),uv_r.y(),slope_m);
+  // float rollAngle = radiansSub( atan2(slope_m, 1), atan2(slope_r, 1));
+  // std::cout << "aoo: " << rollAngle << std::endl;
+
   float c=cos(rollAngle);
   float s=sin(rollAngle);
 
@@ -197,8 +215,24 @@ void Mapper::rotateDhAndDvInCands(CameraForMapping* keyframe){
 
 void Mapper::rotateDhAndDvInWvltDec(CameraForMapping* keyframe){
 
+  // cand
   Eigen::Matrix3f R = keyframe->frame_camera_wrt_world_->linear();
   float rollAngle= -atan2(R(1,0),R(1,1));
+
+  // float slope_r, slope_m;
+  // CameraForMapping* cam_r = dtam_->camera_vector_->at(0);
+  // CameraForMapping* cam_m = keyframe;
+  // CamCouple* cam_couple_rm = new CamCouple(cam_r,cam_m);
+  // CamCouple* cam_couple_mr = new CamCouple(cam_m,cam_r);
+  // Eigen::Vector2f uv_m{cam_m->cam_parameters_->width*0.5,cam_m->cam_parameters_->height*0.5};
+  // Eigen::Vector3f p; Eigen::Vector2f uv_r;
+  // cam_m->pointAtDepth(uv_m,1,p);
+  // cam_r->projectPoint( p, uv_r );
+  // cam_couple_rm->getSlope(uv_m.x(),uv_m.y(),slope_r);
+  // cam_couple_mr->getSlope(uv_r.x(),uv_r.y(),slope_m);
+  // float rollAngle = radiansSub( atan2(slope_m, 1), atan2(slope_r, 1));
+  // std::cout << "aoo: " << rollAngle << std::endl;
+
   float c=cos(rollAngle);
   float s=sin(rollAngle);
 
@@ -224,13 +258,24 @@ void Mapper::rotateDhAndDvInWvltDec(CameraForMapping* keyframe){
 void Mapper::updateRotationalInvariantGradients(){
   // get current keyframe
   CameraForMapping* keyframe_current = dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
-  rotateDhAndDvInWvltDec(keyframe_current);
-
-  if(dtam_->frame_current_>0){
-    // get previous keyframe
+  if(dtam_->frame_current_==0){
+    for (Wvlt_lvl* wvlt_lvl : *(keyframe_current->wavelet_dec_->vector_wavelets)){
+      wvlt_lvl->dh_robust->image_=wvlt_lvl->dh->image_.clone();
+      wvlt_lvl->dv_robust->image_=wvlt_lvl->dv->image_.clone();
+    }
+  }
+  else{
+    rotateDhAndDvInWvltDec(keyframe_current);
     CameraForMapping* keyframe_prev = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(dtam_->keyframe_vector_->size()-2));
     rotateDhAndDvInCands(keyframe_prev);
   }
+  // rotateDhAndDvInWvltDec(keyframe_current);
+  //
+  // if(dtam_->frame_current_>0){
+  //   // get previous keyframe
+  //   CameraForMapping* keyframe_prev = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(dtam_->keyframe_vector_->size()-2));
+  //   rotateDhAndDvInCands(keyframe_prev);
+  // }
 
 
 

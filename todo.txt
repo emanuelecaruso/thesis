@@ -7,3 +7,5 @@
 - regions separate
 - try with just intensities
 - TODO remove (dtam.cpp)
+
+- rgb to pixel intensities

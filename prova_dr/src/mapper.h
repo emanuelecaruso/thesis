@@ -40,6 +40,8 @@ class CamCouple{
     void getBound(float u1, float v1, float d1, float& bound, bool u_or_v);
     void getD1(float u1, float v1, float& d1, float u2, bool u_or_v);
     void getD2(float u1, float v1, float d1, float& d2);
+    void getSlope(float u1, float v1, float& slope_m);
+
   private:
     //Parameters for slope
     float A_s,B_s,C_s, D_s,E_s,F_s;
@@ -52,7 +54,6 @@ class CamCouple{
     void getSlopeParameters();
     void getBoundsParameters();
     void getDepthParameters();
-    void getSlope(float u1, float v1, float& slope_m);
 
 
 
