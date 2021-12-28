@@ -76,6 +76,13 @@ class Image{
       return new_img;
     }
 
+    inline Image<colorRGB>* returnColoredImgFromIntensityImg(const std::string& new_name) const{
+
+      Image<colorRGB>* new_img = new Image<colorRGB>(new_name);
+      cv::cvtColor(image_, new_img->image_, cv::COLOR_GRAY2BGR);
+      return new_img;
+    }
+
     inline T evalPixel(const int row, const int col) const{
       T color;
       if (row>=0 && row<image_.rows && col>=0 && col<image_.cols)
@@ -144,87 +151,87 @@ class Image{
       return out;
     }
 
+    //
+    // inline Image* filter3ChannImg(cv::Mat_<float> kernel,
+    //                                 const std::string& name) const{
+    //
+    //   Image< T >* img_filtered =new Image< T >(name);
+    //
+    //   std::vector<cv::Mat> channels_o(3);
+    //   std::vector<cv::Mat> channels_i(3);
+    //
+    //   split(image_, channels_i);
+    //
+    //   filter2D(channels_i[0], channels_o[0], colorRGB_CODE, kernel);
+    //   filter2D(channels_i[1], channels_o[1], colorRGB_CODE, kernel);
+    //   filter2D(channels_i[2], channels_o[2], colorRGB_CODE, kernel);
+    //
+    //   /// Merge the three channels
+    //   merge(channels_o, img_filtered->image_);
+    //
+    //   return img_filtered;
+    // }
+    //
+    // inline int thresholdHard(float threshold) {
+    //   int cols=image_.cols;
+    //   int rows=image_.rows;
+    //
+    //   int n_pixels_kept=0;
+    //
+    //   for (int row=0;row<rows;row++)
+    //   {
+    //       for (int col=0; col<cols;col++)
+    //       {
+    //           colorRGB clr ;
+    //           evalPixel(row,col,clr);
+    //
+    //           float norm=l1Norm(clr);
+    //           if (norm<threshold){
+    //             setPixel(row,col,black);
+    //           }
+    //           else
+    //             n_pixels_kept++;
+    //       }
+    //   }
+    //   return n_pixels_kept;
+    // }
 
-    inline Image* filter3ChannImg(cv::Mat_<float> kernel,
-                                    const std::string& name) const{
-
-      Image< T >* img_filtered =new Image< T >(name);
-
-      std::vector<cv::Mat> channels_o(3);
-      std::vector<cv::Mat> channels_i(3);
-
-      split(image_, channels_i);
-
-      filter2D(channels_i[0], channels_o[0], colorRGB_CODE, kernel);
-      filter2D(channels_i[1], channels_o[1], colorRGB_CODE, kernel);
-      filter2D(channels_i[2], channels_o[2], colorRGB_CODE, kernel);
-
-      /// Merge the three channels
-      merge(channels_o, img_filtered->image_);
-
-      return img_filtered;
-    }
-
-    inline int thresholdHard(float threshold) {
-      int cols=image_.cols;
-      int rows=image_.rows;
-
-      int n_pixels_kept=0;
-
-      for (int row=0;row<rows;row++)
-      {
-          for (int col=0; col<cols;col++)
-          {
-              colorRGB clr ;
-              evalPixel(row,col,clr);
-
-              float norm=l1Norm(clr);
-              if (norm<threshold){
-                setPixel(row,col,black);
-              }
-              else
-                n_pixels_kept++;
-          }
-      }
-      return n_pixels_kept;
-    }
-
-    inline Image< colorRGB>* compute_sobel_x(const std::string& name) const{
-      Image<  colorRGB >* img_sobel_x=new Image< colorRGB >(name);
+    inline Image< pixelIntensity>* compute_sobel_x(const std::string& name) const{
+      Image<  pixelIntensity >* img_sobel_x=new Image< pixelIntensity >(name);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<  1,  0, -1,
                  2,  0, -2,
                  1,  0, -1;
 
-      img_sobel_x = filter3ChannImg( kernel, name);
+      filter2D(image_, img_sobel_x->image_, pixelIntensity_CODE, kernel);
 
       return img_sobel_x;
     }
 
-    inline Image<colorRGB>* compute_sobel_y(const std::string& name) const{
-      Image< colorRGB >* img_sobel_y =new Image< colorRGB >(name);
+    inline Image<pixelIntensity>* compute_sobel_y(const std::string& name) const{
+      Image< pixelIntensity >* img_sobel_y =new Image< pixelIntensity >(name);
 
       cv::Mat_<float> kernel(3,3);
       kernel <<   1,  2,  1,
                   0,  0,  0,
                  -1, -2, -1;
 
-      img_sobel_y = filter3ChannImg( kernel, name);
+      filter2D(image_, img_sobel_y->image_, pixelIntensity_CODE, kernel);
 
       return img_sobel_y;
     }
 
-    inline Image< colorRGB>* compute_sobel_x() const{
+    inline Image< pixelIntensity>* compute_sobel_x() const{
       return compute_sobel_x("fx_"+name_);
     }
 
-    inline Image<colorRGB>* compute_sobel_y() const{
+    inline Image<pixelIntensity>* compute_sobel_y() const{
       return compute_sobel_y("fy_"+name_);
     }
 
-    inline Image<colorRGB>* squared() const{
-      Image< colorRGB >* squared =new Image< colorRGB >("^2_"+name_);
+    inline Image<pixelIntensity>* squared() const{
+      Image< pixelIntensity >* squared =new Image< pixelIntensity >("^2_"+name_);
 
       squared->image_=image_.mul(image_);
 

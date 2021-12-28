@@ -16,14 +16,16 @@ int main (int argc, char * argv[]) {
   // parameters
   int wavelet_levels=3; // ex: 3 levels -> lev 0,1,2
   int reg_level=2;  // ex reg level = 3 -> 0,1,2,*3* (fourth level)
-  float grad_threshold = 1.5;
+  // float grad_threshold = 0.2;
+  float grad_threshold = 0.01;
   // float grad_threshold = 1;
   // float grad_threshold = 1.5;
   float grad_perc_threshold = 0.75;
   // float cost_threshold = 0.8; // if cost is below this threshold, is keeped
   float cost_threshold = 0.2; // if cost is below this threshold, is keeped
   // int num_candidates = 300;
-  int num_candidates = 4000;
+  // int num_candidates = 4000;
+  int num_candidates = 8000;
   int max_num_active_points = num_candidates;
   // int num_candidates = INT_MAX;
   int num_active_keyframes = 7;

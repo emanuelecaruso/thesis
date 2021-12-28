@@ -35,7 +35,7 @@ bool Renderer::renderPoint(Cp& cp, Camera* camera){
 
   cv::Vec3b color = cv::Vec3b(cp.color[0],cp.color[1],cp.color[2]);
 
-  camera->image_rgb_->setPixel(pixel_coords, color);
+  camera->image_intensity_->setPixel(pixel_coords, color);
   camera->invdepth_map_->setPixel(pixel_coords,depth);
 
   return true;

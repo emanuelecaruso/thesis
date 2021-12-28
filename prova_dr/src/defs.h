@@ -268,9 +268,10 @@ namespace pr {
   const float colorRGB_maxval = 1;
   const int colorRGB_CODE = CV_32FC3;
 
-  // typedef cv::Vec3b colorRGB;
-  // const float colorRGB_maxval = 255;
-  // const int colorRGB_CODE = CV_8UC3;
+
+  typedef float pixelIntensity;
+  const float pixelIntensity_maxval = 1;
+  const int pixelIntensity_CODE = CV_32FC1;
 
 struct Params{
 

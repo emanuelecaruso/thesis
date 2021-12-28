@@ -205,8 +205,8 @@ void Mapper::rotateDhAndDvInCands(CameraForMapping* keyframe){
 
   for(Candidate* cand : *(keyframe->candidates_)){
     // rotate dh and dv in current candidate
-    colorRGB dh = cand->dh_;
-    colorRGB dv = cand->dv_;
+    pixelIntensity dh = cand->dh_;
+    pixelIntensity dv = cand->dv_;
     cand->dh_robust_=dh*c-dv*s;
     cand->dv_robust_=dv*c+dh*s;
 
@@ -238,12 +238,12 @@ void Mapper::rotateDhAndDvInWvltDec(CameraForMapping* keyframe){
 
   // iterate through wavelet levels
   for (Wvlt_lvl* wvlt_lvl : *(keyframe->wavelet_dec_->vector_wavelets)){
-    cv::Mat_<colorRGB> dv_ = wvlt_lvl->dv->image_.clone();
-    cv::Mat_<colorRGB> dh_ = wvlt_lvl->dh->image_.clone();
-    cv::Mat_<colorRGB> dvs;
-    cv::Mat_<colorRGB> dvc;
-    cv::Mat_<colorRGB> dhs;
-    cv::Mat_<colorRGB> dhc;
+    cv::Mat_<pixelIntensity> dv_ = wvlt_lvl->dv->image_.clone();
+    cv::Mat_<pixelIntensity> dh_ = wvlt_lvl->dh->image_.clone();
+    cv::Mat_<pixelIntensity> dvs;
+    cv::Mat_<pixelIntensity> dvc;
+    cv::Mat_<pixelIntensity> dhs;
+    cv::Mat_<pixelIntensity> dhc;
     cv::multiply(dv_, cv::Scalar(s,s,s), dvs);
     cv::multiply(dv_, cv::Scalar(c,c,c), dvc);
     cv::multiply(dh_, cv::Scalar(s,s,s), dhs);

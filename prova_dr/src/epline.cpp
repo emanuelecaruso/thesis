@@ -62,21 +62,21 @@ void EpipolarLine::lineTraverse(int level)
 
 
 
-float EpipolarLine::getCostMagn(const colorRGB& magnitude3C_r, const colorRGB& magnitude3C_m,
-                            const colorRGB& color_r, const colorRGB& color_m) {
-  float cost_magn = abs(magnitude3C_r[0]-magnitude3C_m[0])+abs(magnitude3C_r[1]-magnitude3C_m[1])+abs(magnitude3C_r[2]-magnitude3C_m[2]);
-  float cost_col = abs(color_r[0]-color_m[0])+abs(color_r[1]-color_m[1])+abs(color_r[2]-color_m[2]);
+float EpipolarLine::getCostMagn(const pixelIntensity magnitude3C_r, const pixelIntensity magnitude3C_m,
+                            const pixelIntensity color_r, const pixelIntensity color_m) {
+  float cost_magn = abs(magnitude3C_r-magnitude3C_m)+abs(magnitude3C_r-magnitude3C_m)+abs(magnitude3C_r-magnitude3C_m);
+  float cost_col = abs(color_r-color_m)+abs(color_r-color_m)+abs(color_r-color_m);
   // return cost_magn;
   return cost_magn+cost_col;
 }
 
 
-float EpipolarLine::getCostNew(const colorRGB& dh_r, const colorRGB& dh_m,
-                            const colorRGB& dv_r, const colorRGB& dv_m,
-                            const colorRGB& color_r, const colorRGB& color_m ) {
-  float cost_dh = abs(dh_r[0]-dh_m[0])+abs(dh_r[1]-dh_m[1])+abs(dh_r[2]-dh_m[2]);
-  float cost_dv = abs(dv_r[0]-dv_m[0])+abs(dv_r[1]-dv_m[1])+abs(dv_r[2]-dv_m[2]);
-  float cost_col = abs(color_r[0]-color_m[0])+abs(color_r[1]-color_m[1])+abs(color_r[2]-color_m[2]);
+float EpipolarLine::getCostNew(const pixelIntensity dh_r, const pixelIntensity dh_m,
+                            const pixelIntensity dv_r, const pixelIntensity dv_m,
+                            const pixelIntensity color_r, const pixelIntensity color_m ) {
+  float cost_dh = abs(dh_r-dh_m)+abs(dh_r-dh_m)+abs(dh_r-dh_m);
+  float cost_dv = abs(dv_r-dv_m)+abs(dv_r-dv_m)+abs(dv_r-dv_m);
+  float cost_col = abs(color_r-color_m)+abs(color_r-color_m)+abs(color_r-color_m);
 
   return cost_dh+cost_dv+cost_col;
   // return cost_magn+cost_col;
@@ -89,13 +89,12 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
   float prev_cost = FLT_MAX;
   int min_uv_idx;
 
-  colorRGB color_r = candidate->color_;
+  pixelIntensity color_r = candidate->color_;
   float magnitude_r = candidate->grad_magnitude_;
-  colorRGB magnitude3C_r = candidate->grad3C_magnitude_;
-  colorRGB dh_rob_r = candidate->dh_robust_;
-  colorRGB dv_rob_r = candidate->dv_robust_;
-  // colorRGB dh_r = candidate->dh_;
-  // colorRGB dv_r = candidate->dv_;
+  pixelIntensity dh_rob_r = candidate->dh_robust_;
+  pixelIntensity dv_rob_r = candidate->dv_robust_;
+  // pixelIntensity dh_r = candidate->dh_;
+  // pixelIntensity dv_r = candidate->dv_;
 
   // cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(candidate->pixel_, magnitude_m);
 
@@ -108,13 +107,12 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
     Eigen::Vector2i pixel;
     cam->uv2pixelCoords(uv,pixel,candidate->level_);
 
-    colorRGB color_m;
+    pixelIntensity color_m;
     float magnitude_m;
-    colorRGB magnitude3C_m;
-    colorRGB dh_rob_m;
-    colorRGB dv_rob_m;
-    colorRGB dh_m;
-    colorRGB dv_m;
+    pixelIntensity dh_rob_m;
+    pixelIntensity dv_rob_m;
+    pixelIntensity dh_m;
+    pixelIntensity dv_m;
 
     // check if pixel is within the image
     if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(pixel, magnitude_m))
@@ -139,7 +137,6 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
 
       // get cost
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude3C_img->evalPixel(pixel, magnitude3C_m);
       cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dh_robust->evalPixel(pixel, dh_rob_m);
       cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dv_robust->evalPixel(pixel, dv_rob_m);
       cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dh->evalPixel(pixel, dh_m);
@@ -184,36 +181,36 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
 // show
 void EpipolarLine::showEpipolar(int level,float size){
-    Image<colorRGB>* image_rgb_new = createEpipolarImg(level);
-    image_rgb_new->show(size*(pow(2,level+1)));
+    Image<colorRGB>* image_intensity_new = createEpipolarImg(level);
+    image_intensity_new->show(size*(pow(2,level+1)));
 }
 
 void EpipolarLine::showEpipolarWithMin(int level,float size){
-    Image<colorRGB>* image_rgb_new = createEpipolarImg(level);
+    Image<colorRGB>* image_intensity_new = createEpipolarImg(level);
 
     if(!uv_idxs_mins->empty()){
       for (int idx : *uv_idxs_mins){
         Eigen::Vector2i pixel;
         cam->uv2pixelCoords(uvs->at(idx),pixel,level);
-        image_rgb_new->setPixel(pixel,blue);
+        image_intensity_new->setPixel(pixel,blue);
       }
     }
-    image_rgb_new->show(size*(pow(2,level+1)), cam->name_);
+    image_intensity_new->show(size*(pow(2,level+1)), cam->name_);
 }
 
 void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2, bool print=false, float size=1){
-    Image<colorRGB>* image_rgb_new = createEpipolarImg();
-    Image<colorRGB>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
-    image_rgb_new->showWithOtherImage(image_rgb_new_2,size);
+    Image<colorRGB>* image_intensity_new = createEpipolarImg();
+    Image<colorRGB>* image_intensity_new_2 = ep_line_2->createEpipolarImg();
+    image_intensity_new->showWithOtherImage(image_intensity_new_2,size);
 
 }
 
 void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2,
                           const std::string& name, bool print=false, float size=1)
 {
-    Image<colorRGB>* image_rgb_new = createEpipolarImg();
-    Image<colorRGB>* image_rgb_new_2 = ep_line_2->createEpipolarImg();
-    image_rgb_new->showWithOtherImage(image_rgb_new_2,name,size);
+    Image<colorRGB>* image_intensity_new = createEpipolarImg();
+    Image<colorRGB>* image_intensity_new_2 = ep_line_2->createEpipolarImg();
+    image_intensity_new->showWithOtherImage(image_intensity_new_2,name,size);
 }
 
 
@@ -221,12 +218,14 @@ void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2,
 // create imgs to show
 Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int level){
 
-    Image<colorRGB>* image_rgb_new;
+    Image<colorRGB>* image_intensity_new = new Image<colorRGB> (cam->name_) ;
+
     if (level==-1)
-      image_rgb_new = cam->image_rgb_->clone(name);
+      image_intensity_new = cam->image_intensity_->returnColoredImgFromIntensityImg("epipolar") ;
     else
-      // image_rgb_new = cam->wavelet_dec_->vector_wavelets->at(level)->c->clone(name);
-      image_rgb_new = cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->clone(name);
+      // image_intensity_new = cam->wavelet_dec_->vector_wavelets->at(level)->c->clone(name);
+      // image_intensity_new = cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->clone(name);
+      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->returnColoredImgFromIntensityImg("epipolar") ;
 
 
     if (!uvs->empty())
@@ -236,13 +235,13 @@ Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int le
         cam->uv2pixelCoords(uvs->at(i),pixel,level);
 
         // if(i==0)
-        //   image_rgb_new->setPixel(pixel, blue);
+        //   image_intensity_new->setPixel(pixel, blue);
         // else if (i==uvs->size()-1)
-        //   image_rgb_new->setPixel(pixel, red);
+        //   image_intensity_new->setPixel(pixel, red);
         // else
-        image_rgb_new->setPixel(pixel, green);
+        image_intensity_new->setPixel(pixel, green);
       }
-    return image_rgb_new;
+    return image_intensity_new;
 }
 
 Image<colorRGB>* EpipolarLine::createEpipolarImg(int level){

@@ -65,7 +65,7 @@ void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
     if(frame_current_==0){
       tracker_->trackCam(take_gt_poses);
       keyframe_handler_->addKeyframe(all_keyframes);
-      mapper_->updateRotationalInvariantGradients();
+      // mapper_->updateRotationalInvariantGradients();
       mapper_->selectNewCandidates();
       continue;
     }
@@ -75,10 +75,10 @@ void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
     tracker_->trackCam(take_gt_poses);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
-      mapper_->updateRotationalInvariantGradients();
+      // mapper_->updateRotationalInvariantGradients();
       // bundle_adj_->projectAndMarginalizeActivePoints();
-      mapper_->trackExistingCandidates();
-      cand_tracked_.notify_all();
+      // mapper_->trackExistingCandidates();
+      // cand_tracked_.notify_all();
       mapper_->selectNewCandidates();
       // bundle_adj_->activateNewPoints(); in other thread
       // bundle_adj_->optimize(); in other thread
@@ -149,10 +149,10 @@ void Dtam::testRotationalInvariance(){
   {
     CameraForMapping* cam=camera_vector_->at(i);
 
-    Image<colorRGB>* dv_ = new Image<colorRGB>("dh");
-    Image<colorRGB>* dh_ = new Image<colorRGB>("dv");
-    Image<colorRGB>* dv_inv = new Image<colorRGB>("dh inv");
-    Image<colorRGB>* dh_inv = new Image<colorRGB>("dv inv");
+    Image<pixelIntensity>* dv_ = new Image<pixelIntensity>("dh");
+    Image<pixelIntensity>* dh_ = new Image<pixelIntensity>("dv");
+    Image<pixelIntensity>* dv_inv = new Image<pixelIntensity>("dh inv");
+    Image<pixelIntensity>* dh_inv = new Image<pixelIntensity>("dv inv");
     dv_->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dv->image_.clone();
     dh_->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dh->image_.clone();
     dv_inv->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dv_robust->image_.clone();
@@ -196,19 +196,21 @@ void Dtam::test_mapping(){
   bool all_keyframes=true;
   bool active_all_candidates=true;
 
-  std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
+  // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
   std::thread initialization_thread(&Dtam::doInitialization, this, all_keyframes, take_gt_poses);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
 
-  optimization_thread.detach();
+  // optimization_thread.detach();
   initialization_thread.detach();
   update_cameras_thread_.join();
 
   // debugAllCameras();
 
 
-  // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"0");
+  // camera_vector_->at(0)->image_intensity_->show(2);
+  // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->c->show(2);
+  // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(2);
   // camera_vector_->at(1)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"1");
   // camera_vector_->at(0)->showCandidates_1(2);
   // camera_vector_->at(0)->showCandidates_2(2);
@@ -216,12 +218,12 @@ void Dtam::test_mapping(){
   camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(7)->showProjCandidates_2(2);
-  camera_vector_->at(5)->showProjCandidates_2(2);
+  // camera_vector_->at(5)->showProjCandidates_2(2);
   // camera_vector_->at(1)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(camera_vector_->size()-2));
-  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
   // testRotationalInvariance();
   cv::waitKey(0);

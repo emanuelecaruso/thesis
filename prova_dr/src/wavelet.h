@@ -10,20 +10,18 @@ class Wvlt_lvl{
     const int level;
     const Wvlt_dec* wvlt_dec;
 
-    Image<colorRGB>* c;
-    Image<colorRGB>* dh;
-    Image<colorRGB>* dv;
-    Image<colorRGB>* dh_robust;
-    Image<colorRGB>* dv_robust;
-
-    Image<colorRGB>* magnitude3C_img;
+    Image<pixelIntensity>* c;
+    Image<pixelIntensity>* dh;
+    Image<pixelIntensity>* dv;
+    Image<pixelIntensity>* dh_robust;
+    Image<pixelIntensity>* dv_robust;
     Image<float>* magnitude_img;
 
     // clone
-    Wvlt_lvl(Image<colorRGB>* c_,
-            Image<colorRGB>* dh_, Image<colorRGB>* dv_,
-            Image<colorRGB>* dh_robust_, Image<colorRGB>* dv_robust_,
-            Image<float>* magnitude_img_, Image<colorRGB>* magnitude3C_img_,
+    Wvlt_lvl(Image<pixelIntensity>* c_,
+            Image<pixelIntensity>* dh_, Image<pixelIntensity>* dv_,
+            Image<pixelIntensity>* dh_robust_, Image<pixelIntensity>* dv_robust_,
+            Image<float>* magnitude_img_,
            const int level_, const Wvlt_dec* wvlt_dec_):
               level(level_),
               wvlt_dec(wvlt_dec_),
@@ -32,12 +30,11 @@ class Wvlt_lvl{
               dv(dv_->clone()),
               dh_robust(dh_robust_->clone()),
               dv_robust(dv_robust_->clone()),
-              magnitude3C_img(magnitude3C_img_->clone()),
               magnitude_img(magnitude_img_->clone())
     {  };
 
     // create first level
-    Wvlt_lvl(const Image<colorRGB>* img, Wvlt_dec* wvlt_dec_ ):
+    Wvlt_lvl(const Image<pixelIntensity>* img, Wvlt_dec* wvlt_dec_ ):
     level(0),
     wvlt_dec(wvlt_dec_){
       WaveletDecHaar(img);
@@ -51,14 +48,13 @@ class Wvlt_lvl{
       WaveletDecHaar( wvlt_lvl_previous->c);
     };
     inline Wvlt_lvl* clone(){
-      return new Wvlt_lvl(c,dh,dv,dh_robust,dv_robust, magnitude_img,magnitude3C_img, level, wvlt_dec);};
+      return new Wvlt_lvl(c,dh,dv,dh_robust,dv_robust, magnitude_img, level, wvlt_dec);};
 
     Image<float>* compute_robust_sobels();
 
   private:
-    void WaveletDecHaar(const Image<colorRGB>* img);
-    Image<colorRGB>* getMagnitude3C(const Image<colorRGB>* img1, const Image<colorRGB>* img2);
-    Image<float>* getMagnitude(const Image<colorRGB>* magnitude_img_);
+    void WaveletDecHaar(const Image<pixelIntensity>* img);
+    Image<float>* getMagnitude();
     // void WaveletDecHaar(Wvlt_lvl* wvlt_lvl_previous);
 
 };
@@ -71,7 +67,7 @@ class Wvlt_dec{
     const int levels_;
 
     const CameraForMapping* cam_;
-    const Image<colorRGB>* image_;
+    const Image<pixelIntensity>* image_;
     std::vector< Wvlt_lvl* >* vector_wavelets;
 
     // clone wlt decomposition
@@ -89,7 +85,7 @@ class Wvlt_dec{
     }
 
     // compute wlt decomposition
-    Wvlt_dec(int levels,const Image<colorRGB>* img,const CameraForMapping* cam ):
+    Wvlt_dec(int levels,const Image<pixelIntensity>* img,const CameraForMapping* cam ):
     levels_(levels),
     image_(img),
     cam_(cam),

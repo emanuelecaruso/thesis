@@ -16,19 +16,19 @@ class Camera{
     const CamParameters* cam_parameters_;
     const Eigen::Matrix3f* K_;
     const Eigen::Matrix3f* Kinv_;
-    const Image<colorRGB>* image_rgb_;
+    const Image<pixelIntensity>* image_intensity_;
     Image<float>* invdepth_map_;
     Eigen::Isometry3f* frame_camera_wrt_world_;
     Eigen::Isometry3f* frame_world_wrt_camera_;
 
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
-           const Image<colorRGB>* image_rgb):
+           const Image<pixelIntensity>* image_intensity):
            name_(name),
            cam_parameters_(cam_parameters),
            K_(compute_K()),
            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
-           image_rgb_( image_rgb ),
+           image_intensity_( image_intensity ),
            frame_camera_wrt_world_(new Eigen::Isometry3f),
            frame_world_wrt_camera_(new Eigen::Isometry3f)
            { };
@@ -39,15 +39,15 @@ class Camera{
             cam_parameters_(cam_parameters),
             K_(compute_K()),
             Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
-            image_rgb_( returnRGBFromPath( path_rgb ) ),
+            image_intensity_( returnIntensityImgFromPath( path_rgb ) ),
             frame_camera_wrt_world_(new Eigen::Isometry3f),
             frame_world_wrt_camera_(new Eigen::Isometry3f)
             { };
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
-           const Image<colorRGB>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
+           const Image<pixelIntensity>* image_intensity, Eigen::Isometry3f* frame_world_wrt_camera,
                Eigen::Isometry3f* frame_camera_wrt_world ):
-           Camera(name, cam_parameters, image_rgb )
+           Camera(name, cam_parameters, image_intensity )
            {
              frame_world_wrt_camera_=frame_world_wrt_camera;
              frame_camera_wrt_world_=frame_camera_wrt_world;
@@ -108,7 +108,7 @@ class Camera{
     }
   protected:
     Eigen::Matrix3f* compute_K();
-    Image<colorRGB>* returnRGBFromPath(const std::string& path_rgb);
+    Image<pixelIntensity>* returnIntensityImgFromPath(const std::string& path_rgb);
     void loadWhiteDepth();
     void loadDepthMap(const std::string& path);
     void loadPoseFromJsonVal(nlohmann::basic_json<>::value_type f);
@@ -148,14 +148,13 @@ class Candidate : public CandidateBase{
 
 
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
-              float grad_magnitude, colorRGB& grad3C_magnitude,
-              colorRGB& dh, colorRGB& dv, colorRGB& color,
+              float grad_magnitude,
+              pixelIntensity dh, pixelIntensity dv, pixelIntensity color,
               std::vector<bound>* bounds, RegionWithCandidates* region ):
     CandidateBase( level, pixel, uv),
     bounds_(bounds),
     region_(region),
     grad_magnitude_(grad_magnitude),
-    grad3C_magnitude_(grad3C_magnitude),
     dh_(dh),
     dv_(dv),
     color_(color),
@@ -170,12 +169,11 @@ class Candidate : public CandidateBase{
     std::vector<bound>* bounds_;
     const RegionWithCandidates* region_;
     const float grad_magnitude_;
-    const colorRGB grad3C_magnitude_;
-    const colorRGB dh_;
-    const colorRGB dv_;
-    colorRGB dh_robust_;
-    colorRGB dv_robust_;
-    const colorRGB color_;
+    const pixelIntensity dh_;
+    const pixelIntensity dv_;
+    pixelIntensity dh_robust_;
+    pixelIntensity dv_robust_;
+    const pixelIntensity color_;
     std::vector<Candidate*>* children_;
     bool ready_;
 
@@ -264,6 +262,7 @@ class RegionsWithCandidates : public RegionsWithCandidatesBase{
     inline void collectCandidates(){
       for (RegionWithCandidates* reg : *region_vec_ ){
         reg->collectCandidates();
+        // break;
       }
     }
 
@@ -334,9 +333,9 @@ class CameraForMapping: public Camera{
     friend class Dtam;
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
-           const Image<colorRGB>* image_rgb, Params* parameters):
-           Camera( name, cam_parameters, image_rgb),
-           wavelet_dec_(new Wvlt_dec(parameters->wavelet_levels,new Image<colorRGB>(image_rgb_), this)),
+           const Image<pixelIntensity>* image_intensity, Params* parameters):
+           Camera( name, cam_parameters, image_intensity),
+           wavelet_dec_(new Wvlt_dec(parameters->wavelet_levels,new Image<pixelIntensity>(image_intensity_), this)),
            candidates_(new std::vector<Candidate*>),
            active_points_(new std::vector<KFPoint*>),
            marginalized_points_(new std::vector<KFPoint*>),
@@ -348,16 +347,16 @@ class CameraForMapping: public Camera{
            {};
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
-            const Image<colorRGB>* image_rgb, Eigen::Isometry3f* frame_world_wrt_camera,
+            const Image<pixelIntensity>* image_intensity, Eigen::Isometry3f* frame_world_wrt_camera,
                 Eigen::Isometry3f* frame_camera_wrt_world, Params* parameters):
-            CameraForMapping( name, cam_parameters, image_rgb, parameters)
+            CameraForMapping( name, cam_parameters, image_intensity, parameters)
             {
               frame_world_wrt_camera_=frame_world_wrt_camera;
               frame_camera_wrt_world_=frame_camera_wrt_world;
             };
 
     CameraForMapping(Camera* cam, Params* parameters):
-           CameraForMapping( cam->name_, cam->cam_parameters_, cam->image_rgb_, parameters)
+           CameraForMapping( cam->name_, cam->cam_parameters_, cam->image_intensity_, parameters)
            {  };
 
   private:
