@@ -76,6 +76,13 @@ class Image{
       return new_img;
     }
 
+    inline Image<T>* returnImgForGradientVisualization(const std::string& name){
+      Image<T>* new_img = this->clone();
+      new_img->image_/=cv::Scalar(2);
+      new_img->image_+=cv::Scalar(0.5);
+      return new_img;
+    }
+
     inline Image<colorRGB>* returnColoredImgFromIntensityImg(const std::string& new_name) const{
 
       Image<colorRGB>* new_img = new Image<colorRGB>(new_name);
@@ -249,6 +256,10 @@ class Image{
       return intensity;
     }
 
+    inline void drawCircle(colorRGB color, cv::Point2f point, int radius=2, int thickness=2){
+      cv::circle	(	image_,point,radius,color, thickness);
+    }
+
     inline void drawRectangle(cv::Rect rect, colorRGB color, int type, float alpha=1){
       cv::Mat roi = image_(rect);
       cv::Mat clr(roi.size(), colorRGB_CODE, color);
@@ -256,8 +267,9 @@ class Image{
       // cv::rectangle(image_,rect, color, type);
     }
 
+
     inline void showImgWithColoredPixel(const Eigen::Vector2i pixel, float size, const std::string& name) const{
-      Image< colorRGB >* out =this->clone();
+      Image< colorRGB >* out = returnColoredImgFromIntensityImg(name);
       out->setPixel( pixel, red);
       out->show(size, name);
     }

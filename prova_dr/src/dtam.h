@@ -1,9 +1,11 @@
 #pragma once
 #include "camera.h"
+#include "parameters.h"
 #include "keyframe.h"
 #include "mapper.h"
 #include "tracker.h"
 #include "bundleadj.h"
+#include "initializer.h"
 #include "environment.h"
 #include <thread>
 #include <mutex>
@@ -22,6 +24,7 @@ class Dtam{
     mapper_(new Mapper(this,parameters)),
     tracker_(new Tracker(this)),
     bundle_adj_(new BundleAdj(this, parameters)),
+    initializer_(new Initializer(this, parameters)),
     parameters_(parameters),
     camera_vector_(new std::vector<CameraForMapping*>),
     keyframe_vector_(new std::vector<int>),
@@ -32,10 +35,10 @@ class Dtam{
 
 
     void test_mapping();
+    void eval_initializer();
     void test_tracking(Environment* environment);
 
     void debugAllCameras(bool show_imgs=false);
-    int getFrameCurrent();
     void waitForNewFrame();
     void waitForTrackedCandidates();
 
@@ -46,12 +49,14 @@ class Dtam{
     Mapper* const mapper_;
     Tracker* const tracker_;
     BundleAdj* const bundle_adj_;
+    Initializer* const initializer_;
     Params* const parameters_;
     std::vector<CameraForMapping*>* camera_vector_;
     std::vector<int>* keyframe_vector_;
     int frame_current_;
     bool end_flag_;
 
+    friend class Initializer;
     friend class BundleAdj;
     friend class KeyframeHandler;
     friend class Mapper;
@@ -71,7 +76,8 @@ class Dtam{
     void updateCamerasFromEnvironment();
     void updateCamerasFromVideostream();
     void doMapping();
-    void doInitialization(bool all_keyframes=false, bool take_gt_poses=false);
+    void doInitialization();
+    void doFrontEndPart(bool all_keyframes=false, bool take_gt_poses=false);
     void doOptimization(bool active_all_candidates=false);
     void doTracking();
 

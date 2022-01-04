@@ -255,8 +255,8 @@ bool RegionWithCandidates::collectCandidates(){
         Eigen::Vector2f uv;
         cam_->pixelCoords2uv(pixel_coords, uv, wav_level);
 
-        // // check well TODO
-        // magnitude*=pow(0.8,wav_level);
+        // check well TODO
+        magnitude*=pow(0.8,wav_level);
 
         if(magnitude>grad_threshold_){
 
@@ -266,19 +266,19 @@ bool RegionWithCandidates::collectCandidates(){
           Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,magnitude,
             dh, dv, c, bounds, this );
 
-          // add children
-          for(Candidate* cand : *cands_vec_){
-            //  if older cand is at an higher level ...
-            int level_diff = cand->level_-wav_level;
-            // if(level_diff>0){
-              // ... and contains current candidate
-              // if( (x_curr/pow(2,level_diff))==cand->pixel_.x() &&
-              //     (y_curr/pow(2,level_diff))==cand->pixel_.y()){
-                cand->children_->push_back(candidate);
-                candidate->children_->push_back(cand);
-              // }
-            // }
-          }
+          // // add children
+          // for(Candidate* cand : *cands_vec_){
+          //   //  if older cand is at an higher level ...
+          //   int level_diff = cand->level_-wav_level;
+          //   // if(level_diff>0){
+          //     // ... and contains current candidate
+          //     // if( (x_curr/pow(2,level_diff))==cand->pixel_.x() &&
+          //     //     (y_curr/pow(2,level_diff))==cand->pixel_.y()){
+          //       cand->children_->push_back(candidate);
+          //       candidate->children_->push_back(cand);
+          //     // }
+          //   // }
+          // }
 
 
 
@@ -359,13 +359,11 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
             //   }
             //
             // }
-            std::cout << "NOOPE " << cands_vec->size() << std::endl;
 
-            for( Candidate* child_cand : *(candidate->children_)){
-              remove(cands_vec->begin(), cands_vec->end(), child_cand);
-              // delete child_cand;
-            }
-            std::cout << "" << cands_vec->size() << std::endl;
+            // for( Candidate* child_cand : *(candidate->children_)){
+            //   remove(cands_vec->begin(), cands_vec->end(), child_cand);
+            //   // delete child_cand;
+            // }
 
             // push back best candidate
             candidates_->push_back(candidate);
@@ -377,7 +375,7 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
             n_candidates_++;
           }
           else{
-            if (cands_vec->size()>1)
+            // if (cands_vec->size()>1)
 
             // Candidate* candidate_prev = cands_vec->back();
             Candidate* candidate_prev = cands_vec->at(cand_vec_size-1);
@@ -386,10 +384,10 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
             //     std::cout << "PORCODDIOOO" << std::endl;
             // Candidate* candidate = region->back();
             // region->pop_back();
-            // if(candidate->grad_magnitude_>candidate_prev->grad_magnitude_*alpha){
+            if(candidate->grad_magnitude_>candidate_prev->grad_magnitude_*alpha){
               candidates_->push_back(candidate);
               n_candidates_++;
-            // }
+            }
           }
         }
 
@@ -465,7 +463,8 @@ void CameraForMapping::showProjCandidates_2(float size){
   double alpha = 0.5;
 
   int n_proj_cands=0;
-  Image<pixelIntensity>* show_img = new Image<pixelIntensity>(image_intensity_);
+
+  Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg("proj cand temp");
 
   for (RegionWithProjCandidates* reg : *(regions_projected_cands_->region_vec_)){
     for (CandidateProjected* cand : *(reg->cands_vec_)){
@@ -476,6 +475,7 @@ void CameraForMapping::showProjCandidates_2(float size){
 
       Eigen::Vector2i pixel= cand->pixel_;
       pixel*=pow(2,level+1);
+      std::string name = "" ;
 
       // compute corners
       cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
@@ -485,7 +485,7 @@ void CameraForMapping::showProjCandidates_2(float size){
 
     }
   }
-  show_img->show(size, "n proj cands: "+std::to_string(n_proj_cands));
+  show_img->show(size, "n projected cands: "+std::to_string(n_proj_cands));
 
 }
 

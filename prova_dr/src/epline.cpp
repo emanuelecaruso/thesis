@@ -74,12 +74,12 @@ float EpipolarLine::getCostMagn(const pixelIntensity magnitude3C_r, const pixelI
 float EpipolarLine::getCostNew(const pixelIntensity dh_r, const pixelIntensity dh_m,
                             const pixelIntensity dv_r, const pixelIntensity dv_m,
                             const pixelIntensity color_r, const pixelIntensity color_m ) {
-  float cost_dh = abs(dh_r-dh_m)+abs(dh_r-dh_m)+abs(dh_r-dh_m);
-  float cost_dv = abs(dv_r-dv_m)+abs(dv_r-dv_m)+abs(dv_r-dv_m);
-  float cost_col = abs(color_r-color_m)+abs(color_r-color_m)+abs(color_r-color_m);
+  float cost_dh = abs(dh_r-dh_m);
+  float cost_dv = abs(dv_r-dv_m);
+  float cost_col = abs(color_r-color_m);
 
-  return cost_dh+cost_dv+cost_col;
-  // return cost_magn+cost_col;
+  return cost_dh+cost_dv+2*cost_col;
+  // return cost_dh+cost_dv;
 }
 
 
@@ -93,8 +93,8 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
   float magnitude_r = candidate->grad_magnitude_;
   pixelIntensity dh_rob_r = candidate->dh_robust_;
   pixelIntensity dv_rob_r = candidate->dv_robust_;
-  // pixelIntensity dh_r = candidate->dh_;
-  // pixelIntensity dv_r = candidate->dv_;
+  pixelIntensity dh_r = candidate->dh_;
+  pixelIntensity dv_r = candidate->dv_;
 
   // cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(candidate->pixel_, magnitude_m);
 
@@ -146,14 +146,16 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
       // float cost = getCostMagn(magnitude3C_r,magnitude3C_m, color_r,color_m );
 
-      float cost = getCostNew(dh_rob_r,dh_rob_m, dv_rob_r, dv_rob_m, color_r,color_m );
+      // float cost = getCostNew(dh_rob_r,dh_rob_m, dv_rob_r, dv_rob_m, color_r,color_m );
+      float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, color_r,color_m );
       // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, color_r,color_m );
 
       if (cost<prev_cost){
         sign=true;
       }
       else{
-        if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
+        // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
+        if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
         // if(sign && prev_cost<(parameters->cost_threshold)){
           uv_idxs_mins->push_back(i-1);
         }
@@ -225,7 +227,8 @@ Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int le
     else
       // image_intensity_new = cam->wavelet_dec_->vector_wavelets->at(level)->c->clone(name);
       // image_intensity_new = cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->clone(name);
-      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->returnColoredImgFromIntensityImg("epipolar") ;
+      // image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->returnColoredImgFromIntensityImg("epipolar") ;
+      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->magnitude_img->returnColoredImgFromIntensityImg("epipolar") ;
 
 
     if (!uvs->empty())

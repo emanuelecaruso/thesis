@@ -23,10 +23,6 @@ set(CMAKE_CUDA_HOST_IMPLICIT_LINK_LIBRARIES "cudadevrt;cudart_static;rt;pthread;
 set(CMAKE_CUDA_HOST_IMPLICIT_LINK_DIRECTORIES "/usr/lib/x86_64-linux-gnu/stubs")
 set(CMAKE_CUDA_HOST_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
 
-set(CMAKE_CUDA_IMPLICIT_INCLUDE_DIRECTORIES "/usr/include/c++/6;/usr/include/x86_64-linux-gnu/c++/6;/usr/include/c++/6/backward;/usr/lib/gcc/x86_64-linux-gnu/6/include;/usr/local/include;/usr/lib/gcc/x86_64-linux-gnu/6/include-fixed;/usr/include/x86_64-linux-gnu;/usr/include")
 set(CMAKE_CUDA_IMPLICIT_LINK_LIBRARIES "cudadevrt;cudart_static;rt;pthread;dl;stdc++;m;gcc_s;gcc;c;gcc_s;gcc")
 set(CMAKE_CUDA_IMPLICIT_LINK_DIRECTORIES "/usr/lib/x86_64-linux-gnu/stubs;/usr/lib/gcc/x86_64-linux-gnu/6;/usr/lib/x86_64-linux-gnu;/usr/lib;/lib/x86_64-linux-gnu;/lib")
 set(CMAKE_CUDA_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
-
-set(CMAKE_LINKER "/usr/bin/ld")
-set(CMAKE_MT "")

@@ -1,5 +1,6 @@
 #pragma once
 #include "defs.h"
+#include "parameters.h"
 #include "json.hpp"
 // #include "image.h"
 #include "wavelet.h"

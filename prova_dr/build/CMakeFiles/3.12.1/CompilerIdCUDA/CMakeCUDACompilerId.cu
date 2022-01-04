@@ -26,6 +26,9 @@
 /* These compilers are either not known or too old to define an
   identification macro.  Try to identify the platform and guess that
   it is the native compiler.  */
+#elif defined(__sgi)
+# define COMPILER_ID "MIPSpro"
+
 #elif defined(__hpux) || defined(__hpua)
 # define COMPILER_ID "HP"
 
@@ -75,6 +78,9 @@ char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
 
 #elif defined(_AIX) || defined(__AIX) || defined(__AIX__) || defined(__aix) || defined(__aix__)
 # define PLATFORM_ID "AIX"
+
+#elif defined(__sgi) || defined(__sgi__) || defined(_SGI)
+# define PLATFORM_ID "IRIX"
 
 #elif defined(__hpux) || defined(__hpux__)
 # define PLATFORM_ID "HP-UX"
@@ -135,14 +141,6 @@ char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
 #  define PLATFORM_ID
 # endif
 
-#elif defined(__INTEGRITY)
-# if defined(INT_178B)
-#  define PLATFORM_ID "Integrity178"
-
-# else /* regular Integrity */
-#  define PLATFORM_ID "Integrity"
-# endif
-
 #else /* unknown platform */
 # define PLATFORM_ID
 
@@ -200,43 +198,8 @@ char const* info_simulate = "INFO" ":" "simulate[" SIMULATE_ID "]";
 # if defined(__ICCARM__)
 #  define ARCHITECTURE_ID "ARM"
 
-# elif defined(__ICCRX__)
-#  define ARCHITECTURE_ID "RX"
-
-# elif defined(__ICCRH850__)
-#  define ARCHITECTURE_ID "RH850"
-
-# elif defined(__ICCRL78__)
-#  define ARCHITECTURE_ID "RL78"
-
-# elif defined(__ICCRISCV__)
-#  define ARCHITECTURE_ID "RISCV"
-
 # elif defined(__ICCAVR__)
 #  define ARCHITECTURE_ID "AVR"
-
-# elif defined(__ICC430__)
-#  define ARCHITECTURE_ID "MSP430"
-
-# else /* unknown architecture */
-#  define ARCHITECTURE_ID ""
-# endif
-
-#elif defined(__ghs__)
-# if defined(__PPC64__)
-#  define ARCHITECTURE_ID "PPC64"
-
-# elif defined(__ppc__)
-#  define ARCHITECTURE_ID "PPC"
-
-# elif defined(__ARM__)
-#  define ARCHITECTURE_ID "ARM"
-
-# elif defined(__x86_64__)
-#  define ARCHITECTURE_ID "x64"
-
-# elif defined(__i386__)
-#  define ARCHITECTURE_ID "X86"
 
 # else /* unknown architecture */
 #  define ARCHITECTURE_ID ""

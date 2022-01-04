@@ -6,7 +6,7 @@
 #include <thread>
 #include <chrono>
 #include <stdlib.h>
-#include <fstream>.
+#include <fstream>
 using json = nlohmann::json;
 
 
@@ -35,9 +35,6 @@ void Dtam::addCamera(int counter){
   camera_vector_->push_back(new_cam);
 }
 
-int Dtam::getFrameCurrent(){
-  return frame_current_;
-}
 
 void Dtam::waitForNewFrame(){
   std::unique_lock<std::mutex> locker(mu_frame_);
@@ -51,7 +48,32 @@ void Dtam::waitForTrackedCandidates(){
   locker.unlock();
 }
 
-void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
+void Dtam::doInitialization(){
+  while(true){
+    if(frame_current_==camera_vector_->size()-1)
+      waitForNewFrame();
+
+    double t_start=getTime();
+
+    frame_current_++;
+
+    if(frame_current_==0){
+      tracker_->trackCam(true);
+      keyframe_handler_->addKeyframe(true);
+      initializer_->extractCorners();
+    }
+    else{
+      initializer_->trackCornersLK();
+    }
+
+    double t_end=getTime();
+    int deltaTime=(t_end-t_start);
+    sharedCoutDebug("Initialization frame: "+std::to_string(frame_current_)+", time: "+ std::to_string(deltaTime)+" ms");
+
+  }
+}
+
+void Dtam::doFrontEndPart(bool all_keyframes, bool take_gt_poses){
   while( true ){
 
     if(frame_current_==camera_vector_->size()-1)
@@ -63,29 +85,29 @@ void Dtam::doInitialization(bool all_keyframes, bool take_gt_poses){
     sharedCoutDebug("Frame current: "+std::to_string(frame_current_));
 
     if(frame_current_==0){
-      tracker_->trackCam(take_gt_poses);
-      keyframe_handler_->addKeyframe(all_keyframes);
-      // mapper_->updateRotationalInvariantGradients();
+      tracker_->trackCam(true);
+      keyframe_handler_->addKeyframe(true);
+      mapper_->updateRotationalInvariantGradients();
       mapper_->selectNewCandidates();
       continue;
     }
 
-    sharedCoutDebug("Initialization of frame: "+std::to_string(frame_current_)+" ...");
+    sharedCoutDebug("Front end part of frame: "+std::to_string(frame_current_)+" ...");
 
     tracker_->trackCam(take_gt_poses);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
-      // mapper_->updateRotationalInvariantGradients();
+      mapper_->updateRotationalInvariantGradients();
       // bundle_adj_->projectAndMarginalizeActivePoints();
-      // mapper_->trackExistingCandidates();
-      // cand_tracked_.notify_all();
+      mapper_->trackExistingCandidates();
+      cand_tracked_.notify_all();
       mapper_->selectNewCandidates();
       // bundle_adj_->activateNewPoints(); in other thread
       // bundle_adj_->optimize(); in other thread
     }
     double t_end=getTime();
     int deltaTime=(t_end-t_start);
-    sharedCoutDebug("Initialization of frame: "+std::to_string(frame_current_)+", time: "+ std::to_string(deltaTime)+" ms");
+    sharedCoutDebug("Front end part of frame: "+std::to_string(frame_current_)+", time: "+ std::to_string(deltaTime)+" ms");
 
   }
 
@@ -190,6 +212,20 @@ void Dtam::testRotationalInvariance(){
   cv::waitKey(0);
 }
 
+void Dtam::eval_initializer(){
+
+  std::thread initialization_thread_(&Dtam::doInitialization, this);
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+
+  update_cameras_thread_.join();
+  initialization_thread_.detach();
+
+  // initializer_->showCornersRef();
+  initializer_->showCornersTrack();
+  cv::waitKey(0);
+
+}
+
 void Dtam::test_mapping(){
 
   bool take_gt_poses=true;
@@ -197,12 +233,12 @@ void Dtam::test_mapping(){
   bool active_all_candidates=true;
 
   // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
-  std::thread initialization_thread(&Dtam::doInitialization, this, all_keyframes, take_gt_poses);
+  std::thread frontend_thread(&Dtam::doFrontEndPart, this, all_keyframes, take_gt_poses);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
 
   // optimization_thread.detach();
-  initialization_thread.detach();
+  frontend_thread.detach();
   update_cameras_thread_.join();
 
   // debugAllCameras();
@@ -218,12 +254,12 @@ void Dtam::test_mapping(){
   camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(7)->showProjCandidates_2(2);
-  // camera_vector_->at(5)->showProjCandidates_2(2);
+  camera_vector_->at(5)->showProjCandidates_2(2);
   // camera_vector_->at(1)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(camera_vector_->size()-2));
-  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
   // testRotationalInvariance();
   cv::waitKey(0);
@@ -249,13 +285,11 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
       // printf( "%s is not a directory\n", path_name );
       std::string st = "rm " + path_name;
       const char *str = st.c_str();
-      // std::string
-      system(str);
+
     }
 
     std::string st = "touch "+path_name;
     const char *str = st.c_str();
-    system(str);
 
     json j;
 

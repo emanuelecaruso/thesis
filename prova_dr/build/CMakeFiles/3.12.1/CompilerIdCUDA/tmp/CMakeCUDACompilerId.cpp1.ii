@@ -19077,11 +19077,11 @@ static __inline__ __attribute__((host)) cudaError_t cudaBindSurfaceToArray(
 #pragma GCC diagnostic pop
 # 1 "<command-line>" 2
 # 1 "CMakeCUDACompilerId.cu"
-# 40 "CMakeCUDACompilerId.cu"
+# 43 "CMakeCUDACompilerId.cu"
 
-# 40 "CMakeCUDACompilerId.cu"
+# 43 "CMakeCUDACompilerId.cu"
 char const* info_compiler = "INFO" ":" "compiler[" "NVIDIA" "]";
-# 272 "CMakeCUDACompilerId.cu"
+# 235 "CMakeCUDACompilerId.cu"
 char const info_version[] = {
   'I', 'N', 'F', 'O', ':',
   'c','o','m','p','i','l','e','r','_','v','e','r','s','i','o','n','[',
@@ -19096,7 +19096,7 @@ char const info_version[] = {
 
 
   ']','\0'};
-# 319 "CMakeCUDACompilerId.cu"
+# 282 "CMakeCUDACompilerId.cu"
 char const* info_platform = "INFO" ":" "platform[" "Linux" "]";
 char const* info_arch = "INFO" ":" "arch[" "]";
 

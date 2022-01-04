@@ -1,5 +1,6 @@
 // #include "environment.h"
 #include "dtam.h"
+#include "parameters.h"
 #include <stdio.h>
 
 using namespace std;
@@ -13,31 +14,12 @@ int main (int argc, char * argv[]) {
   const std::string dataset_name = argv[1]; // dataset name
   const std::string path_name = "./dataset/"+dataset_name;
 
-  // parameters
-  int wavelet_levels=3; // ex: 3 levels -> lev 0,1,2
-  int reg_level=2;  // ex reg level = 3 -> 0,1,2,*3* (fourth level)
-  // float grad_threshold = 0.2;
-  float grad_threshold = 0.01;
-  // float grad_threshold = 1;
-  // float grad_threshold = 1.5;
-  float grad_perc_threshold = 0.75;
-  // float cost_threshold = 0.8; // if cost is below this threshold, is keeped
-  float cost_threshold = 0.2; // if cost is below this threshold, is keeped
-  // int num_candidates = 300;
-  // int num_candidates = 4000;
-  int num_candidates = 8000;
-  int max_num_active_points = num_candidates;
-  // int num_candidates = INT_MAX;
-  int num_active_keyframes = 7;
-  float max_depth_var = 0.01; // maximum depth variance for the initilizer
 
 
   // initialization
-  Params* parameters = new Params(wavelet_levels ,reg_level, grad_threshold, grad_perc_threshold,
-                                  cost_threshold, num_candidates, max_num_active_points,
-                                  num_active_keyframes, max_depth_var);
+  Params* parameters = new Params();
 
-  Environment* environment = new Environment(path_name, dataset_name, wavelet_levels);
+  Environment* environment = new Environment(path_name, dataset_name, parameters);
 
   Dtam* dtam = new Dtam(environment, parameters); // dense mapper and tracker
 

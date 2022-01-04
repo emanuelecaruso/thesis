@@ -8,7 +8,7 @@
 using json = nlohmann::json;
 
 
-std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name, const std::string& dataset_name){
+std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name, const std::string& dataset_name, int end_frame){
 
   std::vector<Camera*>* camera_vector = nullptr;
 
@@ -36,8 +36,13 @@ std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name
 
   camera_vector = new std::vector<Camera*>;
 
+  int count =0;
+
   for (json::iterator it = cameras.begin(); it != cameras.end(); ++it) {
 
+    if (count>end_frame)
+      break;
+      
     std::string name=it.key();
 
 
@@ -77,11 +82,13 @@ std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name
       Camera* camera = new Camera(name,cam_parameters_, f, path_rgb_ );
       camera_vector->push_back(camera);
       std::cout << camera->name_ << " added in env" << std::endl;
+      count++;
     }
     else{
       Camera* camera = new Camera(name,cam_parameters_, f, path_rgb_, path_depth_);
       camera_vector->push_back(camera);
       std::cout << camera->name_ << " added in env" << std::endl;
+      count++;
     }
 
   }
