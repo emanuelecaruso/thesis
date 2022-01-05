@@ -21,6 +21,7 @@ class Initializer{
     void showCornersRef();
     void trackCornersLK();
     void showCornersTrack();
+    bool findPose();
 
   private:
     Dtam* const dtam_;
@@ -34,4 +35,9 @@ class Initializer{
     const Image<float>* getReferenceImage();
     const Image<float>* getCurrentImage();
     const Image<float>* getPrevImage();
+
+    cv::Mat findEssentialMatrix();
+    cv::Mat findFundamentalMatrix();
+    cv::Mat findHomography();
+
 };

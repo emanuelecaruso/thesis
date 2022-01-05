@@ -47,10 +47,9 @@ void Initializer::trackCornersLK(){
   cv::Mat_<uchar> img_next_uchar;
 
   int n = dtam_->frame_current_-ref_frame_idx_;
+
   // calculate optical flow
-  std::vector<uchar> status;
-  std::vector<float> err;
-  cv::Size size_win = cv::Size(30,30);
+  cv::Size size_win = cv::Size(parameters_->size_window,parameters_->size_window);
 
   corners_vec_->push_back(new std::vector<cv::Point2f>);
   errors_vec_->push_back(new std::vector<float>);
@@ -62,6 +61,78 @@ void Initializer::trackCornersLK(){
 
   // TermCriteria criteria = TermCriteria((TermCriteria::COUNT) + (TermCriteria::EPS), 10, 0.03);
   calcOpticalFlowPyrLK(img_prev_uchar, img_next_uchar, *(corners_vec_->at(n-1)), *(corners_vec_->at(n)), *(status_vec_->at(n)), *(errors_vec_->at(n)), size_win);
+
+  // filter corners
+  for (int i=status_vec_->at(n)->size()-1; i>=0; i--){
+    // if(errors_vec_->at(n)->at(i)<10 || !(status_vec_->at(n)->at(i)) ){
+    if(errors_vec_->at(n)->at(i)>10 ){
+      // std::cout << i << std::endl;
+      for (int j=0; j<=n; j++){
+        // std::cout << status_vec_->at(j)->size() << " "<< errors_vec_->at(j)->size() << " "<< corners_vec_->at(j)->size() << std::endl;
+        corners_vec_->at(j)->erase (corners_vec_->at(j)->begin()+i);
+        if(j>0){
+          status_vec_->at(j)->erase (status_vec_->at(j)->begin()+i);
+          errors_vec_->at(j)->erase (errors_vec_->at(j)->begin()+i);
+        }
+      }
+    }
+  }
+
+
+
+
+  // for (int i=0; i<status_vec_->at(n)->size(); i++){
+  //   status_vec_->at(n)->at(i)=errors_vec_->at(n)->at(i)<10;
+  // }
+}
+
+bool Initializer::findPose(){
+  // estimate homography
+  cv::Mat H = findHomography();
+
+  // estimate essential matrix
+  // cv::Mat E = findEssentialMatrix();
+  cv::Mat F = findFundamentalMatrix();
+
+  // eval models
+
+  // find pose
+}
+
+cv::Mat Initializer::findEssentialMatrix(){
+  cv::Point2d pp = cv::Point2d(0,0);
+  double focal = dtam_->camera_vector_->at(0)->cam_parameters_->lens;
+  int method = cv::RANSAC;
+  double prob = 0.95;
+  double threshold = 1.0;
+
+  cv::Mat E = cv::findEssentialMat	(	*(corners_vec_->at(0)), *(corners_vec_->back()),
+                                  focal, pp, method, prob, threshold);
+  return E;
+}
+
+cv::Mat Initializer::findFundamentalMatrix(){
+  int method = cv::RANSAC;
+  double ransacReprojThreshold = 3;
+  double 	confidence = parameters_->confidence;
+
+  cv::Mat F = cv::findFundamentalMat	(	*(corners_vec_->at(0)), *(corners_vec_->back()),
+                                        method, ransacReprojThreshold, confidence );
+  return F;
+}
+
+cv::Mat Initializer::findHomography(){
+  int method = cv::RANSAC;
+  double ransacReprojThreshold = 3;
+  const int maxIters = 2000;
+  double 	confidence = parameters_->confidence;
+
+
+  cv::Mat H = cv::findHomography	( *(corners_vec_->at(0)), *(corners_vec_->back()),
+                          method, ransacReprojThreshold, cv::noArray(), maxIters, confidence );
+
+
+  return H;
 }
 
 void Initializer::showCornersTrack(){
@@ -79,17 +150,11 @@ void Initializer::showCornersTrack(){
       Image<colorRGB>* show_image= img->returnColoredImgFromIntensityImg("corners tracking");
       // for (auto corner : *(corners_vec_->at(0))){
       for (int j=0; j<corners_vec_->at(i)->size(); j++){
-        if ( i==0 || ( (status_vec_->at(i)->at(j)) && (errors_vec_->at(i)->at(j))<10 ) ){
-          show_image->drawCircle(colors[j], corners_vec_->at(i)->at(j));
-        }
+        show_image->drawCircle(colors[j], corners_vec_->at(i)->at(j));
       }
       show_image->show(2);
       cv::waitKey(1000);
-      // std::cout << "size: " << i << " "<< corners_vec_->at(i)->size() << std::endl;
-      // std::cout << "size: " << i << " "<< status_vec_->at(0)->size() << std::endl;
     }
 
-
-    // show_image->show(2);
   }
 }

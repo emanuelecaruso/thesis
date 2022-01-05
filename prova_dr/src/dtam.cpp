@@ -59,16 +59,20 @@ void Dtam::doInitialization(){
 
     if(frame_current_==0){
       tracker_->trackCam(true);
-      keyframe_handler_->addKeyframe(true);
+      // keyframe_handler_->addKeyframe(true);
       initializer_->extractCorners();
     }
     else{
       initializer_->trackCornersLK();
+      // if pose is found ...
+      if(initializer_->findPose()){
+        // ... add first 2 keyframes
+      }
     }
 
     double t_end=getTime();
     int deltaTime=(t_end-t_start);
-    sharedCoutDebug("Initialization frame: "+std::to_string(frame_current_)+", time: "+ std::to_string(deltaTime)+" ms");
+    sharedCoutDebug("   - Initialization of frame "+std::to_string(frame_current_)+", computation time: "+ std::to_string(deltaTime)+" ms");
 
   }
 }
@@ -136,7 +140,7 @@ void Dtam::updateCamerasFromEnvironment(){
 
     double t_start=getTime();
 
-    sharedCout("\nFrame: "+ std::to_string(counter));
+    // sharedCout("\nFrame: "+ std::to_string(counter));
     addCamera(counter);
 
     frame_updated_.notify_all();
@@ -145,7 +149,7 @@ void Dtam::updateCamerasFromEnvironment(){
     locker.unlock();
 
     int deltaTime=(t_end-t_start);
-    sharedCoutDebug("Add camera computation time: "+ std::to_string(deltaTime)+" ms");
+    sharedCoutDebug("\nAdd Frame "+std::to_string(counter)+", computation time: "+ std::to_string(deltaTime)+" ms");
     long int waitDelay=deltaTime*1000;
 
     long int time_to_wait=(1.0/fps)*1000000-waitDelay;

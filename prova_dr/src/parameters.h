@@ -22,9 +22,11 @@ static float max_depth_var_=0.01;
 static int end_frame_=5;
 static int fps_=30;
 // initializer parameters
-static int n_corners_ = 200;
+static int n_corners_ = 500;
 static float quality_level_ = 0.01;
 static float min_distance_ = 10;
+static int size_window_ = 30;
+static float confidence_ = 0.995;
 
 struct Params{
 
@@ -42,5 +44,7 @@ struct Params{
   int n_corners=n_corners_;
   float quality_level=quality_level_;
   float min_distance=min_distance_;
+  float size_window=size_window_;
+  float confidence=confidence_;
 
 };
