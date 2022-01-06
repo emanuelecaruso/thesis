@@ -22,11 +22,13 @@ static float max_depth_var_=0.01;
 static int end_frame_=5;
 static int fps_=30;
 // initializer parameters
-static int n_corners_ = 500;
+static int n_corners_ = 1000;
 static float quality_level_ = 0.01;
 static float min_distance_ = 10;
-static int size_window_ = 30;
-static float confidence_ = 0.995;
+static float err_threshold_ = 5;
+static int size_window_ = 21;
+static float confidence_ = 0.999;
+static float ransacReprojThreshold_ = 1;
 
 struct Params{
 
@@ -44,7 +46,9 @@ struct Params{
   int n_corners=n_corners_;
   float quality_level=quality_level_;
   float min_distance=min_distance_;
+  float err_threshold=err_threshold_;
   float size_window=size_window_;
   float confidence=confidence_;
+  float ransacReprojThreshold=ransacReprojThreshold_;
 
 };

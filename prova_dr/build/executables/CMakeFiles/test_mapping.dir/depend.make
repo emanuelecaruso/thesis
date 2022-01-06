@@ -2249,6 +2249,7 @@ executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/inc
 executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/include/opencv4/opencv2/core/cvstd.hpp
 executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/include/opencv4/opencv2/core/cvstd.inl.hpp
 executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/include/opencv4/opencv2/core/cvstd_wrapper.hpp
+executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/include/opencv4/opencv2/core/eigen.hpp
 executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/include/opencv4/opencv2/core/fast_math.hpp
 executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/include/opencv4/opencv2/core/hal/interface.h
 executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o: /usr/local/include/opencv4/opencv2/core/hal/msa_macros.h

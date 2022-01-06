@@ -4,6 +4,7 @@
 #include "utils.h"
 #include <stdlib.h>
 #include "defs.h"
+#include <opencv2/core/eigen.hpp>
 
 const Image<float>* Initializer::getReferenceImage(){
   return dtam_->camera_vector_->at(ref_frame_idx_)->image_intensity_;
@@ -65,7 +66,7 @@ void Initializer::trackCornersLK(){
   // filter corners
   for (int i=status_vec_->at(n)->size()-1; i>=0; i--){
     // if(errors_vec_->at(n)->at(i)<10 || !(status_vec_->at(n)->at(i)) ){
-    if(errors_vec_->at(n)->at(i)>10 ){
+    if(errors_vec_->at(n)->at(i)>parameters_->err_threshold ){
       // std::cout << i << std::endl;
       for (int j=0; j<=n; j++){
         // std::cout << status_vec_->at(j)->size() << " "<< errors_vec_->at(j)->size() << " "<< corners_vec_->at(j)->size() << std::endl;
@@ -88,7 +89,7 @@ void Initializer::trackCornersLK(){
 
 bool Initializer::findPose(){
   // estimate homography
-  cv::Mat H = findHomography();
+  // cv::Mat H = findHomography();
 
   // estimate essential matrix
   // cv::Mat E = findEssentialMatrix();
@@ -97,23 +98,112 @@ bool Initializer::findPose(){
   // eval models
 
   // find pose
+  cv::Mat E = fundamental2Essential(F);
+  Eigen::Isometry3f T = essential2pose( E );
+  // Eigen::Isometry3f T = homography2pose( H );
+
+
+}
+
+Eigen::Isometry3f Initializer::computeRelativePoseGt(){
+  Eigen::Isometry3f w_T_m = *(dtam_->environment_->camera_vector_->at(dtam_->frame_current_)->frame_camera_wrt_world_);
+  Eigen::Isometry3f r_T_w = *(dtam_->environment_->camera_vector_->at(ref_frame_idx_)->frame_world_wrt_camera_);
+  Eigen::Isometry3f r_T_m = r_T_w*w_T_m;
+
+  return r_T_m;
+}
+
+
+cv::Mat Initializer::fundamental2Essential(cv::Mat& F_){
+
+  Eigen::Matrix3f K = *(dtam_->camera_vector_->at(dtam_->frame_current_)->K_);
+  Eigen::Matrix3f Kt = K.transpose();
+  Eigen::Matrix3f F;
+  cv2eigen(  F_, F );
+
+  Eigen::Matrix3f E = Kt*F*K;
+
+  cv::Mat E_;
+  eigen2cv(  E, E_ );
+
+  return E_;
+
+}
+
+Eigen::Isometry3f Initializer::homography2pose(cv::Mat& H){
+  // get grountruth of the pose to predict
+  Eigen::Isometry3f T_gt = computeRelativePoseGt();
+   // get groundtruth of scale
+  float t_magnitude = T_gt.translation().norm();
+
+  Eigen::Matrix3f K_ = *(dtam_->camera_vector_->at(dtam_->frame_current_)->K_);
+  cv::Mat K;
+  eigen2cv(K_, K);
+  std::vector<cv::Mat> Rs, Ts;
+
+  cv::decomposeHomographyMat(H, K, Rs, Ts, cv::noArray());
+
+  std::cout << "\nCOMPARISON, frame " << dtam_->frame_current_ << std::endl;
+  std::cout << "gt: "<< T_gt.translation() << std::endl;
+  std::cout << "pred: " << Ts[0] << std::endl;
+
+
+  Eigen::Isometry3f T;
+  // T.linear()=R;
+  return T;
+}
+
+
+Eigen::Isometry3f Initializer::essential2pose(cv::Mat& E){
+
+  // get grountruth of the pose to predict
+  Eigen::Isometry3f T_gt = computeRelativePoseGt();
+   // get groundtruth of scale
+  float t_magnitude = T_gt.translation().norm();
+
+  cv::Mat R1, R2, t;
+  decomposeEssentialMat( E, R1, R2, t );
+  t*=t_magnitude; // adjust scale for t vector
+
+  // compute eigenvalues
+  cv::Mat eigenvalues;
+  cv::eigen(E,eigenvalues);
+
+  cv::Mat w;
+  cv::SVD::compute(	E, w);
+
+  std::cout << "\nCOMPARISON, frame " << dtam_->frame_current_ << std::endl;
+  std::cout << "eigenvalues: " << eigenvalues << std::endl;
+  std::cout << "singularvalues: " << w << std::endl;
+  std::cout << "gt: "<< T_gt.translation() << std::endl;
+  std::cout << "pred: " << t << std::endl;
+
+  // Eigen::Matrix3f R;
+  // eigen2cv(  R1, R);
+  //
+  Eigen::Isometry3f T;
+  // T.linear()=R;
+  return T;
 }
 
 cv::Mat Initializer::findEssentialMatrix(){
-  cv::Point2d pp = cv::Point2d(0,0);
-  double focal = dtam_->camera_vector_->at(0)->cam_parameters_->lens;
   int method = cv::RANSAC;
-  double prob = 0.95;
+  double prob = 0.995;
   double threshold = 1.0;
+  Eigen::Matrix3f K_ = *(dtam_->camera_vector_->at(dtam_->frame_current_)->K_);
+  cv::Mat K;
+  eigen2cv(K_, K);
 
-  cv::Mat E = cv::findEssentialMat	(	*(corners_vec_->at(0)), *(corners_vec_->back()),
-                                  focal, pp, method, prob, threshold);
+
+  cv::Mat E = cv::findEssentialMat ( *(corners_vec_->at(0)), *(corners_vec_->back()),
+                                      K, method, prob, threshold );
+
   return E;
 }
 
 cv::Mat Initializer::findFundamentalMatrix(){
-  int method = cv::RANSAC;
-  double ransacReprojThreshold = 3;
+  int method = cv::FM_RANSAC;
+  double ransacReprojThreshold = parameters_->ransacReprojThreshold;
   double 	confidence = parameters_->confidence;
 
   cv::Mat F = cv::findFundamentalMat	(	*(corners_vec_->at(0)), *(corners_vec_->back()),
@@ -123,7 +213,7 @@ cv::Mat Initializer::findFundamentalMatrix(){
 
 cv::Mat Initializer::findHomography(){
   int method = cv::RANSAC;
-  double ransacReprojThreshold = 3;
+  double ransacReprojThreshold = parameters_->ransacReprojThreshold;
   const int maxIters = 2000;
   double 	confidence = parameters_->confidence;
 

@@ -39,5 +39,9 @@ class Initializer{
     cv::Mat findEssentialMatrix();
     cv::Mat findFundamentalMatrix();
     cv::Mat findHomography();
+    cv::Mat fundamental2Essential(cv::Mat& F);
+    Eigen::Isometry3f essential2pose(cv::Mat& E);
+    Eigen::Isometry3f homography2pose(cv::Mat& H);
+    Eigen::Isometry3f computeRelativePoseGt();
 
 };
