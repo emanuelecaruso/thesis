@@ -28,7 +28,7 @@ static float min_distance_ = 10;
 static float err_threshold_ = 5;
 static int size_window_ = 21;
 static float confidence_ = 0.999;
-static float ransacReprojThreshold_ = 1;
+static float ransacReprojThreshold_ = 3;
 
 struct Params{
 

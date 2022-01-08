@@ -61,7 +61,7 @@ class EpipolarLine{
     void showEpipolarWithMin(int level=-1, float size=1);
     void showEpipolarComparison(EpipolarLine* ep_line_2, bool print, float size);
     void showEpipolarComparison(EpipolarLine* ep_line_2, const std::string& name, bool print, float size);
-
+    void drawEpipolar(Image<colorRGB>* img, const colorRGB& color, int level=-1);
 
     bool searchMin(Candidate* candidate, Params* parameters);
     float getCost(const pixelIntensity magnitude3C_r, const pixelIntensity magnitude3C_m,

@@ -31,7 +31,8 @@ class CamCouple{
       getBoundsParameters();
       getDepthParameters();
     }
-    EpipolarLine* getEpSegment(Candidate* candidat, int bound_idx);
+    EpipolarLine* getEpSegment(Candidate* candidate, int bound_idx);
+    EpipolarLine* getEpSegmentDefaultBounds(float u1, float v1);
     // EpipolarLine* getEpSegmentGt(Candidate* candidate);
     // void compareEpSegmentWithGt(Candidate* candidate);
     // void showEpSegment(Candidate* candidate);

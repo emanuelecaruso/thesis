@@ -92,7 +92,7 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
   float min_depth=candidate->bounds_->at(bound_idx).first;
   float max_depth=candidate->bounds_->at(bound_idx).second;
 
-  float slope_m=0, bound_up=0, bound_low=0;
+  float slope_m, bound_up, bound_low;
   getSlope(u1, v1, slope_m);
 
   bool u_or_v = (slope_m<1 && slope_m>-1);
@@ -108,6 +108,24 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
 
 
 
+EpipolarLine* CamCouple::getEpSegmentDefaultBounds(float u1, float v1){
+
+  float min_depth=cam_r_->cam_parameters_->min_depth;
+  float max_depth=cam_r_->cam_parameters_->max_depth;
+
+  float slope_m, bound_up, bound_low;
+  getSlope(u1, v1, slope_m);
+
+  bool u_or_v = (slope_m<1 && slope_m>-1);
+
+  getBounds(u1, v1, min_depth, max_depth, bound_low, bound_up, u_or_v);
+
+  EpipolarLine* ep_seg = new EpipolarLine(  cam_m_, slope_m, bound_low, bound_up, cam_r_projected_in_cam_m );
+
+  // std::cout << bound_low << std::endl;
+  return ep_seg;
+
+}
 
 void Mapper::selectNewCandidates(){
   int idx=dtam_->keyframe_vector_->back();
@@ -326,30 +344,30 @@ void Mapper::trackExistingCandidates(){
         if (!ep_segment->searchMin(cand, parameters_))
           continue;
 
-        // // if (ep_segment->uv_idxs_mins->size()==1){
-        //   // if (dtam_->frame_current_==7){
-        //   // if (flag){
-        //   // if(j==cand->bounds_->size()-1)
-        //   flag=0;
-        //   // ep_segment->showEpipolar(cand->level_);
-        //   ep_segment->showEpipolarWithMin(cand->level_);
-        //
-        //   Image<float>* dh_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
-        //   dh_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dh_rob");
-        //   Image<float>* dv_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
-        //   dv_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dv_rob");
-        //   Image<float>* dh_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
-        //   dh_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dh_rob last");
-        //   Image<float>* dv_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
-        //   dv_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dv_rob last");
-        //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude_img;
-        //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-        //
-        //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
-        //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude3C_img->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"_phase");
-        //   cv::waitKey(0);
-        //   // cv::destroyAllWindows();
-        // // }
+        // if (ep_segment->uv_idxs_mins->size()==1){
+          // if (dtam_->frame_current_==7){
+          // if (flag){
+          // if(j==cand->bounds_->size()-1)
+          flag=0;
+          // ep_segment->showEpipolar(cand->level_);
+          ep_segment->showEpipolarWithMin(cand->level_);
+
+          // Image<float>* dh_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
+          // dh_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dh_rob");
+          // Image<float>* dv_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
+          // dv_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dv_rob");
+          // Image<float>* dh_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
+          // dh_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dh_rob last");
+          // Image<float>* dv_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
+          // dv_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dv_rob last");
+          // Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude_img;
+          // magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+
+          // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
+          // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude3C_img->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"_phase");
+          cv::waitKey(0);
+          // cv::destroyAllWindows();
+        // }
 
         // cam_couple->compareEpSegmentWithGt(cand);
         // cam_couple->showEpSegment(cand);

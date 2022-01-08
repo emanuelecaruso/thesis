@@ -215,21 +215,7 @@ void EpipolarLine::showEpipolarComparison(EpipolarLine* ep_line_2,
     image_intensity_new->showWithOtherImage(image_intensity_new_2,name,size);
 }
 
-
-
-// create imgs to show
-Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int level){
-
-    Image<colorRGB>* image_intensity_new = new Image<colorRGB> (cam->name_) ;
-
-    if (level==-1)
-      image_intensity_new = cam->image_intensity_->returnColoredImgFromIntensityImg("epipolar") ;
-    else
-      // image_intensity_new = cam->wavelet_dec_->vector_wavelets->at(level)->c->clone(name);
-      // image_intensity_new = cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->clone(name);
-      // image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->dv_robust->returnColoredImgFromIntensityImg("epipolar") ;
-      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->magnitude_img->returnColoredImgFromIntensityImg("epipolar") ;
-
+void EpipolarLine::drawEpipolar(Image<colorRGB>* img, const colorRGB& color, int level){
 
     if (!uvs->empty())
       for( int i=0; i<uvs->size(); i++){
@@ -242,8 +228,24 @@ Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int le
         // else if (i==uvs->size()-1)
         //   image_intensity_new->setPixel(pixel, red);
         // else
-        image_intensity_new->setPixel(pixel, green);
+        img->setPixel(pixel, color);
       }
+
+}
+
+
+// create imgs to show
+Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int level){
+
+    Image<colorRGB>* image_intensity_new = new Image<colorRGB> (cam->name_) ;
+
+    if (level==-1)
+      image_intensity_new = cam->image_intensity_->returnColoredImgFromIntensityImg("epipolar") ;
+    else
+      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->magnitude_img->returnColoredImgFromIntensityImg("epipolar") ;
+
+    drawEpipolar(image_intensity_new, green, level);
+
     return image_intensity_new;
 }
 

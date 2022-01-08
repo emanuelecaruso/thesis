@@ -42,7 +42,7 @@ std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name
 
     if (count>end_frame)
       break;
-      
+
     std::string name=it.key();
 
 
@@ -62,17 +62,6 @@ std::vector<Camera*>* Environment::loadCameraVector(const std::string& path_name
       std::cout << error << std::endl;
       return camera_vector;
     };
-
-    Eigen::Matrix3f R;
-    R <<
-      f[0], f[1], f[2],
-      f[3], f[4], f[5],
-      f[6], f[7], f[8];
-
-    Eigen::Vector3f t(f[9],f[10],f[11]);
-    Eigen::Isometry3f* frame_camera_wrt_world = new Eigen::Isometry3f;
-    frame_camera_wrt_world->linear()=R;
-    frame_camera_wrt_world->translation()=t;
 
 
     struct stat info__;

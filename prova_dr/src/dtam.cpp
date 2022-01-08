@@ -36,6 +36,7 @@ void Dtam::addCamera(int counter){
 }
 
 
+
 void Dtam::waitForNewFrame(){
   std::unique_lock<std::mutex> locker(mu_frame_);
   frame_updated_.wait(locker);
@@ -60,7 +61,9 @@ void Dtam::doInitialization(){
     if(frame_current_==0){
       tracker_->trackCam(true);
       // keyframe_handler_->addKeyframe(true);
+      initializer_->compute_cv_K();
       initializer_->extractCorners();
+
     }
     else{
       initializer_->trackCornersLK();
@@ -242,7 +245,7 @@ void Dtam::test_mapping(){
 
 
   // optimization_thread.detach();
-  frontend_thread.detach();
+  frontend_thread.join();
   update_cameras_thread_.join();
 
   // debugAllCameras();

@@ -14,9 +14,11 @@ class Initializer{
     parameters_(parameters),
     corners_vec_(new std::vector<std::vector<cv::Point2f>*>),
     errors_vec_(new std::vector<std::vector<float>*>),
-    status_vec_(new std::vector<std::vector<uchar>*>)
+    status_vec_(new std::vector<std::vector<uchar>*>),
+    inliers_vec_(new std::vector<std::vector<uchar>*>)
     {};
 
+    void compute_cv_K();
     void extractCorners();
     void showCornersRef();
     void trackCornersLK();
@@ -31,6 +33,8 @@ class Initializer{
     std::vector<std::vector<cv::Point2f>*>* corners_vec_;
     std::vector<std::vector<uchar>*>* status_vec_;
     std::vector<std::vector<float>*>* errors_vec_;
+    std::vector<std::vector<uchar>*>* inliers_vec_;
+    cv::Mat cv_K;
 
     const Image<float>* getReferenceImage();
     const Image<float>* getCurrentImage();

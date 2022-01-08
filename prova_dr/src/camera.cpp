@@ -48,6 +48,13 @@ float Camera::getPixelWidth(int level) const{
   return pixel_width;
 }
 
+
+// assign
+void Camera::assignPose(Eigen::Isometry3f& frame_camera_wrt_world){
+  *frame_camera_wrt_world_=frame_camera_wrt_world;
+  *frame_world_wrt_camera_=frame_camera_wrt_world.inverse();
+}
+
 void Camera::clearImgs(){
   invdepth_map_->setAllPixels(1.0);
 }

@@ -85,6 +85,9 @@ class Camera{
     void getCentreAsPixel(Eigen::Vector2i& pixel_coords) const;
     float getPixelWidth(int level=-1) const;
 
+    // assign
+    void assignPose(Eigen::Isometry3f& frame_camera_wrt_world);
+
     // functions for projections/transformations
     void pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv, int level) const;
     void pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv) const;
