@@ -1,5 +1,6 @@
 #include "dtam.h"
 #include "initializer.h"
+#include "mapper.h"
 #include <math.h>
 #include "utils.h"
 #include <stdlib.h>
@@ -95,9 +96,7 @@ void Initializer::trackCornersLK(){
   for (int i=status_vec_->at(n)->size()-1; i>=0; i--){
     // if(errors_vec_->at(n)->at(i)<10 || !(status_vec_->at(n)->at(i)) ){
     if(errors_vec_->at(n)->at(i)>parameters_->err_threshold ){
-      // std::cout << i << std::endl;
       for (int j=0; j<=n; j++){
-        // std::cout << status_vec_->at(j)->size() << " "<< errors_vec_->at(j)->size() << " "<< corners_vec_->at(j)->size() << std::endl;
         corners_vec_->at(j)->erase (corners_vec_->at(j)->begin()+i);
         if(j>0){
           status_vec_->at(j)->erase (status_vec_->at(j)->begin()+i);
@@ -127,22 +126,25 @@ bool Initializer::findPose(){
 
   // eval models
 
-  // find pose
-  Eigen::Isometry3f T = essential2pose( E );
-  // Eigen::Isometry3f T = homography2pose( H );
+  // if the model is good enough
+  if(true){
+    // find pose
+    Eigen::Isometry3f T = essential2pose( E );
+    // Eigen::Isometry3f T = homography2pose( H );
 
-  // assign pose
-  dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(T);
-  // dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(*(dtam_->environment_->camera_vector_->at(dtam_->frame_current_)->frame_camera_wrt_world_));  //gt
-
-
-
+    // assign pose
+    dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(T);
+    // dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(*(dtam_->environment_->camera_vector_->at(dtam_->frame_current_)->frame_camera_wrt_world_));  //gt
+    return true;
+  }
+  // otherwise return false
+  return false;
 
 }
 
 Eigen::Isometry3f Initializer::computeRelativePoseGt(){
   Eigen::Isometry3f w_T_m = *(dtam_->environment_->camera_vector_->at(dtam_->frame_current_)->frame_camera_wrt_world_);
-  Eigen::Isometry3f r_T_w = *(dtam_->environment_->camera_vector_->at(ref_frame_idx_)->frame_world_wrt_camera_);
+  Eigen::Isometry3f r_T_w = *(dtam_->camera_vector_->at(ref_frame_idx_)->frame_world_wrt_camera_);
   Eigen::Isometry3f r_T_m = r_T_w*w_T_m;
 
   return r_T_m;
@@ -178,9 +180,9 @@ Eigen::Isometry3f Initializer::homography2pose(cv::Mat& H){
 
   cv::decomposeHomographyMat(H, K, Rs, Ts, cv::noArray());
 
-  std::cout << "\nCOMPARISON, frame " << dtam_->frame_current_ << std::endl;
-  std::cout << "gt: "<< T_gt.translation() << std::endl;
-  std::cout << "pred: " << Ts[0] << std::endl;
+  // std::cout << "\nCOMPARISON, frame " << dtam_->frame_current_ << std::endl;
+  // std::cout << "gt: "<< T_gt.translation() << std::endl;
+  // std::cout << "pred: " << Ts[0] << std::endl;
 
 
   Eigen::Isometry3f T;
@@ -196,36 +198,8 @@ Eigen::Isometry3f Initializer::essential2pose(cv::Mat& E){
    // get groundtruth of scale
   float t_magnitude = T_gt.translation().norm();
 
-  //
-  // cv::Mat R1, R2, t;
-  // decomposeEssentialMat( E, R1, R2, t );
-  // t*=t_magnitude; // adjust scale for t vector
-  //
-  // // compute eigenvalues
-  // cv::Mat eigenvalues;
-  // cv::eigen(E,eigenvalues);
-  //
-  // cv::Mat w;
-  // cv::SVD::compute(	E, w);
-  //
-  // // std::cout << "\nCOMPARISON, frame " << dtam_->frame_current_ << std::endl;
-  // // std::cout << "eigenvalues: " << eigenvalues << std::endl;
-  // // std::cout << "singularvalues: " << w << std::endl;
-  // // std::cout << "gt: "<< T_gt.translation() << std::endl;
-  // // std::cout << "pred: " << t << std::endl;
-  // // std::cout << "pred: " << R1 << std::endl;
-  //
-  // // Eigen::Matrix3f R;
-  // // eigen2cv(  R1, R);
-  //
-  // // between the 4 poses, find the one which
-  // // have more points in front of the camera
-
-
-
+  // compute relative pose with opencv
   cv::Mat R, t;
-
-  std::cout << "ref: " << ref_frame_idx_ << ", last: " << corners_vec_->size()-1 << std::endl;
   cv::recoverPose	(	E, *(corners_vec_->at(0)), *(corners_vec_->back()),
                     cv_K, R, t, *(inliers_vec_->back()) );
 
@@ -237,32 +211,38 @@ Eigen::Isometry3f Initializer::essential2pose(cv::Mat& E){
   }
   // std::cout << "Inliers: " << i << " out of " << inliers_vec_->back()->size() << std::endl;
 
-  Eigen::Isometry3f r_T_cv;
-  Eigen::Matrix3f R_cv;
-  Eigen::Vector3f t_cv;
-  cv2eigen(R,R_cv);
-  cv2eigen(t,t_cv);
-  r_T_cv.linear() = R_cv;
-  r_T_cv.translation()=t_cv;
+  Eigen::Isometry3f r_T_m;
+  Eigen::Matrix3f R_;
+  Eigen::Vector3f t_;
+  cv2eigen(R,R_);
+  cv2eigen(t,t_);
+  r_T_m.linear() = R_;
+  r_T_m.translation()=t_;
   // solution given by opencv: world wrt the camera -> need inversion
-  r_T_cv.translation()*=t_magnitude;
-  r_T_cv=r_T_cv.inverse();
+  r_T_m.translation()*=t_magnitude;
+  r_T_m=r_T_m.inverse();
 
 
-  std::cout << "gt: "<< T_gt.translation() << std::endl;
-  std::cout << "pred: " << r_T_cv.translation() << std::endl;
-  // std::cout << "cv_T_bl.linear(): "<< cv_T_bl.linear() << std::endl;
-  std::cout << "gt normalized: "<< T_gt.translation().normalized() << std::endl;
-  std::cout << "pred normalized cv: " << r_T_cv.translation().normalized() << std::endl;
+  // std::cout << "ref: " << ref_frame_idx_ << ", last: " << corners_vec_->size()-1 << std::endl;
+  // std::cout << "gt: "<< T_gt.translation() << std::endl;
+  // std::cout << "pred: " << r_T_m.translation() << std::endl;
+  // std::cout << "gt normalized: "<< T_gt.translation().normalized() << std::endl;
+  // std::cout << "pred normalized cv: " << r_T_m.translation().normalized() << std::endl;
 
-  // return the pose
-  return r_T_cv;
+  // relative pose to camera pose
+  Eigen::Isometry3f w_T_r = *(dtam_->camera_vector_->at(ref_frame_idx_)->frame_camera_wrt_world_);
+  Eigen::Isometry3f frame_camera_wrt_world = w_T_r*r_T_m;
+
+  // return the camera pose
+  return frame_camera_wrt_world;
 }
+
+
 
 cv::Mat Initializer::findEssentialMatrix(){
   int method = cv::RANSAC;
-  double prob = 0.999;
-  double threshold = 3.0;
+  double prob = parameters_->confidence;
+  double threshold = parameters_->ransacReprojThreshold;
 
   // Eigen::Matrix3f K_ = *(dtam_->camera_vector_->at(dtam_->frame_current_)->K_);
   // cv::Mat K;
@@ -298,7 +278,7 @@ cv::Mat Initializer::findFundamentalMatrix(){
       i++;
     }
   }
-  std::cout << "Inliers: " << i << " out of " << inliers_vec_->back()->size() << std::endl;
+  // std::cout << "Inliers: " << i << " out of " << inliers_vec_->back()->size() << std::endl;
   // cv::Mat F = cv::findFundamentalMat	(	*(corners_vec_->at(0)), *(corners_vec_->back()) );
 
   return F;
@@ -352,11 +332,12 @@ void Initializer::showCornersTrack(){
           // std::cout << u << std::endl;
 
           EpipolarLine* ep_line = cam_couple->getEpSegmentDefaultBounds(u,v);
+          if ( inliers_vec_->at(i)->at(j) )
           ep_line->drawEpipolar(show_image, colors[j] );
         }
       }
       show_image->show(2);
-      cv::waitKey(1000);
+      cv::waitKey(0);
     }
 
   }

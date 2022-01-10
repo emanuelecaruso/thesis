@@ -68,12 +68,14 @@ CMAKE_BINARY_DIR = /home/emanuele/Scrivania/thesis/prova_dr/build
 # Directory level rules for directory executables
 
 # Convenience name for "all" pass in the directory.
+executables/all: executables/CMakeFiles/test_dso.dir/all
 executables/all: executables/CMakeFiles/test_mapping.dir/all
 executables/all: executables/CMakeFiles/eval_orb_initializer.dir/all
 
 .PHONY : executables/all
 
 # Convenience name for "clean" pass in the directory.
+executables/clean: executables/CMakeFiles/test_dso.dir/clean
 executables/clean: executables/CMakeFiles/test_mapping.dir/clean
 executables/clean: executables/CMakeFiles/eval_orb_initializer.dir/clean
 
@@ -85,13 +87,50 @@ executables/preinstall:
 .PHONY : executables/preinstall
 
 #=============================================================================
+# Target rules for target executables/CMakeFiles/test_dso.dir
+
+# All Build rule for target.
+executables/CMakeFiles/test_dso.dir/all:
+	$(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/depend
+	$(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=15,16,17,18,19,20,21,22,23,24,25,26,27,28 "Built target test_dso"
+.PHONY : executables/CMakeFiles/test_dso.dir/all
+
+# Include target in all.
+all: executables/CMakeFiles/test_dso.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+executables/CMakeFiles/test_dso.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles 14
+	$(MAKE) -f CMakeFiles/Makefile2 executables/CMakeFiles/test_dso.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles 0
+.PHONY : executables/CMakeFiles/test_dso.dir/rule
+
+# Convenience name for target.
+test_dso: executables/CMakeFiles/test_dso.dir/rule
+
+.PHONY : test_dso
+
+# clean rule for target.
+executables/CMakeFiles/test_dso.dir/clean:
+	$(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/clean
+.PHONY : executables/CMakeFiles/test_dso.dir/clean
+
+# clean rule for target.
+clean: executables/CMakeFiles/test_dso.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
 # Target rules for target executables/CMakeFiles/test_mapping.dir
 
 # All Build rule for target.
 executables/CMakeFiles/test_mapping.dir/all:
 	$(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/depend
 	$(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=15,16,17,18,19,20,21,22,23,24,25,26,27,28 "Built target test_mapping"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=29,30,31,32,33,34,35,36,37,38,39,40,41,42 "Built target test_mapping"
 .PHONY : executables/CMakeFiles/test_mapping.dir/all
 
 # Include target in all.

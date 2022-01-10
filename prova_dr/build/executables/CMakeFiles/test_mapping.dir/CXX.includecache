@@ -382,6 +382,26 @@ dirent.h
 mutex
 -
 
+/home/emanuele/Scrivania/thesis/prova_dr/src/dtam.cpp
+mapper.h
+/home/emanuele/Scrivania/thesis/prova_dr/src/mapper.h
+dtam.h
+/home/emanuele/Scrivania/thesis/prova_dr/src/dtam.h
+json.hpp
+/home/emanuele/Scrivania/thesis/prova_dr/src/json.hpp
+math.h
+-
+utils.h
+/home/emanuele/Scrivania/thesis/prova_dr/src/utils.h
+thread
+-
+chrono
+-
+stdlib.h
+-
+fstream
+-
+
 /home/emanuele/Scrivania/thesis/prova_dr/src/dtam.h
 camera.h
 /home/emanuele/Scrivania/thesis/prova_dr/src/camera.h
@@ -419,22 +439,6 @@ image.h
 /home/emanuele/Scrivania/thesis/prova_dr/src/image.h
 defs.h
 /home/emanuele/Scrivania/thesis/prova_dr/src/defs.h
-
-/home/emanuele/Scrivania/thesis/prova_dr/src/initializer.cpp
-dtam.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/dtam.h
-initializer.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/initializer.h
-math.h
--
-utils.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/utils.h
-stdlib.h
--
-defs.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/defs.h
-opencv2/core/eigen.hpp
--
 
 /home/emanuele/Scrivania/thesis/prova_dr/src/initializer.h
 camera.h
@@ -1669,10 +1673,6 @@ memory
 -
 type_traits
 -
-
-/usr/local/include/opencv4/opencv2/core/eigen.hpp
-opencv2/core.hpp
-/usr/local/include/opencv4/opencv2/core/opencv2/core.hpp
 
 /usr/local/include/opencv4/opencv2/core/fast_math.hpp
 opencv2/core/cvdef.h

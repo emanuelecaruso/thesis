@@ -35,12 +35,14 @@ class Dtam{
 
 
     void test_mapping();
+    void test_tracking();
     void eval_initializer();
-    void test_tracking(Environment* environment);
+    void test_dso();
 
     void debugAllCameras(bool show_imgs=false);
     void waitForNewFrame();
     void waitForTrackedCandidates();
+    void waitForInitialization();
 
 
   private:
@@ -63,8 +65,11 @@ class Dtam{
     friend class Tracker;
 
     std::mutex mu_frame_;
+    std::mutex mu_candidate_tracking_;
+    std::mutex mu_initialization_;
     std::condition_variable frame_updated_;
     std::condition_variable cand_tracked_;
+    std::condition_variable initialization_done_;
 
     std::thread update_cameras_thread_;
     std::thread mapping_thread_;
@@ -76,7 +81,7 @@ class Dtam{
     void updateCamerasFromEnvironment();
     void updateCamerasFromVideostream();
     void doMapping();
-    void doInitialization();
+    void doInitialization(bool initialization_loop=false);
     void doFrontEndPart(bool all_keyframes=false, bool take_gt_poses=false);
     void doOptimization(bool active_all_candidates=false);
     void doTracking();

@@ -111,6 +111,19 @@ depend:
 .PHONY : depend
 
 #=============================================================================
+# Target rules for targets named test_dso
+
+# Build rule for target.
+test_dso: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_dso
+.PHONY : test_dso
+
+# fast build rule for target.
+test_dso/fast:
+	$(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/build
+.PHONY : test_dso/fast
+
+#=============================================================================
 # Target rules for targets named test_mapping
 
 # Build rule for target.
@@ -144,6 +157,7 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
+	@echo "... test_dso"
 	@echo "... test_mapping"
 	@echo "... eval_orb_initializer"
 .PHONY : help

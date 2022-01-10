@@ -5,10 +5,12 @@
 - check well TODO (camera.cpp)
 - multiscale searching
 - regions separate
-- try with just intensities
 - TODO remove (dtam.cpp)
 
-- return on rotational rotational invariance
+- return on rotational invariance
       updateRotationalInvariantGradients in dtam.cpp
       updateRotationalInvariantGradients in mapper.cpp
       float cost = getCostNew in epline.cpp (to rob)
+
+- return on frame selection for initialization (large baseline/score ?)
+- return on homography/fundamentalmat on initialization

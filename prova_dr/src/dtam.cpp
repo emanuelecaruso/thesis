@@ -44,12 +44,20 @@ void Dtam::waitForNewFrame(){
 }
 
 void Dtam::waitForTrackedCandidates(){
-  std::unique_lock<std::mutex> locker(mu_frame_);
+  std::unique_lock<std::mutex> locker(mu_candidate_tracking_);
   cand_tracked_.wait(locker);
   locker.unlock();
 }
 
-void Dtam::doInitialization(){
+void Dtam::waitForInitialization(){
+  std::unique_lock<std::mutex> locker(mu_initialization_);
+  initialization_done_.wait(locker);
+  locker.unlock();
+}
+
+void Dtam::doInitialization(bool initialization_loop){
+  bool initialization_done = false;
+
   while(true){
     if(frame_current_==camera_vector_->size()-1)
       waitForNewFrame();
@@ -58,18 +66,36 @@ void Dtam::doInitialization(){
 
     frame_current_++;
 
+    sharedCoutDebug("\nINITIALIZATION: Current Frame "+std::to_string(frame_current_));
+    int frame_delay = camera_vector_->size()-frame_current_-1;
+    if(frame_delay>0)
+      sharedCoutDebug("frame delay: "+std::to_string(frame_delay));
+
     if(frame_current_==0){
       tracker_->trackCam(true);
-      // keyframe_handler_->addKeyframe(true);
+      keyframe_handler_->addKeyframe(true);
       initializer_->compute_cv_K();
       initializer_->extractCorners();
-
+      mapper_->updateRotationalInvariantGradients();
+      mapper_->selectNewCandidates();
     }
     else{
       initializer_->trackCornersLK();
       // if pose is found ...
       if(initializer_->findPose()){
-        // ... add first 2 keyframes
+        // ... add last keyframe
+        keyframe_handler_->addKeyframe(true);
+
+        // start initializing the model
+        mapper_->updateRotationalInvariantGradients();
+        mapper_->trackExistingCandidates();
+        mapper_->selectNewCandidates();
+
+
+        if(!initialization_loop){
+          initialization_done=true;
+        }
+
       }
     }
 
@@ -77,10 +103,20 @@ void Dtam::doInitialization(){
     int deltaTime=(t_end-t_start);
     sharedCoutDebug("   - Initialization of frame "+std::to_string(frame_current_)+", computation time: "+ std::to_string(deltaTime)+" ms");
 
+    if(initialization_done){
+      initialization_done_.notify_all();
+      sharedCoutDebug("   - Initialization ended");
+      break;
+    }
+
+
   }
 }
 
 void Dtam::doFrontEndPart(bool all_keyframes, bool take_gt_poses){
+  if(!take_gt_poses)
+    waitForInitialization();
+
   while( true ){
 
     if(frame_current_==camera_vector_->size()-1)
@@ -152,14 +188,14 @@ void Dtam::updateCamerasFromEnvironment(){
     locker.unlock();
 
     int deltaTime=(t_end-t_start);
-    sharedCoutDebug("\nAdd Frame "+std::to_string(counter)+", computation time: "+ std::to_string(deltaTime)+" ms");
+    // sharedCoutDebug("\nAdd Frame "+std::to_string(counter)+", computation time: "+ std::to_string(deltaTime)+" ms");
     long int waitDelay=deltaTime*1000;
 
     long int time_to_wait=(1.0/fps)*1000000-waitDelay;
     if(time_to_wait>0)
       std::this_thread::sleep_for(std::chrono::microseconds(time_to_wait));
     else
-      sharedCoutDebug("Delay accumulated! : "+ std::to_string(-time_to_wait)+" ms");
+      // sharedCoutDebug("Delay accumulated! : "+ std::to_string(-time_to_wait)+" ms");
 
 
     counter++;
@@ -221,7 +257,9 @@ void Dtam::testRotationalInvariance(){
 
 void Dtam::eval_initializer(){
 
-  std::thread initialization_thread_(&Dtam::doInitialization, this);
+  bool initialization_loop=true;
+
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   update_cameras_thread_.join();
@@ -237,15 +275,15 @@ void Dtam::test_mapping(){
 
   bool take_gt_poses=true;
   bool all_keyframes=true;
-  bool active_all_candidates=true;
+  // bool active_all_candidates=true;
 
   // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
-  std::thread frontend_thread(&Dtam::doFrontEndPart, this, all_keyframes, take_gt_poses);
+  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, take_gt_poses);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
 
   // optimization_thread.detach();
-  frontend_thread.join();
+  frontend_thread_.join();
   update_cameras_thread_.join();
 
   // debugAllCameras();
@@ -270,6 +308,40 @@ void Dtam::test_mapping(){
 
   // testRotationalInvariance();
   cv::waitKey(0);
+
+}
+
+void Dtam::test_dso(){
+
+  bool initialization_loop=false;
+  bool take_gt_poses=false;
+  bool all_keyframes=true;
+  // bool active_all_candidates=true;
+
+  // std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, take_gt_poses);
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop);
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+
+  // frontend_thread_.join();
+  update_cameras_thread_.join();
+  initialization_thread_.detach();
+
+  // initializer_->showCornersRef();
+  // initializer_->showCornersTrack();
+  // cv::waitKey(0);
+
+  // bool all_keyframes=true;
+  //
+  // // std::thread frontend_thread(&Dtam::doFrontEndPart, this, all_keyframes);
+  // std::thread initialization_thread_(&Dtam::doInitialization, this);
+  // std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+  //
+  // // frontend_thread.join();
+  // update_cameras_thread_.join();
+  // initialization_thread_.detach();
+  //
+  //
+  // cv::waitKey(0);
 
 }
 

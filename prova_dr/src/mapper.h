@@ -11,7 +11,7 @@ class CamCouple{
     Eigen::Isometry3f T; //cam_r expressed in cam_m
     Eigen::Matrix3f r;
     Eigen::Vector3f t;
-    float f, f2, w, h, w2, h2, t22;
+    float f, f2, w, h, w2, h2;
     Eigen::Vector2f cam_r_projected_in_cam_m;
 
     CamCouple(const CameraForMapping* cam_r, const CameraForMapping* cam_m):
@@ -23,7 +23,6 @@ class CamCouple{
     {
       r=T.linear();
       t=T.translation();
-      t22=t(2)*t(2);
 
       cam_m->projectCam(cam_r, cam_r_projected_in_cam_m);
 
@@ -39,7 +38,7 @@ class CamCouple{
 
     void getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v);
     void getBound(float u1, float v1, float d1, float& bound, bool u_or_v);
-    void getD1(float u1, float v1, float& d1, float u2, bool u_or_v);
+    void getD1(float u1, float v1, float& d1, float coord, bool u_or_v);
     void getD2(float u1, float v1, float d1, float& d2);
     void getSlope(float u1, float v1, float& slope_m);
 

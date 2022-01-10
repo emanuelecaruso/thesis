@@ -390,7 +390,6 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
             Candidate* candidate_prev = cands_vec->at(cand_vec_size-1);
             // if (candidate_prev->pixel_==candidate->pixel_ &&
             //     candidate_prev->level_==candidate->level_)
-            //     std::cout << "PORCODDIOOO" << std::endl;
             // Candidate* candidate = region->back();
             // region->pop_back();
             if(candidate->grad_magnitude_>candidate_prev->grad_magnitude_*alpha){
