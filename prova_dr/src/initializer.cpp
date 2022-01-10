@@ -21,7 +21,6 @@ const Image<float>* Initializer::getPrevImage(){
 void Initializer::compute_cv_K(){
   // Intrinsic parameters used in opencv are expressed differently:
   // uv coordinates are expressed in pixels units
-  // different convention for camera orientation
 
   // how many pixels to get 1 meter?
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
@@ -238,7 +237,6 @@ Eigen::Isometry3f Initializer::essential2pose(cv::Mat& E){
   }
   // std::cout << "Inliers: " << i << " out of " << inliers_vec_->back()->size() << std::endl;
 
-  // solution given by opencv: world wrt the camera
   Eigen::Isometry3f r_T_cv;
   Eigen::Matrix3f R_cv;
   Eigen::Vector3f t_cv;
@@ -246,30 +244,19 @@ Eigen::Isometry3f Initializer::essential2pose(cv::Mat& E){
   cv2eigen(t,t_cv);
   r_T_cv.linear() = R_cv;
   r_T_cv.translation()=t_cv;
+  // solution given by opencv: world wrt the camera -> need inversion
+  r_T_cv.translation()*=t_magnitude;
   r_T_cv=r_T_cv.inverse();
-  // r_T_cv.translation()=t_cv*t_magnitude;
 
 
-  // transformation from opencv to blender camera frame
-  Eigen::Isometry3f cv_T_bl;
-  // rotation along x axis by PI
-  cv_T_bl.linear() << 1,0,0,
-                      0,-1,0,
-                      0,0,1;
-  cv_T_bl.translation() << 0,0,0;
-
-  // final pose
-  Eigen::Isometry3f r_T_bl=r_T_cv*cv_T_bl;
-
-  // std::cout << "gt: "<< T_gt.translation() << std::endl;
-  // std::cout << "pred: " << r_T_bl.translation() << std::endl;
-  std::cout << "cv_T_bl.linear(): "<< cv_T_bl.linear() << std::endl;
+  std::cout << "gt: "<< T_gt.translation() << std::endl;
+  std::cout << "pred: " << r_T_cv.translation() << std::endl;
+  // std::cout << "cv_T_bl.linear(): "<< cv_T_bl.linear() << std::endl;
   std::cout << "gt normalized: "<< T_gt.translation().normalized() << std::endl;
   std::cout << "pred normalized cv: " << r_T_cv.translation().normalized() << std::endl;
-  std::cout << "pred normalized bl: " << r_T_bl.translation().normalized() << std::endl;
 
   // return the pose
-  return r_T_bl;
+  return r_T_cv;
 }
 
 cv::Mat Initializer::findEssentialMatrix(){

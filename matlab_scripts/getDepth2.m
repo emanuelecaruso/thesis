@@ -4,9 +4,9 @@ clc
 syms f d1 d2 w h u1 v1 u2 v2 r00 r01 r02 r10 r11 r12 r20 r21 r22 t0 t0 t1 t2
 syms slope1 slope2 vh
 
-k=[f  0 -w/2 ;
-   0 -f -h/2;
-   0  0 -1       ];
+k=[f  0 w/2 ;
+   0  f h/2;
+   0  0 1       ];
 
 kinv = inv(k);
 

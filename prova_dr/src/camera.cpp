@@ -67,9 +67,9 @@ Eigen::Matrix3f* Camera::compute_K(){
 
   Eigen::Matrix3f* K = new Eigen::Matrix3f;
   *K <<
-      lens ,   0   ,  -width/2,
-      0    ,  -lens, -height/2,
-      0    ,   0   ,       -1 ;
+      lens ,  0   , width/2,
+      0    ,  lens, height/2,
+      0    ,  0   ,       1 ;
 
   return K;
 }
@@ -120,14 +120,15 @@ bool Camera::projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& 
 
   Eigen::Vector3f p_cam = *frame_world_wrt_camera_*p;
 
-  // return wether the projected point is in front or behind the camera
-  p_cam_z=-p_cam.z();
+  // save value of z
+  p_cam_z=p_cam.z();
 
   Eigen::Vector3f p_proj = (*K_)*p_cam;
 
   uv = p_proj.head<2>()*(1./p_proj.z());
 
-  if (p_cam_z<cam_parameters_->lens)
+  // return wether the projected point is in front or behind the camera
+  if (p_proj.z()<cam_parameters_->lens)
     return false;
 
   return true;
@@ -141,7 +142,8 @@ bool Camera::projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv ) const 
 
   uv = p_proj.head<2>()*(1./p_proj.z());
 
-  if (-p_cam.z()<cam_parameters_->lens)
+  // return wether the projected point is in front or behind the camera
+  if (p_proj.z()<cam_parameters_->lens)
     return false;
 
   return true;
