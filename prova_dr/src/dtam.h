@@ -44,6 +44,9 @@ class Dtam{
     void waitForTrackedCandidates();
     void waitForInitialization();
 
+    CameraForMapping* getCurrentCamera();
+    CameraForMapping* getPreviousCamera();
+
 
   private:
     const Environment* environment_;
@@ -82,7 +85,7 @@ class Dtam{
     void updateCamerasFromVideostream();
     void doMapping();
     void doInitialization(bool initialization_loop=false);
-    void doFrontEndPart(bool all_keyframes=false, bool take_gt_poses=false);
+    void doFrontEndPart(bool all_keyframes=false, bool wait_for_initialization=true,  bool take_gt_poses=false, bool const_acc=true);
     void doOptimization(bool active_all_candidates=false);
     void doTracking();
 

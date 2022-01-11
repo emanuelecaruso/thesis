@@ -310,83 +310,85 @@ void Mapper::trackExistingCandidates(){
 
     int idx = dtam_->keyframe_vector_->at(i);
 
-    sharedCoutDebug("      - Keyframe "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->size()-1)+
-                    " (frame "+std::to_string(idx)+" on "+std::to_string(dtam_->keyframe_vector_->back())+")");
-
     CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
+
+    sharedCoutDebug("      - Keyframe "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->size()-1)+
+                    " (frame "+std::to_string(idx)+" on "+std::to_string(dtam_->keyframe_vector_->back())+": "+ keyframe->name_ +" on "+ last_keyframe->name_ +")");
 
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
 
-    sharedCoutDebug("         - N. candidates: "+std::to_string(keyframe->candidates_->size()));
+    int n_cand_to_track = keyframe->candidates_->size();
+    int n_cand_tracked = 0;
 
-    bool keep_cand = false;
-    bool flag = 1;
+    // bool flag = 1;
 
 
     // iterate through all candidates
     for(int k=0; k<keyframe->candidates_->size(); k++){
 
+      bool keep_cand = false;
+
       Candidate* cand = keyframe->candidates_->at(k);
-
-
-      if(cand->ready_){
-        num_of_ready_candidates++;
-        // break;
-        continue;
-      }
 
       CandidateProjected* projected_cand;
       int num_mins=0;
-
       int bounds_size =cand->bounds_->size();
-      // iterate along all bounds
-      for(int j=0; j<bounds_size; j++){
 
-        EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
-
-        if(ep_segment->uvs->empty()){
-          continue;
-        }
-
-        if (!ep_segment->searchMin(cand, parameters_))
-          continue;
-
-        // // if (ep_segment->uv_idxs_mins->size()==1){
-        //   // if (dtam_->frame_current_==7){
-        //   // if (flag){
-        //   // if(j==cand->bounds_->size()-1)
-        //   flag=0;
-        //   // ep_segment->showEpipolar(cand->level_);
-        //   ep_segment->showEpipolarWithMin(cand->level_);
-        //
-        //   // Image<float>* dh_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
-        //   // dh_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dh_rob");
-        //   // Image<float>* dv_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
-        //   // dv_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dv_rob");
-        //   // Image<float>* dh_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
-        //   // dh_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dh_rob last");
-        //   // Image<float>* dv_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
-        //   // dv_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dv_rob last");
-        //   // Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude_img;
-        //   // magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-        //
-        //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
-        //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude3C_img->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"_phase");
-        //   cv::waitKey(0);
-        //   // cv::destroyAllWindows();
-        // // }
-
-        // cam_couple->compareEpSegmentWithGt(cand);
-        // cam_couple->showEpSegment(cand);
-
+      if(cand->ready_){
+        num_of_ready_candidates++;
+        n_cand_tracked++;
+        num_mins=1;
         keep_cand=true;
+      }
+      else{
+        // iterate along all bounds
+        for(int j=0; j<bounds_size; j++){
 
-        updateBounds(cand,ep_segment,cam_couple, projected_cand, num_mins==0);
+          EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
 
-        num_mins+=ep_segment->uv_idxs_mins->size();
+          if(ep_segment->uvs->empty()){
+            continue;
+          }
 
+          if (!ep_segment->searchMin(cand, parameters_))
+            continue;
 
+          // // if (ep_segment->uv_idxs_mins->size()==1){
+          //   // if (dtam_->frame_current_==7){
+          //   // if (flag){
+          //   // if(j==cand->bounds_->size()-1)
+          //   flag=0;
+          //   // ep_segment->showEpipolar(cand->level_);
+          //   ep_segment->showEpipolarWithMin(cand->level_);
+          //
+          //   // Image<float>* dh_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
+          //   // dh_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dh_rob");
+          //   // Image<float>* dv_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
+          //   // dv_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dv_rob");
+          //   // Image<float>* dh_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
+          //   // dh_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dh_rob last");
+          //   // Image<float>* dv_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
+          //   // dv_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dv_rob last");
+          //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude_img;
+          //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+          //
+          //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
+          //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude3C_img->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"_phase");
+          //   cv::waitKey(0);
+          //   // cv::destroyAllWindows();
+          // // }
 
+          // cam_couple->compareEpSegmentWithGt(cand);
+          // cam_couple->showEpSegment(cand);
+
+          n_cand_tracked++;
+          keep_cand=true;
+
+          updateBounds(cand,ep_segment,cam_couple, projected_cand, num_mins==0);
+
+          num_mins+=ep_segment->uv_idxs_mins->size();
+
+        }
       }
       if (keep_cand){
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
@@ -408,6 +410,8 @@ void Mapper::trackExistingCandidates(){
 
 
     }
+
+    sharedCoutDebug("         - # candidates tracked: "+std::to_string(n_cand_tracked)+ " out of "+std::to_string(n_cand_to_track));
 
   }
   sharedCoutDebug("   - Num of ready candidates: "+ std::to_string(num_of_ready_candidates));

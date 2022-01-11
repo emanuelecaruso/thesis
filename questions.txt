@@ -1,1 +1,5 @@
 - why estimating fundamental matrix is bad in the homography case?
+
+- how to handle pose refinement in bundle adjustment with front end part?
+
+- 

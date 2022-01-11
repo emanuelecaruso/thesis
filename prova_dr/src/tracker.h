@@ -10,10 +10,13 @@ class Tracker{
   public:
     Tracker(Dtam* dtam): dtam_(dtam){};
 
-    void trackCam(bool takeGtPoses);
+    void trackCam(bool takeGtPoses, bool const_acc=true);
+
   private:
     Dtam* const dtam_;
 
     void trackGroundtruth();
-    void track();
+    void computeInitialGuess(bool const_acc );
+    Eigen::Isometry3f velocityConstantModel();
+    Eigen::Isometry3f accelerationConstantModel();
 };

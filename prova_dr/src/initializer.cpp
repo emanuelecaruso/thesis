@@ -309,6 +309,7 @@ void Initializer::showCornersTrack(){
   }
   while(true){
     for(int i=0; i<corners_vec_->size(); i++){
+
       CameraForMapping* cam_r =dtam_->camera_vector_->at(ref_frame_idx_);
       CameraForMapping* cam_m =dtam_->camera_vector_->at(ref_frame_idx_+i);
       Image<colorRGB>* show_image= cam_m->image_intensity_->returnColoredImgFromIntensityImg("corners tracking");
