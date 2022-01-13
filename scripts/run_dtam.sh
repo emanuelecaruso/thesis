@@ -9,8 +9,8 @@ dataset_name='bunny_scene'
 
 cd prova_dr
 
-# ./build/executables/test_tracking ${dataset_name}
-./build/executables/test_mapping ${dataset_name}
+./build/executables/test_tracking ${dataset_name}
+# ./build/executables/test_mapping ${dataset_name}
 # ./build/executables/eval_orb_initializer ${dataset_name}
 # ./build/executables/test_dso ${dataset_name}
 

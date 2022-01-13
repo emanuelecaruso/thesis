@@ -43,6 +43,7 @@ namespace pr {
   typedef Eigen::Matrix<float, 9, 1> Vector9f;
 
   typedef Eigen::Matrix<float, 6, 3> Matrix6_3f;
+  typedef Eigen::Matrix<float, 6, 2> Matrix6_2f;
   typedef Eigen::Matrix<float, 4, 3> Matrix4_3f;
 
 

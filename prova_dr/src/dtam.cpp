@@ -30,8 +30,12 @@ CameraForMapping* Dtam::getCurrentCamera() {
   return camera_vector_->at(frame_current_);
 }
 
-CameraForMapping* Dtam::getPreviousCamera() {
+CameraForMapping* Dtam::getLastCamera() {
   return camera_vector_->at(frame_current_-1);
+}
+
+CameraForMapping* Dtam::getSecondLastCamera() {
+  return camera_vector_->at(frame_current_-2);
 }
 
 void Dtam::addCamera(int counter){
@@ -132,10 +136,15 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     int frame_delay = camera_vector_->size()-frame_current_-1;
     sharedCoutDebug("\nFRONT END for Frame "+std::to_string(frame_current_)+" ("+camera_vector_->at(frame_current_)->name_+") , frame delay: "+std::to_string(frame_delay));
 
-    if(frame_current_==0){
+    if(frame_current_<=1){
       tracker_->trackCam(true);
       keyframe_handler_->addKeyframe(true);
       mapper_->updateRotationalInvariantGradients();
+      
+      if(frame_current_==1){
+        mapper_->trackExistingCandidates();
+        cand_tracked_.notify_all();
+      }
       mapper_->selectNewCandidates();
       continue;
     }
@@ -279,7 +288,7 @@ void Dtam::eval_initializer(){
 void Dtam::test_mapping(){
 
   bool take_gt_poses=true;
-  bool const_acc=true;
+  bool const_acc=false;
   bool all_keyframes=true;
   bool wait_for_initialization=false;
   // bool active_all_candidates=true;
@@ -318,12 +327,32 @@ void Dtam::test_mapping(){
 
 }
 
+
+void Dtam::test_tracking(){
+
+  bool take_gt_poses=false;
+  bool const_acc=false;
+  bool all_keyframes=true;
+  bool wait_for_initialization=false;
+
+  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, const_acc);
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+
+
+  // optimization_thread.detach();
+  frontend_thread_.detach();
+  update_cameras_thread_.join();
+
+  cv::waitKey(0);
+
+}
+
 void Dtam::test_dso(){
 
   bool initialization_loop=false;
   bool take_gt_poses=true;
   bool all_keyframes=true;
-  bool const_acc=true;
+  bool const_acc=false;
   bool wait_for_initialization=true;
   // bool active_all_candidates=true;
 

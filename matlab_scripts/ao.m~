@@ -1,0 +1,46 @@
+clear
+clc
+
+syms a b c p1 p2 p3
+
+p=[p1;p2;p3];
+
+
+Rx=[ 1      0       0;
+     0 cos(a) -sin(a);
+     0 sin(a)  cos(a)];
+ 
+Ry= [cos(b)  0  sin(b);
+     0       1       0;
+     -sin(b) 0  cos(b)];
+
+Rz= [ cos(c) -sin(c) 0;
+      sin(c)  cos(c) 0;
+      0       0      1];
+  
+DRx=[ 1      0       0;
+      0 -sin(a) -cos(a);
+      0 cos(a)  -sin(a)];
+  
+DRy= [-sin(b)  0  cos(b);
+      0       1       0;
+      -cos(b) 0  -sin(b)];
+ 
+DRz= [ -sin(c) -cos(c) 0;
+        cos(c) -sin(c) 0;
+        0       0      1];
+  
+% Da=DRy*Rx*Rz*p;
+% Db=Ry*DRx*Rz*p;
+% Dc=Ry*Rx*DRz*p;
+
+
+Da=DRx * Ry  * Rz  * p;
+Db=Rx  * DRy * Rz  * p;
+Dc=Rx  * Ry  * DRz * p;
+
+Da_=subs(Da, [a,b,c],[0,0,0]);
+Db_=subs(Db, [a,b,c],[0,0,0]);
+Dc_=subs(Dc, [a,b,c],[0,0,0]);
+
+D=[Da_ Db_ Dc_]

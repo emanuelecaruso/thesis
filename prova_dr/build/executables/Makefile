@@ -141,6 +141,21 @@ test_mapping/fast:
 .PHONY : test_mapping/fast
 
 # Convenience name for target.
+executables/CMakeFiles/test_tracking.dir/rule:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f CMakeFiles/Makefile2 executables/CMakeFiles/test_tracking.dir/rule
+.PHONY : executables/CMakeFiles/test_tracking.dir/rule
+
+# Convenience name for target.
+test_tracking: executables/CMakeFiles/test_tracking.dir/rule
+
+.PHONY : test_tracking
+
+# fast build rule for target.
+test_tracking/fast:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/build
+.PHONY : test_tracking/fast
+
+# Convenience name for target.
 executables/CMakeFiles/eval_orb_initializer.dir/rule:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f CMakeFiles/Makefile2 executables/CMakeFiles/eval_orb_initializer.dir/rule
 .PHONY : executables/CMakeFiles/eval_orb_initializer.dir/rule
@@ -163,6 +178,7 @@ __/src/bundleadj.o: __/src/bundleadj.cpp.o
 __/src/bundleadj.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/bundleadj.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/bundleadj.cpp.o
 .PHONY : __/src/bundleadj.cpp.o
 
@@ -174,6 +190,7 @@ __/src/bundleadj.i: __/src/bundleadj.cpp.i
 __/src/bundleadj.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/bundleadj.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/bundleadj.cpp.i
 .PHONY : __/src/bundleadj.cpp.i
 
@@ -185,6 +202,7 @@ __/src/bundleadj.s: __/src/bundleadj.cpp.s
 __/src/bundleadj.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/bundleadj.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/bundleadj.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/bundleadj.cpp.s
 .PHONY : __/src/bundleadj.cpp.s
 
@@ -196,6 +214,7 @@ __/src/camera.o: __/src/camera.cpp.o
 __/src/camera.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/camera.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/camera.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/camera.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/camera.cpp.o
 .PHONY : __/src/camera.cpp.o
 
@@ -207,6 +226,7 @@ __/src/camera.i: __/src/camera.cpp.i
 __/src/camera.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/camera.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/camera.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/camera.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/camera.cpp.i
 .PHONY : __/src/camera.cpp.i
 
@@ -218,6 +238,7 @@ __/src/camera.s: __/src/camera.cpp.s
 __/src/camera.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/camera.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/camera.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/camera.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/camera.cpp.s
 .PHONY : __/src/camera.cpp.s
 
@@ -229,6 +250,7 @@ __/src/dtam.o: __/src/dtam.cpp.o
 __/src/dtam.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/dtam.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/dtam.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/dtam.cpp.o
 .PHONY : __/src/dtam.cpp.o
 
@@ -240,6 +262,7 @@ __/src/dtam.i: __/src/dtam.cpp.i
 __/src/dtam.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/dtam.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/dtam.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/dtam.cpp.i
 .PHONY : __/src/dtam.cpp.i
 
@@ -251,6 +274,7 @@ __/src/dtam.s: __/src/dtam.cpp.s
 __/src/dtam.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/dtam.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/dtam.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/dtam.cpp.s
 .PHONY : __/src/dtam.cpp.s
 
@@ -262,6 +286,7 @@ __/src/environment.o: __/src/environment.cpp.o
 __/src/environment.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/environment.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/environment.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/environment.cpp.o
 .PHONY : __/src/environment.cpp.o
 
@@ -273,6 +298,7 @@ __/src/environment.i: __/src/environment.cpp.i
 __/src/environment.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/environment.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/environment.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/environment.cpp.i
 .PHONY : __/src/environment.cpp.i
 
@@ -284,6 +310,7 @@ __/src/environment.s: __/src/environment.cpp.s
 __/src/environment.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/environment.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/environment.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/environment.cpp.s
 .PHONY : __/src/environment.cpp.s
 
@@ -295,6 +322,7 @@ __/src/epline.o: __/src/epline.cpp.o
 __/src/epline.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/epline.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/epline.cpp.o
 .PHONY : __/src/epline.cpp.o
 
@@ -306,6 +334,7 @@ __/src/epline.i: __/src/epline.cpp.i
 __/src/epline.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/epline.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/epline.cpp.i
 .PHONY : __/src/epline.cpp.i
 
@@ -317,6 +346,7 @@ __/src/epline.s: __/src/epline.cpp.s
 __/src/epline.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/epline.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/epline.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/epline.cpp.s
 .PHONY : __/src/epline.cpp.s
 
@@ -328,6 +358,7 @@ __/src/image.o: __/src/image.cpp.o
 __/src/image.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/image.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/image.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/image.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/image.cpp.o
 .PHONY : __/src/image.cpp.o
 
@@ -339,6 +370,7 @@ __/src/image.i: __/src/image.cpp.i
 __/src/image.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/image.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/image.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/image.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/image.cpp.i
 .PHONY : __/src/image.cpp.i
 
@@ -350,6 +382,7 @@ __/src/image.s: __/src/image.cpp.s
 __/src/image.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/image.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/image.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/image.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/image.cpp.s
 .PHONY : __/src/image.cpp.s
 
@@ -361,6 +394,7 @@ __/src/initializer.o: __/src/initializer.cpp.o
 __/src/initializer.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/initializer.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/initializer.cpp.o
 .PHONY : __/src/initializer.cpp.o
 
@@ -372,6 +406,7 @@ __/src/initializer.i: __/src/initializer.cpp.i
 __/src/initializer.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/initializer.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/initializer.cpp.i
 .PHONY : __/src/initializer.cpp.i
 
@@ -383,6 +418,7 @@ __/src/initializer.s: __/src/initializer.cpp.s
 __/src/initializer.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/initializer.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/initializer.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/initializer.cpp.s
 .PHONY : __/src/initializer.cpp.s
 
@@ -394,6 +430,7 @@ __/src/keyframe.o: __/src/keyframe.cpp.o
 __/src/keyframe.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/keyframe.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/keyframe.cpp.o
 .PHONY : __/src/keyframe.cpp.o
 
@@ -405,6 +442,7 @@ __/src/keyframe.i: __/src/keyframe.cpp.i
 __/src/keyframe.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/keyframe.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/keyframe.cpp.i
 .PHONY : __/src/keyframe.cpp.i
 
@@ -416,6 +454,7 @@ __/src/keyframe.s: __/src/keyframe.cpp.s
 __/src/keyframe.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/keyframe.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/keyframe.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/keyframe.cpp.s
 .PHONY : __/src/keyframe.cpp.s
 
@@ -427,6 +466,7 @@ __/src/mapper.o: __/src/mapper.cpp.o
 __/src/mapper.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/mapper.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/mapper.cpp.o
 .PHONY : __/src/mapper.cpp.o
 
@@ -438,6 +478,7 @@ __/src/mapper.i: __/src/mapper.cpp.i
 __/src/mapper.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/mapper.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/mapper.cpp.i
 .PHONY : __/src/mapper.cpp.i
 
@@ -449,6 +490,7 @@ __/src/mapper.s: __/src/mapper.cpp.s
 __/src/mapper.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/mapper.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/mapper.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/mapper.cpp.s
 .PHONY : __/src/mapper.cpp.s
 
@@ -460,6 +502,7 @@ __/src/tracker.o: __/src/tracker.cpp.o
 __/src/tracker.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/tracker.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/tracker.cpp.o
 .PHONY : __/src/tracker.cpp.o
 
@@ -471,6 +514,7 @@ __/src/tracker.i: __/src/tracker.cpp.i
 __/src/tracker.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/tracker.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/tracker.cpp.i
 .PHONY : __/src/tracker.cpp.i
 
@@ -482,6 +526,7 @@ __/src/tracker.s: __/src/tracker.cpp.s
 __/src/tracker.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/tracker.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/tracker.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/tracker.cpp.s
 .PHONY : __/src/tracker.cpp.s
 
@@ -493,6 +538,7 @@ __/src/utils.o: __/src/utils.cpp.o
 __/src/utils.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/utils.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/utils.cpp.o
 .PHONY : __/src/utils.cpp.o
 
@@ -504,6 +550,7 @@ __/src/utils.i: __/src/utils.cpp.i
 __/src/utils.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/utils.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/utils.cpp.i
 .PHONY : __/src/utils.cpp.i
 
@@ -515,6 +562,7 @@ __/src/utils.s: __/src/utils.cpp.s
 __/src/utils.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/utils.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/utils.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/utils.cpp.s
 .PHONY : __/src/utils.cpp.s
 
@@ -526,6 +574,7 @@ __/src/wavelet.o: __/src/wavelet.cpp.o
 __/src/wavelet.cpp.o:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.o
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/wavelet.cpp.o
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/wavelet.cpp.o
 .PHONY : __/src/wavelet.cpp.o
 
@@ -537,6 +586,7 @@ __/src/wavelet.i: __/src/wavelet.cpp.i
 __/src/wavelet.cpp.i:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.i
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/wavelet.cpp.i
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/wavelet.cpp.i
 .PHONY : __/src/wavelet.cpp.i
 
@@ -548,6 +598,7 @@ __/src/wavelet.s: __/src/wavelet.cpp.s
 __/src/wavelet.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/__/src/wavelet.cpp.s
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/__/src/wavelet.cpp.s
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/__/src/wavelet.cpp.s
 .PHONY : __/src/wavelet.cpp.s
 
@@ -632,6 +683,33 @@ test_mapping.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/test_mapping.cpp.s
 .PHONY : test_mapping.cpp.s
 
+test_tracking.o: test_tracking.cpp.o
+
+.PHONY : test_tracking.o
+
+# target to build an object file
+test_tracking.cpp.o:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/test_tracking.cpp.o
+.PHONY : test_tracking.cpp.o
+
+test_tracking.i: test_tracking.cpp.i
+
+.PHONY : test_tracking.i
+
+# target to preprocess a source file
+test_tracking.cpp.i:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/test_tracking.cpp.i
+.PHONY : test_tracking.cpp.i
+
+test_tracking.s: test_tracking.cpp.s
+
+.PHONY : test_tracking.s
+
+# target to generate assembly for a file
+test_tracking.cpp.s:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/test_tracking.cpp.s
+.PHONY : test_tracking.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -642,6 +720,7 @@ help:
 	@echo "... test_dso"
 	@echo "... edit_cache"
 	@echo "... test_mapping"
+	@echo "... test_tracking"
 	@echo "... eval_orb_initializer"
 	@echo "... __/src/bundleadj.o"
 	@echo "... __/src/bundleadj.i"
@@ -688,6 +767,9 @@ help:
 	@echo "... test_mapping.o"
 	@echo "... test_mapping.i"
 	@echo "... test_mapping.s"
+	@echo "... test_tracking.o"
+	@echo "... test_tracking.i"
+	@echo "... test_tracking.s"
 .PHONY : help
 
 

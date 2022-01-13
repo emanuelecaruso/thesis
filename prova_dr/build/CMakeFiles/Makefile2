@@ -70,6 +70,7 @@ CMAKE_BINARY_DIR = /home/emanuele/Scrivania/thesis/prova_dr/build
 # Convenience name for "all" pass in the directory.
 executables/all: executables/CMakeFiles/test_dso.dir/all
 executables/all: executables/CMakeFiles/test_mapping.dir/all
+executables/all: executables/CMakeFiles/test_tracking.dir/all
 executables/all: executables/CMakeFiles/eval_orb_initializer.dir/all
 
 .PHONY : executables/all
@@ -77,6 +78,7 @@ executables/all: executables/CMakeFiles/eval_orb_initializer.dir/all
 # Convenience name for "clean" pass in the directory.
 executables/clean: executables/CMakeFiles/test_dso.dir/clean
 executables/clean: executables/CMakeFiles/test_mapping.dir/clean
+executables/clean: executables/CMakeFiles/test_tracking.dir/clean
 executables/clean: executables/CMakeFiles/eval_orb_initializer.dir/clean
 
 .PHONY : executables/clean
@@ -157,6 +159,43 @@ executables/CMakeFiles/test_mapping.dir/clean:
 
 # clean rule for target.
 clean: executables/CMakeFiles/test_mapping.dir/clean
+
+.PHONY : clean
+
+#=============================================================================
+# Target rules for target executables/CMakeFiles/test_tracking.dir
+
+# All Build rule for target.
+executables/CMakeFiles/test_tracking.dir/all:
+	$(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/depend
+	$(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=43,44,45,46,47,48,49,50,51,52,53,54,55,56 "Built target test_tracking"
+.PHONY : executables/CMakeFiles/test_tracking.dir/all
+
+# Include target in all.
+all: executables/CMakeFiles/test_tracking.dir/all
+
+.PHONY : all
+
+# Build rule for subdir invocation for target.
+executables/CMakeFiles/test_tracking.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles 14
+	$(MAKE) -f CMakeFiles/Makefile2 executables/CMakeFiles/test_tracking.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles 0
+.PHONY : executables/CMakeFiles/test_tracking.dir/rule
+
+# Convenience name for target.
+test_tracking: executables/CMakeFiles/test_tracking.dir/rule
+
+.PHONY : test_tracking
+
+# clean rule for target.
+executables/CMakeFiles/test_tracking.dir/clean:
+	$(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/clean
+.PHONY : executables/CMakeFiles/test_tracking.dir/clean
+
+# clean rule for target.
+clean: executables/CMakeFiles/test_tracking.dir/clean
 
 .PHONY : clean
 

@@ -45,7 +45,8 @@ class Dtam{
     void waitForInitialization();
 
     CameraForMapping* getCurrentCamera();
-    CameraForMapping* getPreviousCamera();
+    CameraForMapping* getLastCamera();
+    CameraForMapping* getSecondLastCamera();
 
 
   private:

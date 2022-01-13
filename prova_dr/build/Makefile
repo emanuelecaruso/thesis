@@ -137,6 +137,19 @@ test_mapping/fast:
 .PHONY : test_mapping/fast
 
 #=============================================================================
+# Target rules for targets named test_tracking
+
+# Build rule for target.
+test_tracking: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_tracking
+.PHONY : test_tracking
+
+# fast build rule for target.
+test_tracking/fast:
+	$(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/build
+.PHONY : test_tracking/fast
+
+#=============================================================================
 # Target rules for targets named eval_orb_initializer
 
 # Build rule for target.
@@ -159,6 +172,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... test_dso"
 	@echo "... test_mapping"
+	@echo "... test_tracking"
 	@echo "... eval_orb_initializer"
 .PHONY : help
 

@@ -436,26 +436,6 @@ mutex
 condition_variable
 -
 
-/home/emanuele/Scrivania/thesis/prova_dr/src/mapper.cpp
-mapper.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/mapper.h
-epline.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/epline.h
-dtam.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/dtam.h
-math.h
--
-utils.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/utils.h
-stdlib.h
--
-defs.h
-/home/emanuele/Scrivania/thesis/prova_dr/src/defs.h
-cstdlib
--
-chrono
--
-
 /home/emanuele/Scrivania/thesis/prova_dr/src/mapper.h
 camera.h
 /home/emanuele/Scrivania/thesis/prova_dr/src/camera.h
@@ -483,6 +463,20 @@ dirent.h
 -
 mutex
 -
+
+/home/emanuele/Scrivania/thesis/prova_dr/src/tracker.cpp
+dtam.h
+/home/emanuele/Scrivania/thesis/prova_dr/src/dtam.h
+tracker.h
+/home/emanuele/Scrivania/thesis/prova_dr/src/tracker.h
+math.h
+-
+utils.h
+/home/emanuele/Scrivania/thesis/prova_dr/src/utils.h
+stdlib.h
+-
+defs.h
+/home/emanuele/Scrivania/thesis/prova_dr/src/defs.h
 
 /home/emanuele/Scrivania/thesis/prova_dr/src/tracker.h
 camera.h

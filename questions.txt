@@ -2,4 +2,4 @@
 
 - how to handle pose refinement in bundle adjustment with front end part?
 
-- 
+- why dso downweights high gradient regions?
