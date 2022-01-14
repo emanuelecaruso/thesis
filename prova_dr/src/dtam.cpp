@@ -173,9 +173,28 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 }
 
 void Dtam::doOptimization(bool active_all_candidates){
-  while( !end_flag_ ){
+  waitForInitialization();
+  while( true ){
 
-    bundle_adj_->activateNewPoints(active_all_candidates);
+    // if current frame of bundle adjustment is still latest keyframe
+    if(bundle_adj_->getFrameCurrentBA()==keyframe_vector_->back()){
+      // and is not over
+      if ( end_flag_ )
+        break;
+      //optimize
+      waitForTrackedCandidates();
+
+    }
+    // otherwise
+    else{
+      // activate new points
+      bundle_adj_->activateNewPoints();
+      // project active points and marginalize the ones
+      // outside of the frustum
+      bundle_adj_->projectAndMarginalizeActivePoints();
+      // marginalize old keyframe
+
+    }
   }
 }
 
@@ -220,6 +239,7 @@ void Dtam::updateCamerasFromEnvironment(){
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   end_flag_=true;
   frame_updated_.notify_all();
+  cand_tracked_.notify_all();
   sharedCout("\nVideo stream ended");
 
 }
@@ -315,15 +335,15 @@ void Dtam::test_mapping(){
   // camera_vector_->at(0)->showCandidates_1(2);
   // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(camera_vector_->size()-2)->showProjCandidates_2(2);
-  camera_vector_->at(0)->showCandidates_2(2);
+  // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(7)->showProjCandidates_2(2);
-  // camera_vector_->at(5)->showProjCandidates_2(2);
+  camera_vector_->at(5)->showProjCandidates_2(2);
   // camera_vector_->at(1)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(camera_vector_->size()-2));
-  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
   // testRotationalInvariance();
   cv::waitKey(0);
@@ -429,7 +449,7 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
         std::string idx = ss.str();
         j["cameras"][camera->name_]["p"+idx] = {
           {"level", level},
-          {"invdepth_var", cand_proj->invdepth_var_},
+          {"invdepth_var", cand_proj->cand_->getInvdepthVar()},
           {"position", {p[0],p[1],p[2]}}
         };
         count++;

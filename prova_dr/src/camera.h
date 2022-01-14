@@ -137,7 +137,36 @@ class CandidateBase{
     level_(level), pixel_(pixel), uv_(uv){};
 };
 
-class RegionWithCandidates;
+class Candidate;
+
+class RegionWithCandidatesBase{
+  public:
+
+    int x_, y_, reg_level_;
+    float grad_threshold_;
+    CameraForMapping* cam_;
+
+    RegionWithCandidatesBase(int x, int y, Params* parameters, CameraForMapping* cam):
+    x_(x), y_(y), reg_level_(parameters->reg_level),
+    grad_threshold_(parameters->grad_threshold), cam_(cam)
+    {    };
+    void showRegion(int size);
+
+};
+
+class RegionWithCandidates : public RegionWithCandidatesBase{
+  public:
+
+    std::vector<Candidate*>* cands_vec_;
+
+    RegionWithCandidates(int x, int y, Params* parameters, CameraForMapping* cam):
+    RegionWithCandidatesBase( x, y, parameters, cam),
+    cands_vec_(new std::vector<Candidate*>){
+      // collectCandidates();
+    };
+    bool collectCandidates();
+
+};
 
 class Candidate : public CandidateBase{
   public:
@@ -154,8 +183,7 @@ class Candidate : public CandidateBase{
     grad_magnitude_(grad_magnitude),
     dh_(dh),
     dv_(dv),
-    intensity_(intensity),
-    ready_(false)
+    intensity_(intensity)
     {};
 
     ~Candidate(){
@@ -164,15 +192,25 @@ class Candidate : public CandidateBase{
 
     std::vector<bound>* bounds_;
     float depth_;
-    const RegionWithCandidates* region_;
+    RegionWithCandidates* region_;
     const float grad_magnitude_;
     const pixelIntensity dh_;
     const pixelIntensity dv_;
     pixelIntensity dh_robust_;
     pixelIntensity dv_robust_;
     const pixelIntensity intensity_;
-    bool ready_;
 
+    inline float getInvdepthVar() const{
+      float d2 = bounds_->at(0).second;
+      float d1 = bounds_->at(0).first;
+      return (1.0/d2)-(1.0/d1);
+    }
+
+    inline void marginalize() const {
+      std::vector<Candidate*>* v = region_->cands_vec_;
+      v->erase(std::remove(v->begin(), v->end(), this), v->end());
+      delete this;
+    }
 };
 
 
@@ -180,17 +218,14 @@ class Candidate : public CandidateBase{
 class CandidateProjected : public CandidateBase{
   public:
     const float invdepth_;
-    const float invdepth_var_;
     const Candidate* cand_;
 
-    CandidateProjected(Candidate* cand, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth, float invdepth_var):
+    CandidateProjected(Candidate* cand, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth):
     CandidateBase(cand->level_, pixel, uv),
     invdepth_(invdepth),
-    invdepth_var_(invdepth_var),
     cand_(cand)
     {};
 
-  private:
 
 };
 
@@ -202,23 +237,10 @@ class ActivePoint : public CandidateBase{
     ActivePoint(CandidateProjected* cand_proj):
     CandidateBase( cand_proj->cand_->level_, cand_proj->cand_->pixel_, cand_proj->cand_->uv_),
     invdepth_(cand_proj->invdepth_),
-    invdepth_var_(cand_proj->invdepth_var_)
+    invdepth_var_( cand_proj->cand_->getInvdepthVar() )
     {}
 
-};
 
-class RegionWithCandidatesBase{
-  public:
-
-    int x_, y_, reg_level_;
-    float grad_threshold_;
-    CameraForMapping* cam_;
-
-    RegionWithCandidatesBase(int x, int y, Params* parameters, CameraForMapping* cam):
-    x_(x), y_(y), reg_level_(parameters->reg_level),
-    grad_threshold_(parameters->grad_threshold), cam_(cam)
-    {    };
-    void showRegion(int size);
 
 };
 
@@ -242,19 +264,7 @@ class RegionsWithCandidatesBase{
 };
 
 
-class RegionWithCandidates : public RegionWithCandidatesBase{
-  public:
 
-    std::vector<Candidate*>* cands_vec_;
-
-    RegionWithCandidates(int x, int y, Params* parameters, CameraForMapping* cam):
-    RegionWithCandidatesBase( x, y, parameters, cam),
-    cands_vec_(new std::vector<Candidate*>){
-      // collectCandidates();
-    };
-    bool collectCandidates();
-
-};
 
 class RegionsWithCandidates : public RegionsWithCandidatesBase{
   public:
@@ -323,9 +333,9 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
       std::vector<CandidateProjected*>* cands_vec_ = region_vec_->at(idx)->cands_vec_;
 
       auto lb_cmp = [](CandidateProjected* const & x, float d) -> bool
-        { return x->invdepth_var_ < d; };
+        { return x->cand_->getInvdepthVar() < d; };
 
-      auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), projected_cand->invdepth_var_, lb_cmp);
+      auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), projected_cand->cand_->getInvdepthVar(), lb_cmp);
       cands_vec_->insert ( it , projected_cand );
     }
 };

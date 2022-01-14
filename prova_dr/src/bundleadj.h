@@ -16,8 +16,11 @@ class BundleAdj{
     frame_current_ba(-1){};
 
     void projectAndMarginalizeActivePoints();
-    void activateNewPoints(bool active_all_candidates);
+    void activateNewPoints();
     void optimize();
+    inline int getFrameCurrentBA(){
+      return frame_current_ba;
+    }
   private:
 
     int frame_current_ba;
@@ -30,7 +33,7 @@ class BundleAdj{
 
     void sortRegions();
     // void projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
-    int selectNewActivePoints(bool active_all_candidates);
+    int selectNewActivePoints();
 
 
 

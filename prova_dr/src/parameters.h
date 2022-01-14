@@ -12,9 +12,9 @@
 
 static int wavelet_levels_=3; // ex: 3 levels -> lev 0,1,2
 static int reg_level_=2;     // ex reg level = 3 -> 0,1,2,*3* (fourth level)
-static float grad_threshold_=0.3;
+static float grad_threshold_=0.1;
 static float grad_perc_threshold_=0.75;
-static float cost_threshold_=0.5;
+static float cost_threshold_=0.25;
 static int num_candidates_=4000;
 static int max_num_active_points_=num_candidates_;
 static int num_active_keyframes_=5;

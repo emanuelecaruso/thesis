@@ -9,23 +9,20 @@ void BundleAdj::projectAndMarginalizeActivePoints(){
 
 }
 
-void BundleAdj::activateNewPoints(bool active_all_candidates){
 
-  if(frame_current_ba==dtam_->frame_current_)
-    dtam_->waitForTrackedCandidates();
-
+void BundleAdj::activateNewPoints(){
 
   frame_current_ba = dtam_->keyframe_vector_->back();
   // sharedCoutDebug("   - activating point in frame "+std::to_string(frame_current_ba));
 
   double t_start=getTime();
 
-  int num_activated = selectNewActivePoints(active_all_candidates);
+  int num_activated = selectNewActivePoints();
 
   double t_end=getTime();
   int deltaTime=(t_end-t_start);
 
-  sharedCoutDebug("   - Points activated in frame "+std::to_string(frame_current_ba)+": "+std::to_string(num_activated)+", time: "+std::to_string(deltaTime)+" ms");
+  sharedCoutDebug("   - Points activated in frame "+std::to_string(frame_current_ba)+": "+std::to_string(num_activated)+", number of active points: "+std::to_string(num_active_points_)+", time: "+std::to_string(deltaTime)+" ms");
 
 
 
@@ -49,7 +46,7 @@ void BundleAdj::activateCandidate(CandidateProjected* cand_proj){
   // cam_->active_points_->push_back();
 }
 
-int BundleAdj::selectNewActivePoints(bool active_all_candidates){
+int BundleAdj::selectNewActivePoints(){
 
   // num of points to be activated
   int num_to_be_activated=parameters_->max_num_active_points- num_active_points_;
@@ -61,11 +58,19 @@ int BundleAdj::selectNewActivePoints(bool active_all_candidates){
 
   std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
 
+  // while(num_activated<num_to_be_activated){
   for (int i=0; i<num_to_be_activated; i++){
+    if (reg_vec->empty())
+      break;
+
     RegionWithProjCandidates* reg = reg_vec->at(i%reg_vec->size());
     if (reg->cands_vec_->empty()){
+      reg_vec->erase(std::remove(reg_vec->begin(), reg_vec->end(), reg), reg_vec->end());
+      i--;
       continue;
     }
+
+    // i++;
 
     CandidateProjected* cand_proj = reg->cands_vec_->at(0);
     activateCandidate(cand_proj);

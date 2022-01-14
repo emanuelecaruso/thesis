@@ -143,8 +143,7 @@ void Mapper::selectNewCandidates(){
 
 
 
-void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple,
-                          CandidateProjected*& projected_cand, bool no_mins){
+void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple){
 
   int num_mins = ep_line->uv_idxs_mins->size();
   float bound_min;
@@ -168,25 +167,10 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
     float coord_min = coord-sign*pixel_width*0.5;
     float coord_max = coord+sign*pixel_width*0.5;
 
-
     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
-    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, coord, ep_line->u_or_v);
     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
 
-    cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, d2);
-
     bound bound_{bound_min,bound_max};
-
-    if (num_mins==1 && no_mins){
-
-      Eigen::Vector2i pixel_curr;
-      cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
-
-      // create projected
-      projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2, ((1.0/bound_min)-(1.0/bound_max)));
-
-    }
-
 
     // push back new bound
     candidate->bounds_->push_back(bound_);
@@ -195,6 +179,61 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 
 
 }
+
+
+
+// void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple,
+//                           CandidateProjected*& projected_cand, bool no_mins_till_now){
+//
+//   int num_mins = ep_line->uv_idxs_mins->size();
+//   float bound_min;
+//   float bound_max;
+//   float d2;
+//   float coord;
+//   int sign = pow(-1,(ep_line->start>ep_line->end));
+//   float pixel_width = ep_line->cam->getPixelWidth(candidate->level_);  // GET PIXEL WIDTH
+//
+//   // iterate through mins
+//   for (int i=0; i<num_mins; i++){
+//     // uv min
+//     Eigen::Vector2f uv_curr=ep_line->uvs->at(ep_line->uv_idxs_mins->at(i));
+//
+//     if(ep_line->u_or_v)
+//       coord=uv_curr.x();
+//     else
+//       coord=uv_curr.y();
+//
+//     // from uv to bound
+//     float coord_min = coord-sign*pixel_width*0.5;
+//     float coord_max = coord+sign*pixel_width*0.5;
+//
+//
+//     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
+//     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, coord, ep_line->u_or_v);
+//     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
+//
+//     cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, d2);
+//
+//     bound bound_{bound_min,bound_max};
+//
+//     if (num_mins==1 && no_mins_till_now){
+//
+//       Eigen::Vector2i pixel_curr;
+//       cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
+//
+//       // create projected
+//       projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
+//
+//     }
+//
+//
+//     // push back new bound
+//     candidate->bounds_->push_back(bound_);
+//
+//   }
+//
+//
+// }
 
 void Mapper::rotateDhAndDvInCands(CameraForMapping* keyframe){
   // cand
@@ -291,14 +330,43 @@ void Mapper::updateRotationalInvariantGradients(){
 
 CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple){
 
+  Eigen::Vector3f p;
+  Eigen::Vector2f uv;
+  Eigen::Vector2i pixel_coords;
+  float depth_m;
+  cam_couple->cam_r_->pointAtDepth(candidate->uv_,candidate->depth_,p);
+  cam_couple->cam_m_->projectPoint( p, uv, depth_m );
+  cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
+  CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_coords, uv, 1.0/depth_m );
+  return projected_cand;
+}
+
+CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line ){
+
+  Eigen::Vector2f uv_curr=ep_line->uvs->at(ep_line->uv_idxs_mins->at(0));
+  Eigen::Vector2i pixel_curr;
+  cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
+
+  float coord, d2;
+  if(ep_line->u_or_v)
+    coord=uv_curr.x();
+  else
+    coord=uv_curr.y();
+
+  // update depth of candidate (unique, used only if there is one min)
+  cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, coord, ep_line->u_or_v);
+  cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, d2);
+
+  CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
+
+  return projected_cand;
+
 }
 
 void Mapper::trackExistingCandidates(){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
   sharedCoutDebug("   - Tracking existing candidates");
-
-  int num_of_ready_candidates=0;
 
   std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
 
@@ -321,9 +389,10 @@ void Mapper::trackExistingCandidates(){
 
 
     // iterate through all candidates
-    for(int k=0; k<keyframe->candidates_->size(); k++){
+    for(int k=keyframe->candidates_->size()-1; k>=0; k--){
 
       bool keep_cand = false;
+      bool projected_cand_created = false;
 
       Candidate* cand = keyframe->candidates_->at(k);
 
@@ -331,31 +400,42 @@ void Mapper::trackExistingCandidates(){
       int num_mins=0;
       int bounds_size =cand->bounds_->size();
 
+      // iterate along all bounds
+      for(int j=0; j<bounds_size; j++){
 
-      if(cand->ready_){
-        num_of_ready_candidates++;
-        n_cand_tracked++;
-        num_mins=1;
-        keep_cand=true;
-      }
-      else{
-        // iterate along all bounds
-        for(int j=0; j<bounds_size; j++){
+        EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
 
-          EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
+        // if uvs is empty, uvs are outside the frustum
+        if(ep_segment->uvs->empty()){
+          // those bounds are non valid
+          continue;
+        }
 
-          // if uvs is empty, uvs are outside the frustum
-          if(ep_segment->uvs->empty()){
-            continue;
+        // if uvs<3, epipolar segment is too short to update bounds
+        if(ep_segment->uvs->size()<3){
+
+          // push the same bounds
+          cand->bounds_->push_back(cand->bounds_->at(j));
+
+          keep_cand=true;
+          // if there are no mins till now
+          if(!num_mins){
+            // save projected cand in case is going to be pushed
+            projected_cand=projectCandidate( cand, cam_couple);
+            projected_cand_created=true;
           }
 
-          // if uvs<3, epipolar segment is too short to update bounds
-          if(ep_segment->uvs->size()<3){
-            // continue;
-          }
+          num_mins++;
 
-          if (!ep_segment->searchMin(cand, parameters_))
-            continue;
+          continue;
+        }
+
+        // if no mins are found
+        else if (!ep_segment->searchMin(cand, parameters_)){
+          // those bounds are not valid
+          continue;
+        }
+        else{
 
           // // if (ep_segment->uv_idxs_mins->size()==1){
           //   // if (dtam_->frame_current_==7){
@@ -385,32 +465,41 @@ void Mapper::trackExistingCandidates(){
           // cam_couple->compareEpSegmentWithGt(cand);
           // cam_couple->showEpSegment(cand);
 
-          n_cand_tracked++;
+          // if there are no mins till now, and only 1 min has been found
+          if(!num_mins && ep_segment->uv_idxs_mins->size()==1 ){
+            // save projected cand in case is going to be pushed
+            projected_cand=projectCandidate( cand, cam_couple, ep_segment);
+            projected_cand_created=true;
+          }
+
+
           keep_cand=true;
 
-          updateBounds(cand,ep_segment,cam_couple, projected_cand, num_mins==0);
+          updateBounds(cand,ep_segment,cam_couple);
 
           num_mins+=ep_segment->uv_idxs_mins->size();
 
         }
+
       }
 
       if (keep_cand){
+        n_cand_tracked++;
+        // erase old bounds
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
+
         if(num_mins==1){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
-
-          if ( projected_cand->invdepth_var_< parameters_->max_invdepth_var*pow(2,projected_cand->level_) ){
-            // point is ready to be activate
-            cand->ready_=true;
-          }
+        }
+        else if(num_mins>1 && projected_cand_created){
+          delete projected_cand;
         }
       }
+      // if candidate has not been tracked, marginalize it
       else{
         keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
-        k--;
-        delete cand;
+        cand->marginalize();
       }
 
 
@@ -419,7 +508,6 @@ void Mapper::trackExistingCandidates(){
     sharedCoutDebug("         - # candidates tracked: "+std::to_string(n_cand_tracked)+ " out of "+std::to_string(n_cand_to_track));
 
   }
-  sharedCoutDebug("   - Num of ready candidates: "+ std::to_string(num_of_ready_candidates));
 
 }
 
