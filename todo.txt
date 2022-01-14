@@ -14,3 +14,9 @@
 
 - return on frame selection for initialization (large baseline/score ?)
 - return on homography/fundamentalmat on initialization
+
+- consider curvature
+
+- invdepth or depth?
+
+- consider linear interpolation instead of nn

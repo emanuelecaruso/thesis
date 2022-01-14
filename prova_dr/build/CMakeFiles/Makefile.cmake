@@ -67,7 +67,4 @@ set(CMAKE_MAKEFILE_PRODUCTS
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
   "executables/CMakeFiles/test_dso.dir/DependInfo.cmake"
-  "executables/CMakeFiles/test_mapping.dir/DependInfo.cmake"
-  "executables/CMakeFiles/test_tracking.dir/DependInfo.cmake"
-  "executables/CMakeFiles/eval_orb_initializer.dir/DependInfo.cmake"
   )

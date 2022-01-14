@@ -47,15 +47,15 @@ faces = []
 
 count =0
 for value in dict2:
-    
+
     position=value['position']
-    depth_var=value['depth_var']
+    invdepth_var=value['invdepth_var']
     level=value['level']
-    
+
     if True:
-    #if depth_var<0.1:
+    #if invdepth_var<???:
         len=size*(pow(2,level))
-        
+
         vertices.append( (position[0]+len,position[1]+len,position[2]+len) ) #rtf
         vertices.append( (position[0]+len,position[1]+len,position[2]-len) ) #rtc
         vertices.append( (position[0]+len,position[1]-len,position[2]+len) ) #rdf
@@ -64,7 +64,7 @@ for value in dict2:
         vertices.append( (position[0]-len,position[1]+len,position[2]-len) ) #ltc
         vertices.append( (position[0]-len,position[1]-len,position[2]+len) ) #lcf
         vertices.append( (position[0]-len,position[1]-len,position[2]-len) ) #lcc
-        
+
         faces.append( (count+1,count+2,count+3) ) #r
         faces.append( (count,count+1,count+2) ) #r
         faces.append( (count+5,count+6,count+7) ) #l
@@ -78,11 +78,11 @@ for value in dict2:
         faces.append( (count+3,count+5,count+7) ) #c
         faces.append( (count+1,count+3,count+5) ) #c
 
-    
+
     count+=8
 
-        
-        
+
+
 mesh = bpy.data.meshes.new("mymesh")
 obj = bpy.data.objects.new("myobj", mesh)
 bpy.context.scene.collection.objects.link(obj)

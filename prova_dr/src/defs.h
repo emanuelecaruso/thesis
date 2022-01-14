@@ -324,4 +324,18 @@ namespace pr {
     }
     return sub;
   }
+
+  inline int lowerBound(std::vector<int> const& vec, int value) {
+    auto const it = std::lower_bound(vec.begin(), vec.end(), value);
+    if (it == vec.end()) { return -1; }
+
+    return *it;
+  }
+
+  inline int upperBound(std::vector<int> const& vec, int value) {
+    auto const it = std::upper_bound(vec.begin(), vec.end(), value);
+    if (it == vec.end()) { return -1; }
+
+    return *it;
+  }
 }

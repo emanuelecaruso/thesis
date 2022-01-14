@@ -18,7 +18,7 @@ static float cost_threshold_=0.5;
 static int num_candidates_=4000;
 static int max_num_active_points_=num_candidates_;
 static int num_active_keyframes_=5;
-static float max_depth_var_=0.01;
+static float max_invdepth_var_=0.05;
 static int end_frame_=5;
 static int fps_=30;
 // initializer parameters
@@ -40,7 +40,7 @@ struct Params{
   int num_candidates=num_candidates_;
   int max_num_active_points=max_num_active_points_;
   int num_active_keyframes=num_active_keyframes_;
-  float max_depth_var=max_depth_var_;
+  float max_invdepth_var=max_invdepth_var_;
   int end_frame=end_frame_;
   int fps=fps_;
   int n_corners=n_corners_;

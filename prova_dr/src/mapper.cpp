@@ -149,7 +149,6 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
   int num_mins = ep_line->uv_idxs_mins->size();
   float bound_min;
   float bound_max;
-  float d1;
   float d2;
   float coord;
   int sign = pow(-1,(ep_line->start>ep_line->end));
@@ -171,10 +170,10 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 
 
     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
-    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), d1, coord, ep_line->u_or_v);
+    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, coord, ep_line->u_or_v);
     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
 
-    cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), d1, d2);
+    cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, d2);
 
     bound bound_{bound_min,bound_max};
 
@@ -184,16 +183,8 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
       cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
 
       // create projected
-      projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, d2, (bound_max-bound_min));
+      projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2, ((1.0/bound_min)-(1.0/bound_max)));
 
-      // // push inside "candidates projected vec" in new keyframe
-      // cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
-      //
-      // if ( (bound_max-bound_min)< parameters_->max_depth_var*pow(2,candidate->level_) ){
-      //   // point is ready to be activate
-      //   candidate->ready_=true;
-      //   break;
-      // }
     }
 
 
@@ -298,12 +289,18 @@ void Mapper::updateRotationalInvariantGradients(){
 
 }
 
+CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple){
+
+}
+
 void Mapper::trackExistingCandidates(){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
   sharedCoutDebug("   - Tracking existing candidates");
 
   int num_of_ready_candidates=0;
+
+  std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
 
   //iterate through active keyframes
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
@@ -334,6 +331,7 @@ void Mapper::trackExistingCandidates(){
       int num_mins=0;
       int bounds_size =cand->bounds_->size();
 
+
       if(cand->ready_){
         num_of_ready_candidates++;
         n_cand_tracked++;
@@ -346,8 +344,14 @@ void Mapper::trackExistingCandidates(){
 
           EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
 
+          // if uvs is empty, uvs are outside the frustum
           if(ep_segment->uvs->empty()){
             continue;
+          }
+
+          // if uvs<3, epipolar segment is too short to update bounds
+          if(ep_segment->uvs->size()<3){
+            // continue;
           }
 
           if (!ep_segment->searchMin(cand, parameters_))
@@ -390,13 +394,14 @@ void Mapper::trackExistingCandidates(){
 
         }
       }
+
       if (keep_cand){
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
         if(num_mins==1){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
 
-          if ( projected_cand->depth_var_< parameters_->max_depth_var*pow(2,projected_cand->level_) ){
+          if ( projected_cand->invdepth_var_< parameters_->max_invdepth_var*pow(2,projected_cand->level_) ){
             // point is ready to be activate
             cand->ready_=true;
           }

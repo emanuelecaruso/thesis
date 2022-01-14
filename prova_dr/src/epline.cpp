@@ -63,9 +63,9 @@ void EpipolarLine::lineTraverse(int level)
 
 
 float EpipolarLine::getCostMagn(const pixelIntensity magnitude3C_r, const pixelIntensity magnitude3C_m,
-                            const pixelIntensity color_r, const pixelIntensity color_m) {
+                            const pixelIntensity intensity_r, const pixelIntensity intensity_m) {
   float cost_magn = abs(magnitude3C_r-magnitude3C_m)+abs(magnitude3C_r-magnitude3C_m)+abs(magnitude3C_r-magnitude3C_m);
-  float cost_col = abs(color_r-color_m)+abs(color_r-color_m)+abs(color_r-color_m);
+  float cost_col = abs(intensity_r-intensity_m)+abs(intensity_r-intensity_m)+abs(intensity_r-intensity_m);
   // return cost_magn;
   return cost_magn+cost_col;
 }
@@ -73,10 +73,10 @@ float EpipolarLine::getCostMagn(const pixelIntensity magnitude3C_r, const pixelI
 
 float EpipolarLine::getCostNew(const pixelIntensity dh_r, const pixelIntensity dh_m,
                             const pixelIntensity dv_r, const pixelIntensity dv_m,
-                            const pixelIntensity color_r, const pixelIntensity color_m ) {
+                            const pixelIntensity intensity_r, const pixelIntensity intensity_m ) {
   float cost_dh = abs(dh_r-dh_m);
   float cost_dv = abs(dv_r-dv_m);
-  float cost_col = abs(color_r-color_m);
+  float cost_col = abs(intensity_r-intensity_m);
 
   return cost_dh+cost_dv+2*cost_col;
   // return cost_dh+cost_dv;
@@ -89,7 +89,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
   float prev_cost = FLT_MAX;
   int min_uv_idx;
 
-  pixelIntensity color_r = candidate->color_;
+  pixelIntensity intensity_r = candidate->intensity_;
   float magnitude_r = candidate->grad_magnitude_;
   pixelIntensity dh_rob_r = candidate->dh_robust_;
   pixelIntensity dv_rob_r = candidate->dv_robust_;
@@ -107,7 +107,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
     Eigen::Vector2i pixel;
     cam->uv2pixelCoords(uv,pixel,candidate->level_);
 
-    pixelIntensity color_m;
+    pixelIntensity intensity_m;
     float magnitude_m;
     pixelIntensity dh_rob_m;
     pixelIntensity dv_rob_m;
@@ -141,14 +141,14 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
       cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dv_robust->evalPixel(pixel, dv_rob_m);
       cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dh->evalPixel(pixel, dh_m);
       cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dv->evalPixel(pixel, dv_m);
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, color_m);
+      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, intensity_m);
 
 
-      // float cost = getCostMagn(magnitude3C_r,magnitude3C_m, color_r,color_m );
+      // float cost = getCostMagn(magnitude3C_r,magnitude3C_m, intensity_r,intensity_m );
 
-      // float cost = getCostNew(dh_rob_r,dh_rob_m, dv_rob_r, dv_rob_m, color_r,color_m );
-      float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, color_r,color_m );
-      // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, color_r,color_m );
+      // float cost = getCostNew(dh_rob_r,dh_rob_m, dv_rob_r, dv_rob_m, intensity_r,intensity_m );
+      float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, intensity_r,intensity_m );
+      // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, intensity_r,intensity_m );
 
       if (cost<prev_cost){
         sign=true;

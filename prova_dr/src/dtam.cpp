@@ -70,7 +70,7 @@ void Dtam::waitForInitialization(){
 void Dtam::doInitialization(bool initialization_loop){
   bool initialization_done = false;
 
-  while(true){
+  while(!end_flag_){
     if(frame_current_==camera_vector_->size()-1)
       waitForNewFrame();
 
@@ -93,7 +93,7 @@ void Dtam::doInitialization(bool initialization_loop){
       initializer_->trackCornersLK();
       // if pose is found ...
       if(initializer_->findPose()){
-
+        sharedCoutDebug("   - Pose found");
         if(!initialization_loop){
           // ... add last keyframe
           keyframe_handler_->addKeyframe(true);
@@ -112,8 +112,8 @@ void Dtam::doInitialization(bool initialization_loop){
     sharedCoutDebug("   - INITIALIZATION of frame "+std::to_string(frame_current_)+", computation time: "+ std::to_string(deltaTime)+" ms");
 
     if(initialization_done){
-      initialization_done_.notify_all();
       sharedCoutDebug("\nINITIALIZATION ENDED");
+      initialization_done_.notify_all();
       break;
     }
 
@@ -128,6 +128,8 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
     if(frame_current_==camera_vector_->size()-1)
       waitForNewFrame();
+    if(end_flag_)
+      break;
 
     double t_start=getTime();
 
@@ -140,7 +142,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       tracker_->trackCam(true);
       keyframe_handler_->addKeyframe(true);
       mapper_->updateRotationalInvariantGradients();
-      
+
       if(frame_current_==1){
         mapper_->trackExistingCandidates();
         cand_tracked_.notify_all();
@@ -171,9 +173,9 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 }
 
 void Dtam::doOptimization(bool active_all_candidates){
-  while(frame_current_<camera_vector_->size() || !end_flag_ ){
+  while( !end_flag_ ){
 
-    bundle_adj_->activateNewPoints();
+    bundle_adj_->activateNewPoints(active_all_candidates);
   }
 }
 
@@ -215,8 +217,9 @@ void Dtam::updateCamerasFromEnvironment(){
     counter++;
 
   }
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   end_flag_=true;
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  frame_updated_.notify_all();
   sharedCout("\nVideo stream ended");
 
 }
@@ -277,7 +280,7 @@ void Dtam::eval_initializer(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   update_cameras_thread_.join();
-  initialization_thread_.detach();
+  initialization_thread_.join();
 
   // initializer_->showCornersRef();
   initializer_->showCornersTrack();
@@ -298,8 +301,8 @@ void Dtam::test_mapping(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
 
-  // optimization_thread.detach();
-  frontend_thread_.detach();
+  // optimization_thread.join();
+  frontend_thread_.join();
   update_cameras_thread_.join();
 
   // debugAllCameras();
@@ -315,12 +318,12 @@ void Dtam::test_mapping(){
   camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(0)->showCandidates_2(2);
   // camera_vector_->at(7)->showProjCandidates_2(2);
-  camera_vector_->at(5)->showProjCandidates_2(2);
+  // camera_vector_->at(5)->showProjCandidates_2(2);
   // camera_vector_->at(1)->showProjCandidates_2(2);
   // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(camera_vector_->size()-2));
-  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
   // testRotationalInvariance();
   cv::waitKey(0);
@@ -337,10 +340,11 @@ void Dtam::test_tracking(){
 
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, const_acc);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+  // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
 
 
-  // optimization_thread.detach();
-  frontend_thread_.detach();
+  // optimization_thread.join();
+  frontend_thread_.join();
   update_cameras_thread_.join();
 
   cv::waitKey(0);
@@ -354,15 +358,17 @@ void Dtam::test_dso(){
   bool all_keyframes=true;
   bool const_acc=false;
   bool wait_for_initialization=true;
-  // bool active_all_candidates=true;
+  bool active_all_candidates=true;
 
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, const_acc);
   std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+  std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
 
+  optimization_thread.join();
   frontend_thread_.join();
   update_cameras_thread_.join();
-  initialization_thread_.detach();
+  initialization_thread_.join();
 
   // initializer_->showCornersRef();
   // initializer_->showCornersTrack();
@@ -376,7 +382,7 @@ void Dtam::test_dso(){
   //
   // // frontend_thread.join();
   // update_cameras_thread_.join();
-  // initialization_thread_.detach();
+  // initialization_thread_.join();
   //
   //
   // cv::waitKey(0);
@@ -413,17 +419,17 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
     j["cameras"][camera->name_];
     int count=0;
     for(RegionWithProjCandidates* reg : *(camera->regions_projected_cands_->region_vec_) ){
-      for(CandidateProjected* cand : *(reg->cands_vec_)){
-        int level = cand->level_;
-        Eigen::Vector2f uv = cand->uv_ ;
+      for(CandidateProjected* cand_proj : *(reg->cands_vec_)){
+        int level = cand_proj->level_;
+        Eigen::Vector2f uv = cand_proj->uv_ ;
         Eigen::Vector3f p;
-        camera->pointAtDepth( uv, cand->depth_, p);
+        camera->pointAtDepth( uv, 1.0/cand_proj->invdepth_, p);
         std::stringstream ss;
         ss << std::setw(6) << std::setfill('0') << count;
         std::string idx = ss.str();
         j["cameras"][camera->name_]["p"+idx] = {
           {"level", level},
-          {"depth_var", cand->depth_var_},
+          {"invdepth_var", cand_proj->invdepth_var_},
           {"position", {p[0],p[1],p[2]}}
         };
         count++;

@@ -126,13 +126,6 @@ class Mapper; // forward declaration
 
 class CameraForMapping;
 
-class KFPoint{
-  public:
-
-    KFPoint(){}
-
-};
-
 
 class CandidateBase{
   public:
@@ -140,10 +133,9 @@ class CandidateBase{
     const Eigen::Vector2i pixel_;
     const Eigen::Vector2f uv_;
 
-    CandidateBase(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv):
+    CandidateBase(const int level, const Eigen::Vector2i& pixel, const Eigen::Vector2f& uv):
     level_(level), pixel_(pixel), uv_(uv){};
 };
-
 
 class RegionWithCandidates;
 
@@ -153,16 +145,16 @@ class Candidate : public CandidateBase{
 
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
               float grad_magnitude,
-              pixelIntensity dh, pixelIntensity dv, pixelIntensity color,
+              pixelIntensity dh, pixelIntensity dv, pixelIntensity intensity,
               std::vector<bound>* bounds, RegionWithCandidates* region ):
     CandidateBase( level, pixel, uv),
     bounds_(bounds),
+    depth_(-1),
     region_(region),
     grad_magnitude_(grad_magnitude),
     dh_(dh),
     dv_(dv),
-    color_(color),
-    children_(new std::vector<Candidate*>),
+    intensity_(intensity),
     ready_(false)
     {};
 
@@ -171,31 +163,48 @@ class Candidate : public CandidateBase{
     };
 
     std::vector<bound>* bounds_;
+    float depth_;
     const RegionWithCandidates* region_;
     const float grad_magnitude_;
     const pixelIntensity dh_;
     const pixelIntensity dv_;
     pixelIntensity dh_robust_;
     pixelIntensity dv_robust_;
-    const pixelIntensity color_;
-    std::vector<Candidate*>* children_;
+    const pixelIntensity intensity_;
     bool ready_;
 
 };
 
 
+
 class CandidateProjected : public CandidateBase{
   public:
-    const float depth_;
-    const float depth_var_;
+    const float invdepth_;
+    const float invdepth_var_;
     const Candidate* cand_;
 
-    CandidateProjected(Candidate* cand, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float depth, float depth_var):
+    CandidateProjected(Candidate* cand, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth, float invdepth_var):
     CandidateBase(cand->level_, pixel, uv),
-    depth_(depth),
-    depth_var_(depth_var),
+    invdepth_(invdepth),
+    invdepth_var_(invdepth_var),
     cand_(cand)
     {};
+
+  private:
+
+};
+
+class ActivePoint : public CandidateBase{
+  public:
+    const float invdepth_;
+    const float invdepth_var_;
+
+    ActivePoint(CandidateProjected* cand_proj):
+    CandidateBase( cand_proj->cand_->level_, cand_proj->cand_->pixel_, cand_proj->cand_->uv_),
+    invdepth_(cand_proj->invdepth_),
+    invdepth_var_(cand_proj->invdepth_var_)
+    {}
+
 };
 
 class RegionWithCandidatesBase{
@@ -309,14 +318,14 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
       int reg_y = projected_cand->pixel_.y()/scale_offs;
       int idx = xyToIdx( reg_x, reg_y);
 
-      // push the projected candidate inside the region (sorted by depth var)
+      // push the projected candidate inside the region (sorted by invdepth var)
 
       std::vector<CandidateProjected*>* cands_vec_ = region_vec_->at(idx)->cands_vec_;
 
       auto lb_cmp = [](CandidateProjected* const & x, float d) -> bool
-        { return x->depth_var_ < d; };
+        { return x->invdepth_var_ < d; };
 
-      auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), projected_cand->depth_var_, lb_cmp);
+      auto it = std::lower_bound(cands_vec_->begin(), cands_vec_->end(), projected_cand->invdepth_var_, lb_cmp);
       cands_vec_->insert ( it , projected_cand );
     }
 };
@@ -328,8 +337,8 @@ class CameraForMapping: public Camera{
 
     Wvlt_dec* wavelet_dec_;
     std::vector<Candidate*>* candidates_;
-    std::vector<KFPoint*>* active_points_;
-    std::vector<KFPoint*>* marginalized_points_;
+    std::vector<ActivePoint*>* active_points_;
+    std::vector<ActivePoint*>* marginalized_points_;
     RegionsWithCandidates* regions_;
     RegionsWithProjCandidates* regions_projected_cands_;
     int n_candidates_;
@@ -341,8 +350,8 @@ class CameraForMapping: public Camera{
            Camera( name, cam_parameters, image_intensity),
            wavelet_dec_(new Wvlt_dec(parameters->wavelet_levels,new Image<pixelIntensity>(image_intensity_), this)),
            candidates_(new std::vector<Candidate*>),
-           active_points_(new std::vector<KFPoint*>),
-           marginalized_points_(new std::vector<KFPoint*>),
+           active_points_(new std::vector<ActivePoint*>),
+           marginalized_points_(new std::vector<ActivePoint*>),
            regions_(new RegionsWithCandidates(parameters, this,
                       cam_parameters->resolution_x, cam_parameters->resolution_y)),
            regions_projected_cands_(new RegionsWithProjCandidates(parameters, this,

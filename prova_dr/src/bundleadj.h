@@ -13,10 +13,10 @@ class BundleAdj{
     dtam_(dtam),
     parameters_(parameters),
     num_active_points_(0),
-    frame_current_ba(0){};
+    frame_current_ba(-1){};
 
     void projectAndMarginalizeActivePoints();
-    void activateNewPoints();
+    void activateNewPoints(bool active_all_candidates);
     void optimize();
   private:
 
@@ -26,11 +26,11 @@ class BundleAdj{
     int num_active_points_;
 
     void projectActivePoints(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
-    void activateCandidate(const Candidate* cand);
+    void activateCandidate(CandidateProjected* cand_proj);
 
     void sortRegions();
     // void projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
-    void selectNewActivePoints();
+    int selectNewActivePoints(bool active_all_candidates);
 
 
 

@@ -123,45 +123,6 @@ test_dso/fast:
 	$(MAKE) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/build
 .PHONY : test_dso/fast
 
-#=============================================================================
-# Target rules for targets named test_mapping
-
-# Build rule for target.
-test_mapping: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test_mapping
-.PHONY : test_mapping
-
-# fast build rule for target.
-test_mapping/fast:
-	$(MAKE) -f executables/CMakeFiles/test_mapping.dir/build.make executables/CMakeFiles/test_mapping.dir/build
-.PHONY : test_mapping/fast
-
-#=============================================================================
-# Target rules for targets named test_tracking
-
-# Build rule for target.
-test_tracking: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test_tracking
-.PHONY : test_tracking
-
-# fast build rule for target.
-test_tracking/fast:
-	$(MAKE) -f executables/CMakeFiles/test_tracking.dir/build.make executables/CMakeFiles/test_tracking.dir/build
-.PHONY : test_tracking/fast
-
-#=============================================================================
-# Target rules for targets named eval_orb_initializer
-
-# Build rule for target.
-eval_orb_initializer: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 eval_orb_initializer
-.PHONY : eval_orb_initializer
-
-# fast build rule for target.
-eval_orb_initializer/fast:
-	$(MAKE) -f executables/CMakeFiles/eval_orb_initializer.dir/build.make executables/CMakeFiles/eval_orb_initializer.dir/build
-.PHONY : eval_orb_initializer/fast
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -171,9 +132,6 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... test_dso"
-	@echo "... test_mapping"
-	@echo "... test_tracking"
-	@echo "... eval_orb_initializer"
 .PHONY : help
 
 
