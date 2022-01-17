@@ -43,8 +43,15 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
   // get last keyframe
   CameraForMapping* last_keyframe = dtam_->getLastKeyframe();
   if(track_candidates){
-    // std::vector<RegionWithProjCandidates*>* last_keyframe->regions_projected_cands_
+    // for each level of the pyramid
 
+      // for each pixel at coarser level containing at least 1 candidate
+
+        // intensity of that pixel
+        // compute invdepth as average of invdepths with invdepth var as weight
+        // compute invdepth variance
+
+    // std::vector<RegionWithProjCandidates*>* last_keyframe->regions_projected_cands_
 
   }
 
