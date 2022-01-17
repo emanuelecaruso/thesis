@@ -8,17 +8,17 @@ class Dtam; //forward declaration
 class Tracker{
 
   public:
-    Tracker(Dtam* dtam): dtam_(dtam){};
+    Tracker(Dtam* dtam):
+    dtam_(dtam){};
 
-    void trackCam(bool takeGtPoses, bool const_acc=false);
+    void trackCam(bool takeGtPoses, bool track_candidates=false);
 
   private:
     Dtam* const dtam_;
-
     void trackGroundtruth();
-    void trackLS(bool const_acc);
-    void doLS(Eigen::Isometry3f& initial_guess);
-    Eigen::Isometry3f computeInitialGuess(bool const_acc );
+    void trackLS(bool track_candidates=false);
+    Eigen::Isometry3f doLS(Eigen::Isometry3f& initial_guess, bool track_candidates=false);
+    Eigen::Isometry3f computeInitialGuess( );
     Eigen::Isometry3f velocityConstantModel();
     Eigen::Isometry3f accelerationConstantModel();
 };

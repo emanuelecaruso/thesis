@@ -230,9 +230,9 @@ void Camera::showDepthMap(int image_scale) const {
 
 
 
-bool RegionWithCandidates::collectCandidates(){
+bool RegionWithCandidates::collectCandidates(int wavelet_levels){
 
-  int wav_levels= cam_->wavelet_dec_->levels_;
+  int wav_levels= wavelet_levels;
 
   float min_depth = cam_->cam_parameters_->min_depth;
   float max_depth = cam_->cam_parameters_->max_depth;

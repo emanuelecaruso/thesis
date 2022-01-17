@@ -435,6 +435,12 @@ void Mapper::trackExistingCandidates(){
           // those bounds are not valid
           continue;
         }
+        // if too much mins are found (higly repetitive texture)
+        else if (ep_segment->uv_idxs_mins->size()>parameters_->max_num_mins){
+          keep_cand=false;
+          // discard candidate
+          break;
+        }
         else{
 
           // // if (ep_segment->uv_idxs_mins->size()==1){

@@ -27,8 +27,9 @@ int main (int argc, char * argv[]) {
   // compute depth map
   //############################################################################
 
-  dtam->test_dso();
-  // dtam->test_mapping();
+  // dtam->test_dso();
+  dtam->test_mapping();
+  // dtam->test_tracking();
 
   // dtam->testFeatures();
   // cv::waitKey(0);

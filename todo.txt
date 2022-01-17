@@ -20,3 +20,7 @@
 - invdepth or depth?
 
 - consider linear interpolation instead of nn
+
+- implement tracking as dso, but try to choose better coarser resolutions later
+
+- sample also wrt 2nd derivative

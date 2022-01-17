@@ -164,7 +164,7 @@ class RegionWithCandidates : public RegionWithCandidatesBase{
     cands_vec_(new std::vector<Candidate*>){
       // collectCandidates();
     };
-    bool collectCandidates();
+    bool collectCandidates(int wavelet_levels);
 
 };
 
@@ -203,7 +203,7 @@ class Candidate : public CandidateBase{
     inline float getInvdepthVar() const{
       float d2 = bounds_->at(0).second;
       float d1 = bounds_->at(0).first;
-      return (1.0/d2)-(1.0/d1);
+      return (1.0/d1)-(1.0/d2);
     }
 
     inline void marginalize() const {
@@ -282,9 +282,9 @@ class RegionsWithCandidates : public RegionsWithCandidatesBase{
     };
     std::vector<RegionWithCandidates*>* region_vec_;
 
-    inline void collectCandidates(){
+    inline void collectCandidates(int wavelet_levels){
       for (RegionWithCandidates* reg : *region_vec_ ){
-        reg->collectCandidates();
+        reg->collectCandidates(wavelet_levels);
         // break;
       }
     }
@@ -358,7 +358,7 @@ class CameraForMapping: public Camera{
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
            const Image<pixelIntensity>* image_intensity, Params* parameters):
            Camera( name, cam_parameters, image_intensity),
-           wavelet_dec_(new Wvlt_dec(parameters->wavelet_levels,new Image<pixelIntensity>(image_intensity_), this)),
+           wavelet_dec_(new Wvlt_dec(parameters->coarsest_level,new Image<pixelIntensity>(image_intensity_), this)),
            candidates_(new std::vector<Candidate*>),
            active_points_(new std::vector<ActivePoint*>),
            marginalized_points_(new std::vector<ActivePoint*>),

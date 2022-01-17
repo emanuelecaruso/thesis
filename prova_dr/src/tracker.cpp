@@ -17,45 +17,61 @@ void Tracker::trackGroundtruth(){
   sharedCoutDebug("   - Frame tracked (groundtruth)");
 }
 
-void Tracker::trackLS(bool const_acc){
-  Eigen::Isometry3f initial_guess = computeInitialGuess( const_acc );
+void Tracker::trackLS(bool track_candidates){
+  CameraForMapping* last_cam = dtam_->getLastCamera();
+  CameraForMapping* curr_cam = dtam_->getCurrentCamera();
 
-  doLS(initial_guess);
+  Eigen::Isometry3f initial_guess = computeInitialGuess( );
+
+  Eigen::Isometry3f final_guess = doLS(initial_guess, track_candidates);
+
+  // final guess = curr_T_last -> pose = w_T_last * last_T_curr
+  Eigen::Isometry3f frame_camera_wrt_world_ = (*last_cam->frame_camera_wrt_world_)*final_guess.inverse();
+
+  curr_cam->assignPose(frame_camera_wrt_world_);
 
   Camera* cam_curr_gt = dtam_->environment_->camera_vector_->at(dtam_->frame_current_);
-  Camera* cam_prev_gt = dtam_->environment_->camera_vector_->at(dtam_->frame_current_-1);
-  Eigen::Isometry3f gt = *(cam_curr_gt->frame_world_wrt_camera_)*(*(cam_prev_gt->frame_camera_wrt_world_));
+  Camera* cam_lastkf_gt = dtam_->environment_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  Eigen::Isometry3f gt = *(cam_curr_gt->frame_world_wrt_camera_)*(*(cam_lastkf_gt->frame_camera_wrt_world_));
   std::cout << gt.translation() << "\n and \n " << initial_guess.translation() << std::endl;
 
+
 }
 
-void Tracker::doLS(Eigen::Isometry3f& initial_guess){
+Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates){
 
+  // get last keyframe
+  CameraForMapping* last_keyframe = dtam_->getLastKeyframe();
+  if(track_candidates){
+    // std::vector<RegionWithProjCandidates*>* last_keyframe->regions_projected_cands_
+
+
+  }
 
   int n_observations = 0 ;
-  while(true){
-    for(int i=0; i<n_observations; i++){
+  // while(true){
+  //   for(int i=0; i<n_observations; i++){
+  //
+  //   }
+  // }
 
-    }
-  }
+  return initial_guess;
 }
 
-void Tracker::trackCam(bool takeGtPoses, bool const_acc){
+void Tracker::trackCam(bool takeGtPoses, bool track_candidates){
   if(takeGtPoses){
     trackGroundtruth();
   }
   else{
-    trackLS(const_acc);
+    trackLS(track_candidates);
   }
 }
 
-Eigen::Isometry3f Tracker::computeInitialGuess(bool const_acc ){
+Eigen::Isometry3f Tracker::computeInitialGuess( ){
   Eigen::Isometry3f pose_initial_guess;
-  if(const_acc){
-    pose_initial_guess = accelerationConstantModel();
-  }else{
-    pose_initial_guess = velocityConstantModel();
-  }
+
+  pose_initial_guess = velocityConstantModel();
+
 
   return pose_initial_guess;
 }
@@ -72,11 +88,24 @@ Eigen::Isometry3f Tracker::velocityConstantModel(){
 
   CameraForMapping* last_cam = dtam_->getLastCamera();
   CameraForMapping* prev_cam = dtam_->getSecondLastCamera();
+  CameraForMapping* lastkeyframe_cam = dtam_->getLastKeyframe();
 
   Eigen::Isometry3f* last_T_w = last_cam->frame_world_wrt_camera_;
   Eigen::Isometry3f* w_T_prev = prev_cam->frame_camera_wrt_world_;
 
   Eigen::Isometry3f last_T_prev = (*last_T_w)*(*w_T_prev);
 
-  return last_T_prev;
+  Eigen::Isometry3f* w_T_lastkeyframe = lastkeyframe_cam->frame_camera_wrt_world_;
+
+  // we assume that the relative pose between last and previous frame
+  // is the same between current and last (tracked) frame (constant velocity model)
+  // so last_T_prev = curr_T_last
+
+  // the initial guess is the pose of the last keyframe wrt current camera
+  // so iitial_guess = curr_T_lastkeyframe = curr_T_last*last_T_lastkeyframe
+  // so curr_T_lastkeyframe = curr_T_last*last_T_w*w_T_lastkeyframe
+  // since curr_T_last = last_T_prev -> curr_T_lastkeyframe = last_T_prev*last_T_w*w_T_lastkeyframe
+  Eigen::Isometry3f curr_T_lastkeyframe =  (last_T_prev*(*last_T_w))*(*w_T_lastkeyframe);
+
+  return curr_T_lastkeyframe;
 }
