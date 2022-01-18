@@ -178,7 +178,8 @@ class Candidate : public CandidateBase{
               std::vector<bound>* bounds, RegionWithCandidates* region ):
     CandidateBase( level, pixel, uv),
     bounds_(bounds),
-    depth_(-1),
+    one_min_(false),
+    invdepth_(-1),
     region_(region),
     grad_magnitude_(grad_magnitude),
     dh_(dh),
@@ -191,7 +192,9 @@ class Candidate : public CandidateBase{
     };
 
     std::vector<bound>* bounds_;
-    float depth_;
+    bool one_min_;
+    float invdepth_;
+    float invdepth_var_;
     RegionWithCandidates* region_;
     const float grad_magnitude_;
     const pixelIntensity dh_;
@@ -247,11 +250,11 @@ class ActivePoint : public CandidateBase{
 class RegionsWithCandidatesBase{
   public:
 
-    RegionsWithCandidatesBase(Params* parameters, CameraForMapping* cam, int res_x, int res_y):
+    RegionsWithCandidatesBase(Params* parameters, CameraForMapping* cam, int level):
     cam_(cam),
     parameters_(parameters),
-    num_of_regions_x(res_x/pow(2,parameters->reg_level+1)),
-    num_of_regions_y(res_y/pow(2,parameters->reg_level+1))
+    num_of_regions_x(getNRegionsX(cam,level)),
+    num_of_regions_y(getNRegionsY(cam,level))
     {  };
     const CameraForMapping* cam_;
     const Params* parameters_;
@@ -261,6 +264,9 @@ class RegionsWithCandidatesBase{
     inline int xyToIdx(int x, int y){
       return (num_of_regions_x*y+x);
     }
+
+    int getNRegionsX(CameraForMapping* cam, int level);
+    int getNRegionsY(CameraForMapping* cam, int level);
 };
 
 
@@ -269,8 +275,8 @@ class RegionsWithCandidatesBase{
 class RegionsWithCandidates : public RegionsWithCandidatesBase{
   public:
 
-    RegionsWithCandidates(Params* parameters, CameraForMapping* cam, int res_x, int res_y):
-    RegionsWithCandidatesBase( parameters, cam, res_x, res_y),
+    RegionsWithCandidates(Params* parameters, CameraForMapping* cam, int level):
+    RegionsWithCandidatesBase( parameters, cam, level),
     region_vec_(new std::vector<RegionWithCandidates*>(num_of_regions_x*num_of_regions_y) )
     {
       for(int x=0; x<num_of_regions_x; x++){
@@ -307,8 +313,8 @@ class RegionWithProjCandidates : public RegionWithCandidatesBase{
 class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
   public:
 
-    RegionsWithProjCandidates(Params* parameters, CameraForMapping* cam, int res_x, int res_y):
-    RegionsWithCandidatesBase( parameters, cam, res_x, res_y),
+    RegionsWithProjCandidates(Params* parameters, CameraForMapping* cam, int level):
+    RegionsWithCandidatesBase( parameters, cam, level),
     region_vec_(new std::vector<RegionWithProjCandidates*>(num_of_regions_x*num_of_regions_y) )
     {
       for(int x=0; x<num_of_regions_x; x++){
@@ -362,10 +368,8 @@ class CameraForMapping: public Camera{
            candidates_(new std::vector<Candidate*>),
            active_points_(new std::vector<ActivePoint*>),
            marginalized_points_(new std::vector<ActivePoint*>),
-           regions_(new RegionsWithCandidates(parameters, this,
-                      cam_parameters->resolution_x, cam_parameters->resolution_y)),
-           regions_projected_cands_(new RegionsWithProjCandidates(parameters, this,
-                      cam_parameters->resolution_x, cam_parameters->resolution_y)),
+           regions_(new RegionsWithCandidates(parameters, this, parameters->reg_level+1)),
+           regions_projected_cands_(new RegionsWithProjCandidates(parameters, this, parameters->reg_level+1)),
            n_candidates_(0)
            {};
 

@@ -38,18 +38,76 @@ void Tracker::trackLS(bool track_candidates){
 
 }
 
+void Tracker::prepareCandidatesAtLowerResolutions(CameraForMapping* keyframe){
+  std::vector<RegionsWithCandidates*>* coarse_regions_vec = new std::vector<RegionsWithCandidates*> ;
+
+  // collect regions at coarser levels
+
+  // iterate along all coarser levels
+  for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
+    // create empty regions
+    RegionsWithCandidates* coarse_regions = new RegionsWithCandidates(dtam_->parameters_,keyframe,i);
+    coarse_regions_vec->push_back(coarse_regions);
+    // for each candidate of keyframe
+    for(Candidate* cand : *(keyframe->candidates_)){
+      // if level of candidate is less than current coarse level
+      // and if candidate has one min
+      if(cand->level_<i && cand->one_min_){
+        int level_diff = i-cand->level_;
+        // from pixel of candidate find pixel at level i
+        int coarse_pxl_x = cand->pixel_.x()/(pow(2,level_diff));
+        int coarse_pxl_y = cand->pixel_.y()/(pow(2,level_diff));
+        int idx = coarse_regions->xyToIdx(coarse_pxl_x,coarse_pxl_y);
+        // push candidate inside region
+        coarse_regions->region_vec_->at(idx)->cands_vec_->push_back(cand);
+      }
+    }
+  }
+
+  // create candidates at coarser levels
+
+  // iterate along all coarser levels
+  for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
+    RegionsWithCandidates* coarse_regions = coarse_regions_vec->at(i-1);
+    // iterate along all regions
+    for ( RegionWithCandidates* reg : *(coarse_regions->region_vec_)){
+      // if region is not empty
+      if(!reg->cands_vec_->empty()){
+
+        // intensity
+        pixelIntensity intensity = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(reg->y_,reg->x_);
+        // grad magnitude
+        pixelIntensity grad_magnitude = keyframe->wavelet_dec_->getWavLevel(i)->magnitude_img->evalPixel(reg->y_,reg->x_);
+
+
+        // iterate along collected candidates
+
+          // compute invdepth as weighted average of invdepths with invdepth certainty as weight
+
+          // compute invdepth variance as average of variances
+
+        // create candidate
+      }
+    }
+  }
+}
+
 Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates){
 
   // get last keyframe
   CameraForMapping* last_keyframe = dtam_->getLastKeyframe();
+
+  // prepare candidates at lower resolutions
+  prepareCandidatesAtLowerResolutions(last_keyframe);
+
   if(track_candidates){
     // for each level of the pyramid
 
-      // for each pixel at coarser level containing at least 1 candidate
+      // while chi square is not converged
 
-        // intensity of that pixel
-        // compute invdepth as average of invdepths with invdepth var as weight
-        // compute invdepth variance
+        // for each pixel at coarser level containing at least 1 candidate
+
+
 
     // std::vector<RegionWithProjCandidates*>* last_keyframe->regions_projected_cands_
 

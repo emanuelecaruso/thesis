@@ -13,6 +13,7 @@
 // coarsest level
 static int coarsest_level_= 4; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // levels for regions
+// static int wavelet_levels_=3; // e.g. 3 levels -> lev 0,1,2
 static int wavelet_levels_=1; // e.g. 3 levels -> lev 0,1,2
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 static float grad_threshold_=0.1;
@@ -60,7 +61,11 @@ struct Params{
 
   Params(){
     if (coarsest_level<wavelet_levels){
-      std::cout << "Error in parameters: coarsest level less than wavelet levels!" << std::endl;
+      std::cout << "Error in parameters: coarsest_level less than wavelet_levels!" << std::endl;
+      exit(1);
+    }
+    if (wavelet_levels>reg_level+1){
+      std::cout << "Error in parameters: reg_level+1 less than wavelet_levels!" << std::endl;
       exit(1);
     }
   };

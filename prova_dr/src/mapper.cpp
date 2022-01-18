@@ -334,7 +334,7 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   Eigen::Vector2f uv;
   Eigen::Vector2i pixel_coords;
   float depth_m;
-  cam_couple->cam_r_->pointAtDepth(candidate->uv_,candidate->depth_,p);
+  cam_couple->cam_r_->pointAtDepth(candidate->uv_,1.0/candidate->invdepth_,p);
   cam_couple->cam_m_->projectPoint( p, uv, depth_m );
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
   CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_coords, uv, 1.0/depth_m );
@@ -347,15 +347,17 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   Eigen::Vector2i pixel_curr;
   cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
 
-  float coord, d2;
+  float coord, d1, d2;
   if(ep_line->u_or_v)
     coord=uv_curr.x();
   else
     coord=uv_curr.y();
 
   // update depth of candidate (unique, used only if there is one min)
-  cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, coord, ep_line->u_or_v);
-  cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, d2);
+  cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), d1, coord, ep_line->u_or_v);
+  cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), d1, d2);
+
+  candidate->invdepth_=1/d1;
 
   CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
 
@@ -497,9 +499,15 @@ void Mapper::trackExistingCandidates(){
         if(num_mins==1){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+          cand->invdepth_var_=cand->getInvdepthVar();
+          cand->one_min_=true;
         }
-        else if(num_mins>1 && projected_cand_created){
-          delete projected_cand;
+        else if(num_mins>1){
+          cand->invdepth_var_=-1;
+          cand->invdepth_=-1;
+          cand->one_min_=false;
+          if(projected_cand_created)
+            delete projected_cand;
         }
       }
       // if candidate has not been tracked, marginalize it

@@ -229,6 +229,12 @@ void Camera::showDepthMap(int image_scale) const {
 }
 
 
+int RegionsWithCandidatesBase::getNRegionsX(CameraForMapping* cam, int level){
+  return cam->cam_parameters_->resolution_x/pow(2,level);
+}
+int RegionsWithCandidatesBase::getNRegionsY(CameraForMapping* cam, int level){
+  return cam->cam_parameters_->resolution_y/pow(2,level);
+}
 
 bool RegionWithCandidates::collectCandidates(int wavelet_levels){
 

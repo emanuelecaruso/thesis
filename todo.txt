@@ -24,3 +24,5 @@
 - implement tracking as dso, but try to choose better coarser resolutions later
 
 - sample also wrt 2nd derivative
+
+- add magnitude of d_right - d_left

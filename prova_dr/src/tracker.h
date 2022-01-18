@@ -18,6 +18,7 @@ class Tracker{
     void trackGroundtruth();
     void trackLS(bool track_candidates=false);
     Eigen::Isometry3f doLS(Eigen::Isometry3f& initial_guess, bool track_candidates=false);
+    void prepareCandidatesAtLowerResolutions(CameraForMapping* keyframe);
     Eigen::Isometry3f computeInitialGuess( );
     Eigen::Isometry3f velocityConstantModel();
     Eigen::Isometry3f accelerationConstantModel();

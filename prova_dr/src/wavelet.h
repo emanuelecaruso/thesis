@@ -104,7 +104,7 @@ class Wvlt_dec{
 
     // void signThresholdedPoints(float threshold, bool printNPix=false);
     // void compareThreshold(float threshold, float size=1);
-    void reconstructImage();
+    Wvlt_lvl* getWavLevel(int level);
     void showWaveletDec(float size=1);
     void showWaveletDec(const std::string& name, float size=1);
 

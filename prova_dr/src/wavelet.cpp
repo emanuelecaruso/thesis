@@ -80,6 +80,9 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
 
 }
 
+Wvlt_lvl* Wvlt_dec::getWavLevel(int level){
+  return vector_wavelets->at(level);
+}
 
 void Wvlt_dec::showWaveletDec(float size){
   showWaveletDec("wavelet decomposition", size);
