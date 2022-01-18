@@ -91,6 +91,7 @@ void Dtam::doInitialization(bool initialization_loop){
       initializer_->compute_cv_K();
       initializer_->extractCorners();
       mapper_->selectNewCandidates();
+      tracker_->collectCandidatesInCoarseRegions();
     }
     else{
       initializer_->trackCornersLK();
@@ -103,6 +104,7 @@ void Dtam::doInitialization(bool initialization_loop){
           // start initializing the model
           mapper_->trackExistingCandidates();
           mapper_->selectNewCandidates();
+          tracker_->collectCandidatesInCoarseRegions();
           initialization_done=true;
         }
 
@@ -148,6 +150,8 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
         cand_tracked_.notify_all();
       }
       mapper_->selectNewCandidates();
+      tracker_->collectCandidatesInCoarseRegions();
+
       continue;
     }
 
@@ -160,6 +164,8 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       mapper_->trackExistingCandidates();
       cand_tracked_.notify_all();
       mapper_->selectNewCandidates();
+      tracker_->collectCandidatesInCoarseRegions();
+
       // bundle_adj_->activateNewPoints(); in other thread
       // bundle_adj_->optimize(); in other thread
     }
@@ -333,16 +339,17 @@ void Dtam::test_mapping(){
   // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(2);
   // camera_vector_->at(1)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"1");
   // camera_vector_->at(0)->showCandidates_1(2);
-  // camera_vector_->at(0)->showCandidates_2(2);
-  // camera_vector_->at(camera_vector_->size()-2)->showProjCandidates_2(2);
-  // camera_vector_->at(0)->showCandidates_2(2);
-  camera_vector_->at(0)->showCandidates_2(2);
-  // camera_vector_->at(7)->showProjCandidates_2(2);
-  camera_vector_->at(5)->showProjCandidates_2(2);
-  // camera_vector_->at(1)->showProjCandidates_2(2);
+  // camera_vector_->at(0)->showCandidates(2);
+  // camera_vector_->at(camera_vector_->size()-2)->showProjCandidates(2);
+  // camera_vector_->at(0)->showCandidates(2);
+  camera_vector_->at(0)->showCandidates(2);
+  // camera_vector_->at(7)->showProjCandidates(2);
+  camera_vector_->at(1)->showProjCandidates(2);
+  // camera_vector_->at(5)->showProjCandidates(2);
+
   // camera_vector_->at(keyframe_vector_->back())->regions_sampling_->region_vec_->at(1)->showRegion(2);
 
-  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(1));
 
   // testRotationalInvariance();
   cv::waitKey(0);

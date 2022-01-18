@@ -1,4 +1,5 @@
 #pragma once
+#include "defs.h"
 #include "camera.h"
 #include "image.h"
 #include "environment.h"
@@ -13,13 +14,15 @@ class Tracker{
 
     void trackCam(bool takeGtPoses, bool track_candidates=false);
 
-  private:
+    void collectCandidatesInCoarseRegions();
+
+  protected:
     Dtam* const dtam_;
     void trackGroundtruth();
     void trackLS(bool track_candidates=false);
     Eigen::Isometry3f doLS(Eigen::Isometry3f& initial_guess, bool track_candidates=false);
-    void collectCoarseRegions(CameraForMapping* keyframe);
-    void collectCandidatesAtLowerResolution(CameraForMapping* keyframe);
+    void collectCoarseCandidates(CameraForMapping* keyframe);
+    void iterationLS(Matrix6f& H, Vector6f& b, float& chi );
     Eigen::Isometry3f computeInitialGuess( );
     Eigen::Isometry3f velocityConstantModel();
     Eigen::Isometry3f accelerationConstantModel();

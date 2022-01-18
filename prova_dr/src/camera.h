@@ -222,8 +222,13 @@ class Candidate : public CandidateBase{
     }
 
     inline void marginalize() const {
-      std::vector<Candidate*>* v = region_sampling_->cands_vec_;
-      v->erase(std::remove(v->begin(), v->end(), this), v->end());
+      std::vector<Candidate*>* v1 = region_sampling_->cands_vec_;
+      v1->erase(std::remove(v1->begin(), v1->end(), this), v1->end());
+
+      for(RegionWithCandidates* reg : *regions_coarse_){
+        std::vector<Candidate*>* v2 = reg->cands_vec_;
+        v2->erase(std::remove(v2->begin(), v2->end(), this), v2->end());
+      }
       delete this;
     }
 };
@@ -369,6 +374,9 @@ class CameraForMapping: public Camera{
     std::vector<ActivePoint*>* marginalized_points_;
     RegionsWithCandidates* regions_sampling_;
     RegionsWithProjCandidates* regions_projected_cands_;
+    std::vector<RegionsWithCandidates*>* regions_coarse_vec_;
+    std::vector<std::vector<Candidate*>*>* candidates_coarse_;
+
     int n_candidates_;
     friend class Mapper;
     friend class Dtam;
@@ -382,8 +390,21 @@ class CameraForMapping: public Camera{
            marginalized_points_(new std::vector<ActivePoint*>),
            regions_sampling_(new RegionsWithCandidates(parameters, this, parameters->reg_level+1)),
            regions_projected_cands_(new RegionsWithProjCandidates(parameters, this, parameters->reg_level+1)),
+           regions_coarse_vec_(new std::vector<RegionsWithCandidates*>),
+           candidates_coarse_(new std::vector<std::vector<Candidate*>*>),
            n_candidates_(0)
-           {};
+           {
+             // iterate along all coarser levels
+             for(int i=1; i<parameters->coarsest_level; i++){
+               // create empty regions
+               RegionsWithCandidates* coarse_regions = new RegionsWithCandidates(parameters,this,i);
+               regions_coarse_vec_->push_back(coarse_regions);
+
+               candidates_coarse_->push_back(new std::vector<Candidate*>);
+             }
+
+
+           };
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
             const Image<pixelIntensity>* image_intensity, Eigen::Isometry3f* frame_world_wrt_camera,
@@ -398,15 +419,15 @@ class CameraForMapping: public Camera{
            CameraForMapping( cam->name_, cam->cam_parameters_, cam->image_intensity_, parameters)
            {  };
 
+    void showCandidates(float size);
+    void showCoarseCandidates(float size);
+    void showProjCandidates(float size);
+    void showActivePoints(float size);
+
   private:
     // void collectRegions(float grad_threshold);
     void selectNewCandidates(int max_num_candidates);
     void marginalizeActivePoint();
     void selectActivePoints(int max_num_active_points);
-    void showCandidates_1(float size);
-    void showCandidates_2(float size);
-    // void showProjCandidates_1(float size);
-    void showProjCandidates_2(float size);
-    // void showActivePoints_1(float size);
-    void showActivePoints_2(float size);
+
 };

@@ -27,6 +27,8 @@ static int max_num_mins_ = 5;
 static float max_invdepth_var_=0.05;
 static int end_frame_=5;
 static int fps_=30;
+// tracker parameters
+static int max_iterations_ls_=1000;
 // initializer parameters
 static int n_corners_ = 1000;
 static float quality_level_ = 0.01;
@@ -51,6 +53,7 @@ struct Params{
   float max_invdepth_var=max_invdepth_var_;
   int end_frame=end_frame_;
   int fps=fps_;
+  int max_iterations_ls=max_iterations_ls_;
   int n_corners=n_corners_;
   float quality_level=quality_level_;
   float min_distance=min_distance_;

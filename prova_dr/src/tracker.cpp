@@ -18,6 +18,9 @@ void Tracker::trackGroundtruth(){
 }
 
 void Tracker::trackLS(bool track_candidates){
+
+  double t_start=getTime();
+
   CameraForMapping* last_cam = dtam_->getLastCamera();
   CameraForMapping* curr_cam = dtam_->getCurrentCamera();
 
@@ -30,87 +33,110 @@ void Tracker::trackLS(bool track_candidates){
 
   curr_cam->assignPose(frame_camera_wrt_world_);
 
-  Camera* cam_curr_gt = dtam_->environment_->camera_vector_->at(dtam_->frame_current_);
-  Camera* cam_lastkf_gt = dtam_->environment_->camera_vector_->at(dtam_->keyframe_vector_->back());
-  Eigen::Isometry3f gt = *(cam_curr_gt->frame_world_wrt_camera_)*(*(cam_lastkf_gt->frame_camera_wrt_world_));
-  std::cout << gt.translation() << "\n and \n " << initial_guess.translation() << std::endl;
+  double t_end=getTime();
+  int deltaTime=(t_end-t_start);
+  sharedCoutDebug("   - Frame tracked, time: "+ std::to_string(deltaTime)+" ms");
+
+  // Camera* cam_curr_gt = dtam_->environment_->camera_vector_->at(dtam_->frame_current_);
+  // Camera* cam_lastkf_gt = dtam_->environment_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  // Eigen::Isometry3f gt = *(cam_curr_gt->frame_world_wrt_camera_)*(*(cam_lastkf_gt->frame_camera_wrt_world_));
+  // std::cout << gt.translation() << "\n and \n " << initial_guess.translation() << std::endl;
 
 
 }
 
-void Tracker::collectCoarseRegions(CameraForMapping* keyframe){
-  // std::vector<RegionsWithCandidates*>* coarse_regions_vec = new std::vector<RegionsWithCandidates*> ;
-  //
-  // // collect regions at coarser levels
-  //
-  // // iterate along all coarser levels
-  // for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
-  //   // create empty regions
-  //   RegionsWithCandidates* coarse_regions = new RegionsWithCandidates(dtam_->parameters_,keyframe,i);
-  //   coarse_regions_vec->push_back(coarse_regions);
-  //   // for each candidate of keyframe
-  //   for(Candidate* cand : *(keyframe->candidates_)){
-  //     // if level of candidate is less than current coarse level
-  //     // and if candidate has one min
-  //     if(cand->level_<i && cand->one_min_){
-  //       int level_diff = i-cand->level_;
-  //       // from pixel of candidate find pixel at level i
-  //       int coarse_pxl_x = cand->pixel_.x()/(pow(2,level_diff));
-  //       int coarse_pxl_y = cand->pixel_.y()/(pow(2,level_diff));
-  //       int idx = coarse_regions->xyToIdx(coarse_pxl_x,coarse_pxl_y);
-  //       // push candidate inside region
-  //       coarse_regions->region_vec_->at(idx)->cands_vec_->push_back(cand);
-  //       // save coarse region inside candidate
-  //       cand->regions_coarse_->push_back(coarse_regions->region_vec_->at(idx));
-  //     }
-  //   }
-  // }
+void Tracker::collectCandidatesInCoarseRegions(){
+
+  CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->frame_current_);
+
+  // iterate along all coarser levels
+  for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
+
+    RegionsWithCandidates* coarse_regions = keyframe->regions_coarse_vec_->at(i-1);
+
+    // for each candidate of keyframe
+    for(Candidate* cand : *(keyframe->candidates_)){
+      // if level of candidate is less than current coarse level
+      // and if candidate has one min
+
+
+      if(cand->level_<i){
+
+        int level_diff = i-cand->level_;
+        // from pixel of candidate find pixel at level i
+        int coarse_pxl_x = cand->pixel_.x()/(pow(2,level_diff));
+        int coarse_pxl_y = cand->pixel_.y()/(pow(2,level_diff));
+        int idx = coarse_regions->xyToIdx(coarse_pxl_x,coarse_pxl_y);
+        // push candidate inside region
+        coarse_regions->region_vec_->at(idx)->cands_vec_->push_back(cand);
+
+        // save coarse region inside candidate
+        cand->regions_coarse_->push_back(coarse_regions->region_vec_->at(idx));
+
+      }
+    }
+  }
 }
 
-void Tracker::collectCandidatesAtLowerResolution(CameraForMapping* keyframe){
+void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
 
-  // // create candidates at coarser levels
-  //
-  // // iterate along all coarser levels
-  // for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
-  //   RegionsWithCandidates* coarse_regions = coarse_regions_vec->at(i-1);
-  //   // iterate along all regions
-  //   for ( RegionWithCandidates* reg : *(coarse_regions->region_vec_)){
-  //     // if region is not empty
-  //     if(!reg->cands_vec_->empty()){
-  //
-  //       // intensity
-  //       Eigen::Vector2i pixel {reg->x_, reg->y_};
-  //       Eigen::Vector2f uv;
-  //       keyframe->pixelCoords2uv(pixel,uv, i);
-  //
-  //       pixelIntensity intensity = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel);
-  //       // grad magnitude
-  //       pixelIntensity grad_magnitude = keyframe->wavelet_dec_->getWavLevel(i)->magnitude_img->evalPixel(reg->y_,reg->x_);
-  //
-  //
-  //       // iterate along collected candidates
-  //       float invdepth, invdepth_var;
-  //       float d_over_v_sum = 0, inv_v_sum = 0;
-  //       int num_cands = reg->cands_vec_->size();
-  //       for(Candidate* cand : *(reg->cands_vec_)){
-  //         // update d_over_v_sum
-  //         d_over_v_sum+= cand->invdepth_/cand->invdepth_var_;
-  //         // update inv_v_sum
-  //         inv_v_sum+= 1./cand->invdepth_var_;
-  //
-  //       }
-  //       // compute invdepth as weighted average of invdepths with invdepth certainty as weight
-  //       invdepth = d_over_v_sum/inv_v_sum;
-  //       // compute invdepth variance as average of variances
-  //       invdepth_var = num_cands/inv_v_sum;
-  //
-  //       // create coarse candidate
-  //       Candidate* candidate_coarse = new Candidate(i,pixel, uv, grad_magnitude,intensity,invdepth,invdepth_var);
-  //       // push candidate inside candidates
-  //     }
-  //   }
-  // }
+  // clear coarse candidate vec
+  for(std::vector<Candidate*>* v : *(keyframe->candidates_coarse_)){
+    v->clear();
+  }
+  // create candidates at coarser levels
+
+  // iterate along all coarser levels
+  for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
+
+    RegionsWithCandidates* coarse_regions = keyframe->regions_coarse_vec_->at(i-1);
+
+    // iterate along all regions
+    for ( RegionWithCandidates* reg : *(coarse_regions->region_vec_)){
+      // if region is not empty
+      if(!reg->cands_vec_->empty()){
+
+        // intensity
+        Eigen::Vector2i pixel {reg->x_, reg->y_};
+        Eigen::Vector2f uv;
+        keyframe->pixelCoords2uv(pixel,uv, i);
+
+        pixelIntensity intensity = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel);
+        // grad magnitude
+        pixelIntensity grad_magnitude = keyframe->wavelet_dec_->getWavLevel(i)->magnitude_img->evalPixel(reg->y_,reg->x_);
+
+
+        // iterate along collected candidates
+        float invdepth, invdepth_var;
+        float d_over_v_sum = 0, inv_v_sum = 0;
+        int num_cands = 0;
+        for(Candidate* cand : *(reg->cands_vec_)){
+          if(!cand->one_min_)
+            continue;
+
+          num_cands++;
+          // update d_over_v_sum
+          d_over_v_sum+= cand->invdepth_/cand->invdepth_var_;
+          // update inv_v_sum
+          inv_v_sum+= 1./cand->invdepth_var_;
+
+        }
+        // compute invdepth as weighted average of invdepths with invdepth certainty as weight
+        invdepth = d_over_v_sum/inv_v_sum;
+        // compute invdepth variance as average of variances
+        invdepth_var = num_cands/inv_v_sum;
+
+        // create coarse candidate
+        Candidate* candidate_coarse = new Candidate(i,pixel, uv, grad_magnitude,intensity,invdepth,invdepth_var);
+        // push candidate inside coarse candidates
+        keyframe->candidates_coarse_->at(i-1)->push_back(candidate_coarse);
+      }
+    }
+  }
+}
+
+void Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi ){
+
 }
 
 Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates){
@@ -118,28 +144,59 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
   // get last keyframe
   CameraForMapping* last_keyframe = dtam_->getLastKeyframe();
 
-  // prepare candidates at lower resolutions
-  // prepareCandidatesAtLowerResolutions(last_keyframe);
-
-  if(track_candidates){
-    // for each level of the pyramid
-
-      // while chi square is not converged
-
-        // for each pixel at coarser level containing at least 1 candidate
-
-
-
-    // std::vector<RegionWithProjCandidates*>* last_keyframe->regions_projected_cands_
-
+  // collect coarse candidates
+  for(int keyframe_idx : *(dtam_->keyframe_vector_)){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
+    collectCoarseCandidates(keyframe);
+    // keyframe->showCoarseCandidates(2);
+    // cv::waitKey(0);
   }
 
-  int n_observations = 0 ;
-  // while(true){
-  //   for(int i=0; i<n_observations; i++){
-  //
-  //   }
-  // }
+
+
+  if(track_candidates){
+
+
+
+    // for each coarse level
+    for(int i=dtam_->parameters_->coarsest_level; i>=0; i--){
+
+      Matrix6f H;
+      Vector6f b;
+      float chi;
+
+      int iterations = 0;
+      // while chi square is not converged
+      while(iterations<dtam_->parameters_->max_iterations_ls){
+
+        H.setZero();
+        b.setZero();
+        chi=0;
+
+        // for each active keyframe
+        for(int keyframe_idx : *(dtam_->keyframe_vector_)){
+
+          CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
+
+          std::vector<Candidate*>* v;
+          if(i>0)
+            v= keyframe->candidates_coarse_->at(i-1);
+          else
+            v= keyframe->candidates_;
+          //
+          // // for each candidate
+          // for(Candidate* cand : *v){
+          //   iterationLS( H, b, chi );
+          // }
+
+        }
+
+        iterations++;
+      }
+    }
+
+
+  }
 
   return initial_guess;
 }
