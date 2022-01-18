@@ -173,17 +173,31 @@ class Candidate : public CandidateBase{
 
 
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
-              float grad_magnitude,
-              pixelIntensity dh, pixelIntensity dv, pixelIntensity intensity,
-              std::vector<bound>* bounds, RegionWithCandidates* region ):
+              float grad_magnitude, pixelIntensity intensity,
+              float invdepth, float invdepth_var):
+    CandidateBase( level, pixel, uv),
+    bounds_(nullptr),
+    one_min_(true),
+    invdepth_(invdepth),
+    invdepth_var_(-1),
+    region_sampling_(nullptr),
+    regions_coarse_(nullptr),
+    grad_magnitude_(grad_magnitude),
+    intensity_(intensity)
+    {}
+
+
+    Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
+              float grad_magnitude, pixelIntensity intensity,
+              std::vector<bound>* bounds, RegionWithCandidates* region_sampling ):
     CandidateBase( level, pixel, uv),
     bounds_(bounds),
     one_min_(false),
     invdepth_(-1),
-    region_(region),
+    invdepth_var_(-1),
+    region_sampling_(region_sampling),
+    regions_coarse_(new std::vector<RegionWithCandidates*>),
     grad_magnitude_(grad_magnitude),
-    dh_(dh),
-    dv_(dv),
     intensity_(intensity)
     {};
 
@@ -195,22 +209,20 @@ class Candidate : public CandidateBase{
     bool one_min_;
     float invdepth_;
     float invdepth_var_;
-    RegionWithCandidates* region_;
+    RegionWithCandidates* region_sampling_;
+    std::vector<RegionWithCandidates*>* regions_coarse_;
     const float grad_magnitude_;
-    const pixelIntensity dh_;
-    const pixelIntensity dv_;
-    pixelIntensity dh_robust_;
-    pixelIntensity dv_robust_;
     const pixelIntensity intensity_;
 
     inline float getInvdepthVar() const{
       float d2 = bounds_->at(0).second;
       float d1 = bounds_->at(0).first;
+      // return real variance TODO
       return (1.0/d1)-(1.0/d2);
     }
 
     inline void marginalize() const {
-      std::vector<Candidate*>* v = region_->cands_vec_;
+      std::vector<Candidate*>* v = region_sampling_->cands_vec_;
       v->erase(std::remove(v->begin(), v->end(), this), v->end());
       delete this;
     }
@@ -355,7 +367,7 @@ class CameraForMapping: public Camera{
     std::vector<Candidate*>* candidates_;
     std::vector<ActivePoint*>* active_points_;
     std::vector<ActivePoint*>* marginalized_points_;
-    RegionsWithCandidates* regions_;
+    RegionsWithCandidates* regions_sampling_;
     RegionsWithProjCandidates* regions_projected_cands_;
     int n_candidates_;
     friend class Mapper;
@@ -368,7 +380,7 @@ class CameraForMapping: public Camera{
            candidates_(new std::vector<Candidate*>),
            active_points_(new std::vector<ActivePoint*>),
            marginalized_points_(new std::vector<ActivePoint*>),
-           regions_(new RegionsWithCandidates(parameters, this, parameters->reg_level+1)),
+           regions_sampling_(new RegionsWithCandidates(parameters, this, parameters->reg_level+1)),
            regions_projected_cands_(new RegionsWithProjCandidates(parameters, this, parameters->reg_level+1)),
            n_candidates_(0)
            {};

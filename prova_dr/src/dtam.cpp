@@ -47,7 +47,7 @@ void Dtam::addCamera(int counter){
   // CameraForStudy* env_cam=environment_->camera_vector_->at(counter);
   Camera* env_cam=environment_->camera_vector_->at(counter);
   CameraForMapping* new_cam=new CameraForMapping (env_cam, parameters_);
-  new_cam->regions_->collectCandidates(parameters_->wavelet_levels);
+  new_cam->regions_sampling_->collectCandidates(parameters_->wavelet_levels);
   camera_vector_->push_back(new_cam);
 }
 
@@ -90,7 +90,6 @@ void Dtam::doInitialization(bool initialization_loop){
       keyframe_handler_->addKeyframe(true);
       initializer_->compute_cv_K();
       initializer_->extractCorners();
-      mapper_->updateRotationalInvariantGradients();
       mapper_->selectNewCandidates();
     }
     else{
@@ -102,7 +101,6 @@ void Dtam::doInitialization(bool initialization_loop){
           // ... add last keyframe
           keyframe_handler_->addKeyframe(true);
           // start initializing the model
-          mapper_->updateRotationalInvariantGradients();
           mapper_->trackExistingCandidates();
           mapper_->selectNewCandidates();
           initialization_done=true;
@@ -145,8 +143,6 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     if(frame_current_<=1){
       tracker_->trackCam(true);
       keyframe_handler_->addKeyframe(true);
-      mapper_->updateRotationalInvariantGradients();
-
       if(frame_current_==1){
         mapper_->trackExistingCandidates();
         cand_tracked_.notify_all();
@@ -160,7 +156,6 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     tracker_->trackCam(take_gt_poses,track_candidates);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
-      mapper_->updateRotationalInvariantGradients();
       // bundle_adj_->projectAndMarginalizeActivePoints();
       mapper_->trackExistingCandidates();
       cand_tracked_.notify_all();
@@ -345,7 +340,7 @@ void Dtam::test_mapping(){
   // camera_vector_->at(7)->showProjCandidates_2(2);
   camera_vector_->at(5)->showProjCandidates_2(2);
   // camera_vector_->at(1)->showProjCandidates_2(2);
-  // camera_vector_->at(keyframe_vector_->back())->regions_->region_vec_->at(1)->showRegion(2);
+  // camera_vector_->at(keyframe_vector_->back())->regions_sampling_->region_vec_->at(1)->showRegion(2);
 
   makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 

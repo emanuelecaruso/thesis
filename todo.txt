@@ -26,3 +26,7 @@
 - sample also wrt 2nd derivative
 
 - add magnitude of d_right - d_left
+
+- return real variance TODO (camera.h)
+
+- regions projected candidates -> vector projected candidates ?

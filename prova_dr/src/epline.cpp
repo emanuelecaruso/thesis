@@ -91,10 +91,6 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
   pixelIntensity intensity_r = candidate->intensity_;
   float magnitude_r = candidate->grad_magnitude_;
-  pixelIntensity dh_rob_r = candidate->dh_robust_;
-  pixelIntensity dv_rob_r = candidate->dv_robust_;
-  pixelIntensity dh_r = candidate->dh_;
-  pixelIntensity dv_r = candidate->dv_;
 
   // cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(candidate->pixel_, magnitude_m);
 
@@ -109,10 +105,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
     pixelIntensity intensity_m;
     float magnitude_m;
-    pixelIntensity dh_rob_m;
-    pixelIntensity dv_rob_m;
-    pixelIntensity dh_m;
-    pixelIntensity dv_m;
+
 
     // check if pixel is within the image
     if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(pixel, magnitude_m))
@@ -137,12 +130,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
 
       // get cost
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dh_robust->evalPixel(pixel, dh_rob_m);
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dv_robust->evalPixel(pixel, dv_rob_m);
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dh->evalPixel(pixel, dh_m);
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->dv->evalPixel(pixel, dv_m);
       cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, intensity_m);
-
 
       // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, intensity_r,intensity_m );
       float cost = getCostMagn(magnitude_r, magnitude_m, intensity_r, intensity_m);

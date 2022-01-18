@@ -90,6 +90,15 @@ class Image{
       return new_img;
     }
 
+    inline T evalPixel(const Eigen::Vector2i& pixel_coords) const{
+      T color;
+      if (pixel_coords.y()>=0 && pixel_coords.y()<image_.rows && pixel_coords.x()>=0 && pixel_coords.x()<image_.cols)
+      {
+        color = image_.template at<T>(pixel_coords.y(),pixel_coords.x());
+      }
+      return color;
+    }
+
     inline T evalPixel(const int row, const int col) const{
       T color;
       if (row>=0 && row<image_.rows && col>=0 && col<image_.cols)
@@ -158,50 +167,6 @@ class Image{
       return out;
     }
 
-    //
-    // inline Image* filter3ChannImg(cv::Mat_<float> kernel,
-    //                                 const std::string& name) const{
-    //
-    //   Image< T >* img_filtered =new Image< T >(name);
-    //
-    //   std::vector<cv::Mat> channels_o(3);
-    //   std::vector<cv::Mat> channels_i(3);
-    //
-    //   split(image_, channels_i);
-    //
-    //   filter2D(channels_i[0], channels_o[0], colorRGB_CODE, kernel);
-    //   filter2D(channels_i[1], channels_o[1], colorRGB_CODE, kernel);
-    //   filter2D(channels_i[2], channels_o[2], colorRGB_CODE, kernel);
-    //
-    //   /// Merge the three channels
-    //   merge(channels_o, img_filtered->image_);
-    //
-    //   return img_filtered;
-    // }
-    //
-    // inline int thresholdHard(float threshold) {
-    //   int cols=image_.cols;
-    //   int rows=image_.rows;
-    //
-    //   int n_pixels_kept=0;
-    //
-    //   for (int row=0;row<rows;row++)
-    //   {
-    //       for (int col=0; col<cols;col++)
-    //       {
-    //           colorRGB clr ;
-    //           evalPixel(row,col,clr);
-    //
-    //           float norm=l1Norm(clr);
-    //           if (norm<threshold){
-    //             setPixel(row,col,black);
-    //           }
-    //           else
-    //             n_pixels_kept++;
-    //       }
-    //   }
-    //   return n_pixels_kept;
-    // }
 
     inline Image< pixelIntensity>* compute_sobel_x(const std::string& name) const{
       Image<  pixelIntensity >* img_sobel_x=new Image< pixelIntensity >(name);

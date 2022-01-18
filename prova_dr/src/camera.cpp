@@ -262,8 +262,6 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
         int x_curr=x_ref+x_offs;
 
         float magnitude = wvlt_lvl->magnitude_img->evalPixel(y_curr,x_curr);
-        pixelIntensity dh = wvlt_lvl->dh->evalPixel(y_curr,x_curr);
-        pixelIntensity dv = wvlt_lvl->dv->evalPixel(y_curr,x_curr);
         pixelIntensity c = wvlt_lvl->c->evalPixel(y_curr,x_curr);
 
         Eigen::Vector2i pixel_coords{x_curr,y_curr};
@@ -279,7 +277,7 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
           std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
 
           Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,magnitude,
-            dh, dv, c, bounds, this );
+                    c, bounds, this );
 
           // // add children
           // for(Candidate* cand : *cands_vec_){
@@ -344,7 +342,7 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
 void CameraForMapping::selectNewCandidates(int max_num_candidates){
   int idx=0;
   float alpha=1;
-  std::vector<RegionWithCandidates*>* region_vec = regions_->region_vec_;
+  std::vector<RegionWithCandidates*>* region_vec = regions_sampling_->region_vec_;
 
   while(n_candidates_<max_num_candidates){
     if(!region_vec->empty()){

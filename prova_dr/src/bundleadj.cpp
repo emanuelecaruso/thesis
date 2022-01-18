@@ -32,8 +32,8 @@ void BundleAdj::activateCandidate(CandidateProjected* cand_proj){
   // remove candidate from region of candidates
 
   const Candidate* cand = cand_proj->cand_;
-  std::vector<Candidate*>* cands_vec = cand->region_->cands_vec_;
-  CameraForMapping* cam = cand->region_->cam_;
+  std::vector<Candidate*>* cands_vec = cand->region_sampling_->cands_vec_;
+  CameraForMapping* cam = cand->region_sampling_->cam_;
   cands_vec->erase(remove(cands_vec->begin(), cands_vec->end(), cand));
   cam->candidates_->erase(remove(cam->candidates_->begin(), cam->candidates_->end(), cand));
 
