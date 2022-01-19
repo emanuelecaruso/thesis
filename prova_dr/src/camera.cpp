@@ -102,16 +102,22 @@ void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_co
 uv2pixelCoords(uv, pixel_coords, -1);
 }
 
-
-void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const {
+void Camera::pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe) const {
 
   Eigen::Vector3f p_proj;
   Eigen::Vector2f product = uv * depth;
   p_proj.x() = product.x();
   p_proj.y() = product.y();
   p_proj.z() = depth;
-  Eigen::Vector3f p_cam = (*Kinv_)*p_proj;
-  p = *frame_camera_wrt_world_*p_cam;
+  p_incamframe = (*Kinv_)*p_proj;
+
+}
+
+void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const {
+
+  Eigen::Vector3f p_incamframe;
+  pointAtDepthInCamFrame( uv, depth, p_incamframe);
+  p = *frame_camera_wrt_world_*p_incamframe;
 
 }
 
@@ -139,6 +145,19 @@ bool Camera::projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv ) const 
   Eigen::Vector3f p_cam = *frame_world_wrt_camera_*p;
 
   Eigen::Vector3f p_proj = (*K_)*p_cam;
+
+  uv = p_proj.head<2>()*(1./p_proj.z());
+
+  // return wether the projected point is in front or behind the camera
+  if (p_proj.z()<cam_parameters_->lens)
+    return false;
+
+  return true;
+}
+
+bool Camera::projectPointInCamFrame(const Eigen::Vector3f& p_incamframe, Eigen::Vector2f& uv ) const {
+
+  Eigen::Vector3f p_proj = (*K_)*p_incamframe;
 
   uv = p_proj.head<2>()*(1./p_proj.z());
 
@@ -276,7 +295,7 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
           bound bound_(min_depth,max_depth);
           std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
 
-          Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,magnitude,
+          Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,cam_,magnitude,
                     c, bounds, this );
 
           // // add children

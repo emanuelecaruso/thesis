@@ -29,7 +29,7 @@ void Tracker::trackLS(bool track_candidates){
   Eigen::Isometry3f final_guess = doLS(initial_guess, track_candidates);
 
   // final guess = curr_T_last -> pose = w_T_last * last_T_curr
-  Eigen::Isometry3f frame_camera_wrt_world_ = (*last_cam->frame_camera_wrt_world_)*final_guess.inverse();
+  Eigen::Isometry3f frame_camera_wrt_world_ = final_guess.inverse();
 
   curr_cam->assignPose(frame_camera_wrt_world_);
 
@@ -38,8 +38,7 @@ void Tracker::trackLS(bool track_candidates){
   sharedCoutDebug("   - Frame tracked, time: "+ std::to_string(deltaTime)+" ms");
 
   // Camera* cam_curr_gt = dtam_->environment_->camera_vector_->at(dtam_->frame_current_);
-  // Camera* cam_lastkf_gt = dtam_->environment_->camera_vector_->at(dtam_->keyframe_vector_->back());
-  // Eigen::Isometry3f gt = *(cam_curr_gt->frame_world_wrt_camera_)*(*(cam_lastkf_gt->frame_camera_wrt_world_));
+  // Eigen::Isometry3f gt = *(cam_curr_gt->frame_world_wrt_camera_);
   // std::cout << gt.translation() << "\n and \n " << initial_guess.translation() << std::endl;
 
 
@@ -50,7 +49,7 @@ void Tracker::collectCandidatesInCoarseRegions(){
   CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->frame_current_);
 
   // iterate along all coarser levels
-  for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
+  for(int i=1; i<=dtam_->parameters_->coarsest_level; i++){
 
     RegionsWithCandidates* coarse_regions = keyframe->regions_coarse_vec_->at(i-1);
 
@@ -76,18 +75,21 @@ void Tracker::collectCandidatesInCoarseRegions(){
       }
     }
   }
+
 }
 
 void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
 
   // clear coarse candidate vec
   for(std::vector<Candidate*>* v : *(keyframe->candidates_coarse_)){
+    for (Candidate* cand : *v)
+      delete cand;
     v->clear();
   }
   // create candidates at coarser levels
 
   // iterate along all coarser levels
-  for(int i=1; i<dtam_->parameters_->coarsest_level; i++){
+  for(int i=1; i<=dtam_->parameters_->coarsest_level; i++){
 
     RegionsWithCandidates* coarse_regions = keyframe->regions_coarse_vec_->at(i-1);
 
@@ -123,11 +125,13 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
         }
         // compute invdepth as weighted average of invdepths with invdepth certainty as weight
         invdepth = d_over_v_sum/inv_v_sum;
+        Eigen::Vector3f* p_incamframe = new Eigen::Vector3f ;
+        keyframe->pointAtDepthInCamFrame(uv,1.0/invdepth,*p_incamframe);
         // compute invdepth variance as average of variances
         invdepth_var = num_cands/inv_v_sum;
 
         // create coarse candidate
-        Candidate* candidate_coarse = new Candidate(i,pixel, uv, grad_magnitude,intensity,invdepth,invdepth_var);
+        Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe, grad_magnitude,intensity,invdepth,invdepth_var,p_incamframe);
         // push candidate inside coarse candidates
         keyframe->candidates_coarse_->at(i-1)->push_back(candidate_coarse);
       }
@@ -135,14 +139,45 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
   }
 }
 
-void Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi ){
+void Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
 
+  float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
+
+  // for each feature
+  for( int i=0; i<1; i++){
+
+    // variables
+    Eigen::Vector2f uv_newframe;
+    Eigen::Vector2i pixel_newframe;
+    Eigen::Vector3f point_newframe;
+    Eigen::Vector3f* point_candframe = cand->p_incamframe_;
+    Eigen::Isometry3f* w_T_candframe = cand->cam_->frame_camera_wrt_world_;
+
+    // measurement -> pixel value inside the camera in which candidate has been sampled
+    pixelIntensity z = cand->intensity_;
+
+    // observation
+    point_newframe= current_guess*(*w_T_candframe)*(*point_candframe);
+    frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
+    frame_new->uv2pixelCoords(uv_newframe, pixel_newframe);
+    pixelIntensity h_obs = frame_new->image_intensity_->evalPixel(pixel_newframe);
+
+    // error
+    float error = squareNorm(z-h_obs);
+
+    // jacobian
+    Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
+    Eigen::Matrix<float, 1,2> img_grad;
+    // img_grad << 1, 2;
+
+    // squareNormDerivative(error)*img_grad;
+  }
 }
 
 Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates){
 
-  // get last keyframe
-  CameraForMapping* last_keyframe = dtam_->getLastKeyframe();
+  // get new frame
+  CameraForMapping* frame_new = dtam_->getCurrentCamera();
 
   // collect coarse candidates
   for(int keyframe_idx : *(dtam_->keyframe_vector_)){
@@ -156,7 +191,7 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
 
   if(track_candidates){
 
-
+    Eigen::Isometry3f current_guess = initial_guess;
 
     // for each coarse level
     for(int i=dtam_->parameters_->coarsest_level; i>=0; i--){
@@ -179,22 +214,23 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
           CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
 
           std::vector<Candidate*>* v;
-          if(i>0)
+          if(i>0){
             v= keyframe->candidates_coarse_->at(i-1);
+          }
           else
             v= keyframe->candidates_;
-          //
-          // // for each candidate
-          // for(Candidate* cand : *v){
-          //   iterationLS( H, b, chi );
-          // }
+
+          // for each candidate
+          for(Candidate* cand : *v){
+            iterationLS( H, b, chi, cand, frame_new, current_guess );
+          }
 
         }
 
         iterations++;
       }
     }
-
+    std::cout << "ao? " << std::endl;
 
   }
 
@@ -219,14 +255,6 @@ Eigen::Isometry3f Tracker::computeInitialGuess( ){
   return pose_initial_guess;
 }
 
-Eigen::Isometry3f Tracker::accelerationConstantModel(){
-  Eigen::Isometry3f pose_initial_guess;
-
-  std::cout << "ACCELLERATION CONSTANT MODEL IS MISSING !!!" << std::endl;
-
-  return pose_initial_guess;
-}
-
 Eigen::Isometry3f Tracker::velocityConstantModel(){
 
   CameraForMapping* last_cam = dtam_->getLastCamera();
@@ -241,14 +269,14 @@ Eigen::Isometry3f Tracker::velocityConstantModel(){
   Eigen::Isometry3f* w_T_lastkeyframe = lastkeyframe_cam->frame_camera_wrt_world_;
 
   // we assume that the relative pose between last and previous frame
-  // is the same between current and last (tracked) frame (constant velocity model)
+  // is the same between current and last (to track) frame (constant velocity model)
   // so last_T_prev = curr_T_last
 
   // the initial guess is the pose of the last keyframe wrt current camera
   // so iitial_guess = curr_T_lastkeyframe = curr_T_last*last_T_lastkeyframe
-  // so curr_T_lastkeyframe = curr_T_last*last_T_w*w_T_lastkeyframe
-  // since curr_T_last = last_T_prev -> curr_T_lastkeyframe = last_T_prev*last_T_w*w_T_lastkeyframe
-  Eigen::Isometry3f curr_T_lastkeyframe =  (last_T_prev*(*last_T_w))*(*w_T_lastkeyframe);
+  // so curr_T_w = curr_T_last*last_T_w
+  // since curr_T_last = last_T_prev -> curr_T_w = last_T_prev*last_T_w
+  Eigen::Isometry3f curr_T_w =  last_T_prev*(*last_T_w);
 
-  return curr_T_lastkeyframe;
+  return curr_T_w;
 }

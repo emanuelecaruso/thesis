@@ -325,6 +325,36 @@ namespace pr {
     return sub;
   }
 
+  inline float squareNorm(float a){
+    return pow(a,2);
+  }
+
+  inline squareNormDerivative(float a){
+    return 2*a;
+  }
+
+  inline float huberNorm(float a, float b){
+    float huber_norm;
+    if (abs(a)<=b){
+      huber_norm= (pow(a,2))/(2*b);
+    }else{
+      huber_norm= abs(a)-b/2;
+    }
+    return huber_norm;
+  }
+
+  inline huberNormDerivative(float a){
+    float huber_norm_der;
+    if (abs(a)<=b){
+      huber_norm= a/b;
+    }else if (a>0){
+      huber_norm= 1;
+    }else if (a<0){
+      huber_norm= -1;
+    }
+    return huber_norm;
+  }
+
   inline int lowerBound(std::vector<int> const& vec, int value) {
     auto const it = std::lower_bound(vec.begin(), vec.end(), value);
     if (it == vec.end()) { return -1; }

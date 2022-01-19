@@ -94,8 +94,10 @@ class Camera{
     void uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords, int level) const;
     void uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const;
+    void pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe) const;
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const;
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv) const;
+    bool projectPointInCamFrame(const Eigen::Vector3f& p, Eigen::Vector2f& uv) const;
     bool projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv) const;
     bool projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv, float& p_cam_z) const;
 
@@ -173,27 +175,33 @@ class Candidate : public CandidateBase{
 
 
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
+              CameraForMapping* cam,
               float grad_magnitude, pixelIntensity intensity,
-              float invdepth, float invdepth_var):
+              float invdepth, float invdepth_var, Eigen::Vector3f* p_incamframe):
     CandidateBase( level, pixel, uv),
+    cam_(cam),
     bounds_(nullptr),
     one_min_(true),
     invdepth_(invdepth),
+    p_incamframe_(p_incamframe),
     invdepth_var_(-1),
     region_sampling_(nullptr),
     regions_coarse_(nullptr),
     grad_magnitude_(grad_magnitude),
     intensity_(intensity)
-    {}
+    {    }
 
 
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
+              CameraForMapping* cam,
               float grad_magnitude, pixelIntensity intensity,
               std::vector<bound>* bounds, RegionWithCandidates* region_sampling ):
     CandidateBase( level, pixel, uv),
+    cam_(cam),
     bounds_(bounds),
     one_min_(false),
     invdepth_(-1),
+    p_incamframe_(new Eigen::Vector3f),
     invdepth_var_(-1),
     region_sampling_(region_sampling),
     regions_coarse_(new std::vector<RegionWithCandidates*>),
@@ -205,9 +213,11 @@ class Candidate : public CandidateBase{
       delete bounds_;
     };
 
+    const CameraForMapping* cam_;
     std::vector<bound>* bounds_;
     bool one_min_;
     float invdepth_;
+    Eigen::Vector3f* p_incamframe_;
     float invdepth_var_;
     RegionWithCandidates* region_sampling_;
     std::vector<RegionWithCandidates*>* regions_coarse_;
@@ -384,7 +394,7 @@ class CameraForMapping: public Camera{
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
            const Image<pixelIntensity>* image_intensity, Params* parameters):
            Camera( name, cam_parameters, image_intensity),
-           wavelet_dec_(new Wvlt_dec(parameters->coarsest_level,new Image<pixelIntensity>(image_intensity_), this)),
+           wavelet_dec_(new Wvlt_dec(parameters->coarsest_level+1,new Image<pixelIntensity>(image_intensity_), this)),
            candidates_(new std::vector<Candidate*>),
            active_points_(new std::vector<ActivePoint*>),
            marginalized_points_(new std::vector<ActivePoint*>),
@@ -395,7 +405,7 @@ class CameraForMapping: public Camera{
            n_candidates_(0)
            {
              // iterate along all coarser levels
-             for(int i=1; i<parameters->coarsest_level; i++){
+             for(int i=1; i<=parameters->coarsest_level; i++){
                // create empty regions
                RegionsWithCandidates* coarse_regions = new RegionsWithCandidates(parameters,this,i);
                regions_coarse_vec_->push_back(coarse_regions);
