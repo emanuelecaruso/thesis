@@ -20,7 +20,7 @@ static float grad_threshold_=0.1;
 static float grad_perc_threshold_=0.75;
 // static float cost_threshold_=0.7;
 static float cost_threshold_=0.4;
-static int num_candidates_=4000;
+static int num_candidates_=2000;
 static int max_num_active_points_=num_candidates_;
 static int num_active_keyframes_=5;
 static int max_num_mins_ = 5;
@@ -28,7 +28,7 @@ static float max_invdepth_var_=0.05;
 static int end_frame_=5;
 static int fps_=30;
 // tracker parameters
-static int max_iterations_ls_=1000;
+static int max_iterations_ls_=10;
 // initializer parameters
 static int n_corners_ = 1000;
 static float quality_level_ = 0.01;

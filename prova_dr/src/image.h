@@ -202,6 +202,40 @@ class Image{
       return compute_sobel_y("fy_"+name_);
     }
 
+    inline Image< pixelIntensity>* compute_graddiff_x(const std::string& name) const{
+      Image<  pixelIntensity >* img_graddiff_x=new Image< pixelIntensity >(name);
+
+      cv::Mat_<float> kernel(3,3);
+      kernel <<  1,  -2,  1,
+                 2,  -4,  2,
+                 1,  -2,  1;
+
+      filter2D(image_, img_graddiff_x->image_, pixelIntensity_CODE, kernel);
+
+      return img_graddiff_x;
+    }
+
+    inline Image<pixelIntensity>* compute_graddiff_y(const std::string& name) const{
+      Image< pixelIntensity >* img_graddiff_y =new Image< pixelIntensity >(name);
+
+      cv::Mat_<float> kernel(3,3);
+      kernel <<    1,  2,  1,
+                  -2, -4, -2,
+                   1,  2,  1;
+
+      filter2D(image_, img_graddiff_y->image_, pixelIntensity_CODE, kernel);
+
+      return img_graddiff_y;
+    }
+
+    inline Image< pixelIntensity>* compute_graddiff_x() const{
+      return compute_graddiff_x("graddiff_x_"+name_);
+    }
+
+    inline Image<pixelIntensity>* compute_graddiff_y() const{
+      return compute_graddiff_y("graddiff_y_"+name_);
+    }
+
     inline Image<pixelIntensity>* squared() const{
       Image< pixelIntensity >* squared =new Image< pixelIntensity >("^2_"+name_);
 

@@ -93,5 +93,4 @@ class Dtam{
 
     bool makeJsonForCands(const std::string& path_name, CameraForMapping* camera);
 
-    void testRotationalInvariance();
 };

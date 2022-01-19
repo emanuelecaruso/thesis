@@ -249,53 +249,6 @@ void Dtam::updateCamerasFromEnvironment(){
 
 }
 
-void Dtam::testRotationalInvariance(){
-
-  CameraForMapping* cam0=camera_vector_->at(0);
-  for( int i=1; i<camera_vector_->size(); i++)
-  {
-    CameraForMapping* cam=camera_vector_->at(i);
-
-    Image<pixelIntensity>* dv_ = new Image<pixelIntensity>("dh");
-    Image<pixelIntensity>* dh_ = new Image<pixelIntensity>("dv");
-    Image<pixelIntensity>* dv_inv = new Image<pixelIntensity>("dh inv");
-    Image<pixelIntensity>* dh_inv = new Image<pixelIntensity>("dv inv");
-    dv_->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dv->image_.clone();
-    dh_->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dh->image_.clone();
-    dv_inv->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dv_robust->image_.clone();
-    dh_inv->image_=cam->wavelet_dec_->vector_wavelets->at(0)->dh_robust->image_.clone();
-
-    Eigen::Isometry3f T = (*(cam->frame_camera_wrt_world_));
-    Eigen::Matrix3f R=T.linear();
-
-    // float rollAngle_= -atan2(-R(0,1),R(0,0));
-    // float rollAngleCam0= -atan2(-Rcam0(0,1),Rcam0(0,0));
-    float rollAngle= -atan2(R(1,0),R(1,1));
-
-    float c=cos(rollAngle);
-    float s=sin(rollAngle);
-
-    cv::multiply(dh_->image_, cv::Scalar(1./8.,1./8.,1./8.), dh_->image_);
-    cv::multiply(dv_->image_, cv::Scalar(1./8.,1./8.,1./8.), dv_->image_);
-    cv::add(dh_->image_, cv::Scalar(0.5,0.5,0.5), dh_->image_);
-    cv::add(dv_->image_, cv::Scalar(0.5,0.5,0.5), dv_->image_);
-    dv_->show(2,"dv");
-    dh_->show(2,"dh");
-
-
-    cv::multiply(dh_inv->image_, cv::Scalar(1./8.,1./8.,1./8.), dh_inv->image_);
-    cv::multiply(dv_inv->image_, cv::Scalar(1./8.,1./8.,1./8.), dv_inv->image_);
-    cv::add(dh_inv->image_, cv::Scalar(0.5,0.5,0.5), dh_inv->image_);
-    cv::add(dv_inv->image_, cv::Scalar(0.5,0.5,0.5), dv_inv->image_);
-
-    dh_inv->show(2,"dh_inv");
-    dv_inv->show(2,"dv_inv");
-
-    // cam->wavelet_dec_->vector_wavelets->at(0)->magnitude_img->show();
-    cv::waitKey(0);
-  }
-  cv::waitKey(0);
-}
 
 void Dtam::eval_initializer(){
 

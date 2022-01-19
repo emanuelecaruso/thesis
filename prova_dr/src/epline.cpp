@@ -92,7 +92,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
   pixelIntensity intensity_r = candidate->intensity_;
   float magnitude_r = candidate->grad_magnitude_;
 
-  // cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(candidate->pixel_, magnitude_m);
+  // cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(candidate->pixel_, magnitude_m);
 
   // for(Eigen::Vector2f uv : *uvs){
 
@@ -108,7 +108,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
 
     // check if pixel is within the image
-    if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magnitude_img->evalPixel(pixel, magnitude_m))
+    if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m))
     {
 
       // hard thresholding on magnitude
@@ -226,7 +226,7 @@ Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int le
     if (level==-1)
       image_intensity_new = cam->image_intensity_->returnColoredImgFromIntensityImg("epipolar") ;
     else
-      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->magnitude_img->returnColoredImgFromIntensityImg("epipolar") ;
+      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->magn_cd->returnColoredImgFromIntensityImg("epipolar") ;
 
     drawEpipolar(image_intensity_new, green, level);
 

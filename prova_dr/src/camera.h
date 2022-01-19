@@ -177,13 +177,15 @@ class Candidate : public CandidateBase{
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
               CameraForMapping* cam,
               float grad_magnitude, pixelIntensity intensity,
-              float invdepth, float invdepth_var, Eigen::Vector3f* p_incamframe):
+              float intensity_dx, float intensity_dy,
+              float grad_magnitude_dx, float grad_magnitude_dy,
+              float invdepth, float invdepth_var, Eigen::Vector3f* p):
     CandidateBase( level, pixel, uv),
     cam_(cam),
     bounds_(nullptr),
     one_min_(true),
     invdepth_(invdepth),
-    p_incamframe_(p_incamframe),
+    p_(p),
     invdepth_var_(-1),
     region_sampling_(nullptr),
     regions_coarse_(nullptr),
@@ -195,13 +197,15 @@ class Candidate : public CandidateBase{
     Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
               CameraForMapping* cam,
               float grad_magnitude, pixelIntensity intensity,
+              float intensity_dx, float intensity_dy,
+              float grad_magnitude_dx, float grad_magnitude_dy,
               std::vector<bound>* bounds, RegionWithCandidates* region_sampling ):
     CandidateBase( level, pixel, uv),
     cam_(cam),
     bounds_(bounds),
     one_min_(false),
     invdepth_(-1),
-    p_incamframe_(new Eigen::Vector3f),
+    p_(new Eigen::Vector3f),
     invdepth_var_(-1),
     region_sampling_(region_sampling),
     regions_coarse_(new std::vector<RegionWithCandidates*>),
@@ -217,7 +221,7 @@ class Candidate : public CandidateBase{
     std::vector<bound>* bounds_;
     bool one_min_;
     float invdepth_;
-    Eigen::Vector3f* p_incamframe_;
+    Eigen::Vector3f* p_;
     float invdepth_var_;
     RegionWithCandidates* region_sampling_;
     std::vector<RegionWithCandidates*>* regions_coarse_;

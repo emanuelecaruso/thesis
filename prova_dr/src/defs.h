@@ -329,7 +329,7 @@ namespace pr {
     return pow(a,2);
   }
 
-  inline squareNormDerivative(float a){
+  inline float squareNormDerivative(float a){
     return 2*a;
   }
 
@@ -343,16 +343,16 @@ namespace pr {
     return huber_norm;
   }
 
-  inline huberNormDerivative(float a){
+  inline float huberNormDerivative(float a, float b){
     float huber_norm_der;
     if (abs(a)<=b){
-      huber_norm= a/b;
+      huber_norm_der= a/b;
     }else if (a>0){
-      huber_norm= 1;
+      huber_norm_der= 1;
     }else if (a<0){
-      huber_norm= -1;
+      huber_norm_der= -1;
     }
-    return huber_norm;
+    return huber_norm_der;
   }
 
   inline int lowerBound(std::vector<int> const& vec, int value) {

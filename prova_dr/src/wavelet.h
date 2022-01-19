@@ -11,26 +11,26 @@ class Wvlt_lvl{
     const Wvlt_dec* wvlt_dec;
 
     Image<pixelIntensity>* c;
-    Image<pixelIntensity>* dh;
-    Image<pixelIntensity>* dv;
-    Image<pixelIntensity>* dh_robust;
-    Image<pixelIntensity>* dv_robust;
-    Image<float>* magnitude_img;
+    Image<pixelIntensity>* c_dx;
+    Image<pixelIntensity>* c_dy;
+    Image<float>* magn_cd;
+    Image<float>* magn_cd_dx;
+    Image<float>* magn_cd_dy;
 
     // clone
     Wvlt_lvl(Image<pixelIntensity>* c_,
-            Image<pixelIntensity>* dh_, Image<pixelIntensity>* dv_,
-            Image<pixelIntensity>* dh_robust_, Image<pixelIntensity>* dv_robust_,
-            Image<float>* magnitude_img_,
+            Image<pixelIntensity>* c_dx_, Image<pixelIntensity>* c_dy_,
+            Image<float>* magn_cd_,
+            Image<pixelIntensity>* magn_cd_dx, Image<pixelIntensity>* magn_cd_dy,
            const int level_, const Wvlt_dec* wvlt_dec_):
               level(level_),
               wvlt_dec(wvlt_dec_),
               c(c_->clone()),
-              dh(dh_->clone()),
-              dv(dv_->clone()),
-              dh_robust(dh_robust_->clone()),
-              dv_robust(dv_robust_->clone()),
-              magnitude_img(magnitude_img_->clone())
+              c_dx(c_dx_->clone()),
+              c_dy(c_dy_->clone()),
+              magn_cd_dx(magn_cd_dx->clone()),
+              magn_cd_dy(magn_cd_dy->clone()),
+              magn_cd(magn_cd_->clone())
     {  };
 
     // create first level
@@ -48,13 +48,11 @@ class Wvlt_lvl{
       WaveletDecHaar( wvlt_lvl_previous->c);
     };
     inline Wvlt_lvl* clone(){
-      return new Wvlt_lvl(c,dh,dv,dh_robust,dv_robust, magnitude_img, level, wvlt_dec);};
-
-    Image<float>* compute_robust_sobels();
+      return new Wvlt_lvl(c,c_dx,c_dy, magn_cd, magn_cd_dx, magn_cd_dy, level, wvlt_dec);};
 
   private:
     void WaveletDecHaar(const Image<pixelIntensity>* img);
-    Image<float>* getMagnitude();
+    Image<float>* getMagnitude(Image<pixelIntensity>* dx, Image<pixelIntensity>* dy);
     // void WaveletDecHaar(Wvlt_lvl* wvlt_lvl_previous);
 
 };

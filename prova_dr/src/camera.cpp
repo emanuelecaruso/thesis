@@ -280,8 +280,12 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
         int y_curr=y_ref+y_offs;
         int x_curr=x_ref+x_offs;
 
-        float magnitude = wvlt_lvl->magnitude_img->evalPixel(y_curr,x_curr);
+        float magnitude = wvlt_lvl->magn_cd->evalPixel(y_curr,x_curr);
         pixelIntensity c = wvlt_lvl->c->evalPixel(y_curr,x_curr);
+        pixelIntensity c_dx = wvlt_lvl->c_dx->evalPixel(y_curr,x_curr);
+        pixelIntensity c_dy = wvlt_lvl->c_dy->evalPixel(y_curr,x_curr);
+        pixelIntensity magn_cd_dx = wvlt_lvl->magn_cd_dx->evalPixel(y_curr,x_curr);
+        pixelIntensity magn_cd_dy = wvlt_lvl->magn_cd_dy->evalPixel(y_curr,x_curr);
 
         Eigen::Vector2i pixel_coords{x_curr,y_curr};
         Eigen::Vector2f uv;
@@ -296,7 +300,7 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
           std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
 
           Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,cam_,magnitude,
-                    c, bounds, this );
+                    c, c_dx, c_dy, magn_cd_dx, magn_cd_dy, bounds, this );
 
           // // add children
           // for(Candidate* cand : *cands_vec_){

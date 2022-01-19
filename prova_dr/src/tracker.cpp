@@ -98,14 +98,16 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
       // if region is not empty
       if(!reg->cands_vec_->empty()){
 
-        // intensity
         Eigen::Vector2i pixel {reg->x_, reg->y_};
         Eigen::Vector2f uv;
         keyframe->pixelCoords2uv(pixel,uv, i);
 
-        pixelIntensity intensity = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel);
-        // grad magnitude
-        pixelIntensity grad_magnitude = keyframe->wavelet_dec_->getWavLevel(i)->magnitude_img->evalPixel(reg->y_,reg->x_);
+        pixelIntensity c = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel);
+        pixelIntensity c_dx = keyframe->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(pixel);
+        pixelIntensity c_dy = keyframe->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(pixel);
+        pixelIntensity magn_cd = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd->evalPixel(reg->y_,reg->x_);
+        pixelIntensity magn_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dx->evalPixel(reg->y_,reg->x_);
+        pixelIntensity magn_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dy->evalPixel(reg->y_,reg->x_);
 
 
         // iterate along collected candidates
@@ -125,13 +127,15 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
         }
         // compute invdepth as weighted average of invdepths with invdepth certainty as weight
         invdepth = d_over_v_sum/inv_v_sum;
-        Eigen::Vector3f* p_incamframe = new Eigen::Vector3f ;
-        keyframe->pointAtDepthInCamFrame(uv,1.0/invdepth,*p_incamframe);
+        Eigen::Vector3f* p = new Eigen::Vector3f ;
+        keyframe->pointAtDepth(uv,1.0/invdepth,*p);
         // compute invdepth variance as average of variances
         invdepth_var = num_cands/inv_v_sum;
 
         // create coarse candidate
-        Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe, grad_magnitude,intensity,invdepth,invdepth_var,p_incamframe);
+        Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe, magn_cd,c,
+                                                    c_dx, c_dy, magn_cd_dx, magn_cd_dy,
+                                                    invdepth,invdepth_var,p);
         // push candidate inside coarse candidates
         keyframe->candidates_coarse_->at(i-1)->push_back(candidate_coarse);
       }
@@ -142,6 +146,8 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
 void Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
+  Eigen::Matrix3f K = *(frame_new->K_);
+  Eigen::Matrix3f Kinv = *(frame_new->Kinv_);
 
   // for each feature
   for( int i=0; i<1; i++){
@@ -150,27 +156,42 @@ void Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
     Eigen::Vector2f uv_newframe;
     Eigen::Vector2i pixel_newframe;
     Eigen::Vector3f point_newframe;
-    Eigen::Vector3f* point_candframe = cand->p_incamframe_;
+    Eigen::Vector3f* point = cand->p_;
     Eigen::Isometry3f* w_T_candframe = cand->cam_->frame_camera_wrt_world_;
 
     // measurement -> pixel value inside the camera in which candidate has been sampled
     pixelIntensity z = cand->intensity_;
 
-    // observation
-    point_newframe= current_guess*(*w_T_candframe)*(*point_candframe);
+    // measurement predicted
+    point_newframe= current_guess*(*point);
     frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
-    frame_new->uv2pixelCoords(uv_newframe, pixel_newframe);
-    pixelIntensity h_obs = frame_new->image_intensity_->evalPixel(pixel_newframe);
+    frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, cand->level_);
+    pixelIntensity z_hat = frame_new->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel_newframe);
 
     // error
-    float error = squareNorm(z-h_obs);
+    float error = squareNorm(z-z_hat);
 
     // jacobian
     Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
-    Eigen::Matrix<float, 1,2> img_grad;
-    // img_grad << 1, 2;
+    Eigen::Matrix<float, 1,2> img_jacobian;
+    Eigen::Matrix<float, 2,3> proj_jacobian;
+    Eigen::Matrix<float, 3,6> state_jacobian;
 
-    // squareNormDerivative(error)*img_grad;
+    Eigen::Matrix<float, 1,3> intermediate_jacobian;
+
+    img_jacobian << frame_new->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(pixel_newframe);
+    proj_jacobian << 1./point->z(), 0, -point->x()/pow(point->z(),2),
+                     0, 1./point->z(), -point->y()/pow(point->z(),2);
+    state_jacobian << 1, 0, 0,  0          ,  point->z() , -point->y(),
+                      0, 1, 0, -point->z() ,  0          ,  point->x(),
+                      0, 0, 1,  point->y() , -point->x() ,  0         ;
+
+    intermediate_jacobian = ((img_jacobian*proj_jacobian)*K);
+    // float normalizer = pixels_meter_ratio*((intermediate_jacobian*current_guess.linear())*Kinv)*quellarobali
+
+    float coeff = squareNormDerivative(error)*pixels_meter_ratio;
+
+    J=coeff*(intermediate_jacobian*state_jacobian);
   }
 }
 
