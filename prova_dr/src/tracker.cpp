@@ -125,20 +125,24 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
           inv_v_sum+= 1./cand->invdepth_var_;
 
         }
-        // compute invdepth as weighted average of invdepths with invdepth certainty as weight
-        invdepth = d_over_v_sum/inv_v_sum;
-        Eigen::Vector3f* p = new Eigen::Vector3f ;
-        keyframe->pointAtDepth(uv,1.0/invdepth,*p);
-        // compute invdepth variance as average of variances
-        invdepth_var = num_cands/inv_v_sum;
+        if (num_cands){
+          // compute invdepth as weighted average of invdepths with invdepth certainty as weight
+          invdepth = d_over_v_sum/inv_v_sum;
+          Eigen::Vector3f* p = new Eigen::Vector3f ;
+          Eigen::Vector3f* p_incamframe = new Eigen::Vector3f ;
+          keyframe->pointAtDepth(uv,1.0/invdepth,*p,*p_incamframe);
+          // compute invdepth variance as average of variances
+          invdepth_var = (float)num_cands/inv_v_sum;
 
-        // create coarse candidate
-        Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe, magn_cd,c,
-                                                    c_dx, c_dy, magn_cd_dx, magn_cd_dy,
-                                                    invdepth,invdepth_var,p);
-        // push candidate inside coarse candidates
-        keyframe->candidates_coarse_->at(i-1)->push_back(candidate_coarse);
+          // create coarse candidate
+          Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe, magn_cd,c,
+                                                      c_dx, c_dy, magn_cd_dx, magn_cd_dy,
+                                                      invdepth,invdepth_var,p,p_incamframe);
+          // push candidate inside coarse candidates
+          keyframe->candidates_coarse_->at(i-1)->push_back(candidate_coarse);
+        }
       }
+
     }
   }
 }
@@ -146,53 +150,80 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
 void Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
+  float gauss_img_intensity_noise = 0.01;// Gaussian image intensity noise
   Eigen::Matrix3f K = *(frame_new->K_);
   Eigen::Matrix3f Kinv = *(frame_new->Kinv_);
+  float weight = 1;
+
+  // variables
+  Eigen::Vector2f uv_newframe;
+  Eigen::Vector2i pixel_newframe;
+  Eigen::Vector3f point_newframe;
+  Eigen::Vector3f* point = cand->p_;
+  Eigen::Vector3f* point_incamframe = cand->p_incamframe_;
+  float invdepth = cand->invdepth_;
+  float invdepth_var = cand->invdepth_var_;
+  float invdepth_der = -1/pow(invdepth,2);
+  Eigen::Isometry3f* w_T_candframe = cand->cam_->frame_camera_wrt_world_;
+
+  point_newframe= current_guess*(*point);
+  frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
+  frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, cand->level_);
+
+  Eigen::Matrix<float, 2,3> proj_jacobian;
+  Eigen::Matrix<float, 3,6> state_jacobian;
+  Eigen::Matrix<float, 3,1> normalizer_jacobian;
+
+  proj_jacobian << 1./point->z(), 0, -point->x()/pow(point->z(),2),
+                   0, 1./point->z(), -point->y()/pow(point->z(),2);
+  state_jacobian << 1, 0, 0,  0          ,  point->z() , -point->y(),
+                    0, 1, 0, -point->z() ,  0          ,  point->x(),
+                    0, 0, 1,  point->y() , -point->x() ,  0         ;
+
+  normalizer_jacobian << point_incamframe->x()*invdepth_der,
+                         point_incamframe->y()*invdepth_der,
+                         invdepth_der;
 
   // for each feature
-  for( int i=0; i<1; i++){
-
-    // variables
-    Eigen::Vector2f uv_newframe;
-    Eigen::Vector2i pixel_newframe;
-    Eigen::Vector3f point_newframe;
-    Eigen::Vector3f* point = cand->p_;
-    Eigen::Isometry3f* w_T_candframe = cand->cam_->frame_camera_wrt_world_;
+  // for( int i=0; i<1; i++){
 
     // measurement -> pixel value inside the camera in which candidate has been sampled
     pixelIntensity z = cand->intensity_;
-
     // measurement predicted
-    point_newframe= current_guess*(*point);
-    frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
-    frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, cand->level_);
-    pixelIntensity z_hat = frame_new->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel_newframe);
+    pixelIntensity z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->c->evalPixel(pixel_newframe);
 
     // error
     float error = squareNorm(z-z_hat);
 
     // jacobian
     Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
+    Eigen::Matrix<float, 6, 1> Jtransp; // 1 row, 6 cols
     Eigen::Matrix<float, 1,2> img_jacobian;
-    Eigen::Matrix<float, 2,3> proj_jacobian;
-    Eigen::Matrix<float, 3,6> state_jacobian;
 
     Eigen::Matrix<float, 1,3> intermediate_jacobian;
 
-    img_jacobian << frame_new->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(pixel_newframe);
-    proj_jacobian << 1./point->z(), 0, -point->x()/pow(point->z(),2),
-                     0, 1./point->z(), -point->y()/pow(point->z(),2);
-    state_jacobian << 1, 0, 0,  0          ,  point->z() , -point->y(),
-                      0, 1, 0, -point->z() ,  0          ,  point->x(),
-                      0, 0, 1,  point->y() , -point->x() ,  0         ;
+    img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dy->evalPixel(pixel_newframe);
 
     intermediate_jacobian = ((img_jacobian*proj_jacobian)*K);
-    // float normalizer = pixels_meter_ratio*((intermediate_jacobian*current_guess.linear())*Kinv)*quellarobali
 
-    float coeff = squareNormDerivative(error)*pixels_meter_ratio;
+    // BEFORE SIMPLIFYING PIXELS METERS RATIO
+    // float normalizer = pixels_meter_ratio*((intermediate_jacobian*current_guess.linear())*Kinv)*normalizer_jacobian;
+    // float coeff = squareNormDerivative(error)*pixels_meter_ratio/normalizer;
 
+    float der_residual_wrt_invdepth = ((intermediate_jacobian*current_guess.linear())*Kinv)*normalizer_jacobian;
+    float normalizer = gauss_img_intensity_noise+pow(der_residual_wrt_invdepth,2)*invdepth_var;
+    float coeff = squareNormDerivative(error)/normalizer;
+
+    // std::cout << ", invdepth " << invdepth << ", invdepthvar " << invdepth_var << ", level " << cand->level_ << std::endl;
+    // std::cout << ", invdepth " << invdepth << ", invdepthvar " << invdepth_var << ", level " << cand->level_ << ", uv " << cand->uv_ << ", pixel " << cand->pixel_ << std::endl;
     J=coeff*(intermediate_jacobian*state_jacobian);
-  }
+    Jtransp = J.transpose();
+    // update
+    H+=Jtransp*weight*J;
+    b+=Jtransp*weight*error;
+    chi+=error;
+
+  // }
 }
 
 Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates){
@@ -214,15 +245,17 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
 
     Eigen::Isometry3f current_guess = initial_guess;
 
+    Matrix6f H;
+    Vector6f b;
+    float chi;
+
     // for each coarse level
     for(int i=dtam_->parameters_->coarsest_level; i>=0; i--){
 
-      Matrix6f H;
-      Vector6f b;
-      float chi;
+      std::cout << "level " << i << std::endl;
 
       int iterations = 0;
-      // while chi square is not converged
+
       while(iterations<dtam_->parameters_->max_iterations_ls){
 
         H.setZero();
@@ -230,7 +263,10 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
         chi=0;
 
         // for each active keyframe
-        for(int keyframe_idx : *(dtam_->keyframe_vector_)){
+        for(int j=0; j<dtam_->keyframe_vector_->size()-1; j++){
+
+          int keyframe_idx = dtam_->keyframe_vector_->at(j);
+          std::cout << "keyframe " << keyframe_idx << std::endl;
 
           CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
 
@@ -243,13 +279,22 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
 
           // for each candidate
           for(Candidate* cand : *v){
-            iterationLS( H, b, chi, cand, frame_new, current_guess );
+            if (cand->one_min_)
+              iterationLS( H, b, chi, cand, frame_new, current_guess );
           }
 
         }
+        std::cout << "chi " << chi << std::endl;
+        // std::cout << "H " << H << std::endl;
+        Vector6f dx=-H.inverse()*b;
+        std::cout << "b " << b << std::endl;
 
+        current_guess=v2t(dx)*current_guess;
         iterations++;
       }
+      // update initial guess for next level
+      // std::cout << "H: " << H << std::endl;
+       break;
     }
     std::cout << "ao? " << std::endl;
 

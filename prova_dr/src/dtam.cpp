@@ -158,6 +158,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     // sharedCoutDebug("Front end part of frame: "+std::to_string(frame_current_)+" ...");
 
     tracker_->trackCam(take_gt_poses,track_candidates);
+    break;
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
       // bundle_adj_->projectAndMarginalizeActivePoints();

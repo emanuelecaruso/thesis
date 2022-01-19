@@ -61,46 +61,46 @@ namespace pr {
   }
 
 
-  inline Eigen::Isometry3f v2t(const Vector6f& t){
-    Eigen::Isometry3f T;
-    T.setIdentity();
-    T.translation()=t.head<3>();
-    float w=t.block<3,1>(3,0).squaredNorm();
-    if (w<1) {
-      w=sqrt(1-w);
-      T.linear()=Eigen::Quaternionf(w, t(3), t(4), t(5)).toRotationMatrix();
-    } else {
-      T.linear().setIdentity();
-    }
-    return T;
-  }
-
-  inline Vector6f t2v(const Eigen::Isometry3f& t){
-    Vector6f v;
-    v.head<3>()=t.translation();
-    Eigen::Quaternionf q(t.linear());
-    v.block<3,1>(3,0)=q.matrix().block<3,1>(1,0);
-    if (q.w()<0)
-      v.block<3,1>(3,0) *= -1.0f;
-    return v;
-  }
-
-  inline Eigen::Isometry2f v2t(const Eigen::Vector3f& t){
-    Eigen::Isometry2f T;
-    T.setIdentity();
-    T.translation()=t.head<2>();
-    float c = cos(t(2));
-    float s = sin(t(2));
-    T.linear() << c, -s, s, c;
-    return T;
-  }
-
-  inline Eigen::Vector3f t2v(const Eigen::Isometry2f& t){
-    Eigen::Vector3f v;
-    v.head<2>()=t.translation();
-    v(2) = atan2(t.linear()(1,0), t.linear()(0,0));
-    return v;
-  }
+  // inline Eigen::Isometry3f v2t(const Vector6f& t){
+  //   Eigen::Isometry3f T;
+  //   T.setIdentity();
+  //   T.translation()=t.head<3>();
+  //   float w=t.block<3,1>(3,0).squaredNorm();
+  //   if (w<1) {
+  //     w=sqrt(1-w);
+  //     T.linear()=Eigen::Quaternionf(w, t(3), t(4), t(5)).toRotationMatrix();
+  //   } else {
+  //     T.linear().setIdentity();
+  //   }
+  //   return T;
+  // }
+  //
+  // inline Vector6f t2v(const Eigen::Isometry3f& t){
+  //   Vector6f v;
+  //   v.head<3>()=t.translation();
+  //   Eigen::Quaternionf q(t.linear());
+  //   v.block<3,1>(3,0)=q.matrix().block<3,1>(1,0);
+  //   if (q.w()<0)
+  //     v.block<3,1>(3,0) *= -1.0f;
+  //   return v;
+  // }
+  //
+  // inline Eigen::Isometry2f v2t(const Eigen::Vector3f& t){
+  //   Eigen::Isometry2f T;
+  //   T.setIdentity();
+  //   T.translation()=t.head<2>();
+  //   float c = cos(t(2));
+  //   float s = sin(t(2));
+  //   T.linear() << c, -s, s, c;
+  //   return T;
+  // }
+  //
+  // inline Eigen::Vector3f t2v(const Eigen::Isometry2f& t){
+  //   Eigen::Vector3f v;
+  //   v.head<2>()=t.translation();
+  //   v(2) = atan2(t.linear()(1,0), t.linear()(0,0));
+  //   return v;
+  // }
 
   inline Eigen::Matrix3f Rx(float rot_x){
     float c=cos(rot_x);
@@ -353,6 +353,19 @@ namespace pr {
       huber_norm_der= -1;
     }
     return huber_norm_der;
+  }
+
+  inline Eigen::Isometry3f v2t(const Vector6f& t){
+    Eigen::Isometry3f T;
+    T.translation()=t.head<3>();
+    float a = t(3);
+    float b = t(4);
+    float c = t(5);
+    T.linear() <<                         cos(b)*cos(c),                       -cos(b)*sin(c),         sin(b),
+                   cos(a)*sin(c) + cos(c)*sin(a)*sin(b), cos(a)*cos(c) - sin(a)*sin(b)*sin(c), -cos(b)*sin(a),
+                   sin(a)*sin(c) - cos(a)*cos(c)*sin(b), cos(c)*sin(a) + cos(a)*sin(b)*sin(c),  cos(a)*cos(b);
+
+    return T;
   }
 
   inline int lowerBound(std::vector<int> const& vec, int value) {

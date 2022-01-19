@@ -121,6 +121,13 @@ void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3
 
 }
 
+void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe) const {
+
+  pointAtDepthInCamFrame( uv, depth, p_incamframe);
+  p = *frame_camera_wrt_world_*p_incamframe;
+
+}
+
 bool Camera::projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const {
 
 

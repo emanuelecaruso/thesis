@@ -267,7 +267,7 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), d1, d2);
 
   candidate->invdepth_=1/d1;
-  cam_couple->cam_r_->pointAtDepth(candidate->uv_, d1, *(candidate->p_));
+  cam_couple->cam_r_->pointAtDepth(candidate->uv_, d1, *(candidate->p_), *(candidate->p_incamframe_));
 
   CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
 
