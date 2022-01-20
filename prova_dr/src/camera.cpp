@@ -254,6 +254,15 @@ void Camera::showDepthMap(int image_scale) const {
   invdepth_map_->show(image_scale);
 }
 
+void Candidate::setInvdepthGroundtruth(){
+
+  Eigen::Vector2i pixel;
+  this->cam_->uv2pixelCoords( this->uv_, pixel);
+  float invdepth_val = cam_->invdepth_map_->evalPixel(pixel);
+  float invdepth_gt = invdepth_val/cam_->cam_parameters_->min_depth;
+  this->invdepth_=invdepth_gt;
+
+}
 
 int RegionsWithCandidatesBase::getNRegionsX(CameraForMapping* cam, int level){
   return cam->cam_parameters_->resolution_x/pow(2,level);
@@ -449,13 +458,51 @@ void CameraForMapping::selectActivePoints(int max_num_active_points){
 
 }
 
+colorRGB CameraForMapping::invdepthToRgb(float invdepth){
 
+  float min_depth = cam_parameters_->min_depth;
+  float invdepth_normalized = min_depth*invdepth;
+
+  float H = 230*(1-invdepth_normalized);
+
+  float s = 1;
+  float v = 0.7;
+  float C = s*v;
+  float X = C*(1-abs(fmod(H/60.0, 2)-1));
+  float m = v-C;
+  float r,g,b;
+  if(H >= 0 && H < 60){
+      r = C,g = X,b = 0;
+  }
+  else if(H >= 60 && H < 120){
+      r = X,g = C,b = 0;
+  }
+  else if(H >= 120 && H < 180){
+      r = 0,g = C,b = X;
+  }
+  else if(H >= 180 && H < 240){
+      r = 0,g = X,b = C;
+  }
+  else if(H >= 240 && H < 300){
+      r = X,g = 0,b = C;
+  }
+  else{
+      r = C,g = 0,b = X;
+  }
+  int R = (r+m);
+  int G = (g+m);
+  int B = (b+m);
+
+  colorRGB color = colorRGB(b,g,r);
+  return color;
+}
 
 void CameraForMapping::showCandidates(float size){
 
-  std::vector<colorRGB> color_map{black,red_,green_,blue_,magenta_,cyan_};
+  // std::vector<colorRGB> color_map{black,red_,green_,blue_,magenta_,cyan_};
 
-  double alpha = 0.5;
+  // double alpha = 0.75;
+  double alpha = 1;
 
   std::string name = name_+" , "+std::to_string(candidates_->size())+" candidates";
   Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg(name);
@@ -471,7 +518,11 @@ void CameraForMapping::showCandidates(float size){
     // compute corners
     cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
 
-    show_img->drawRectangle(r, color_map[level], cv::FILLED, alpha);
+    colorRGB color = black;
+    if(candidate->one_min_)
+      color = invdepthToRgb(candidate->invdepth_);
+
+    show_img->drawRectangle(r, color, cv::FILLED, alpha);
     // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
   }
 
@@ -483,9 +534,9 @@ void CameraForMapping::showCandidates(float size){
 
 void CameraForMapping::showCoarseCandidates(float size){
 
-  std::vector<colorRGB> color_map{black,red,green,blue,magenta,cyan};
+  // std::vector<colorRGB> color_map{black,red,green,blue,magenta,cyan};
 
-  double alpha = 0.5;
+  double alpha = 1;
 
   int num_coarse_cands=0;
   for(std::vector<Candidate*>* v : *candidates_coarse_)
@@ -509,7 +560,11 @@ void CameraForMapping::showCoarseCandidates(float size){
       // compute corners
       cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
 
-      show_img->drawRectangle(r, color_map[level], cv::FILLED, alpha);
+      colorRGB color = black;
+      if(candidate->one_min_)
+        color = invdepthToRgb(candidate->invdepth_);
+
+      show_img->drawRectangle(r, color, cv::FILLED, alpha);
       // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
 
     }
@@ -523,28 +578,34 @@ void CameraForMapping::showCoarseCandidates(float size){
 
 void CameraForMapping::showProjCandidates(float size){
 
-  double alpha = 0.5;
+  double alpha = 1;
 
   int n_proj_cands=0;
 
   Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg("proj cand temp");
 
   for (RegionWithProjCandidates* reg : *(regions_projected_cands_->region_vec_)){
-    for (CandidateProjected* cand : *(reg->cands_vec_)){
+
+    for (CandidateProjected* cand_proj : *(reg->cands_vec_)){
       n_proj_cands++;
 
       // get level
-      int level = cand->level_;
+      int level = cand_proj->level_;
 
-      Eigen::Vector2i pixel= cand->pixel_;
+      Eigen::Vector2i pixel= cand_proj->pixel_;
       pixel*=pow(2,level+1);
       std::string name = "" ;
 
-      // compute corners
-      cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
+      if (pixel.y()>=0 && pixel.y()<image_intensity_->image_.rows && pixel.x()>=0 && pixel.x()<image_intensity_->image_.cols)
+      {
+        // compute corners
+        cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
 
-      show_img->drawRectangle(r, black, cv::FILLED, alpha);
-      // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+        colorRGB color = invdepthToRgb(cand_proj->invdepth_);
+
+        show_img->drawRectangle(r, color, cv::FILLED, alpha);
+        // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+      }
 
     }
   }

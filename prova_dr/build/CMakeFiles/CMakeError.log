@@ -1,22 +1,22 @@
 Determining if the pthread_create exist failed with the following output:
 Change Dir: /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_0fecb/fast"
-/usr/bin/make -f CMakeFiles/cmTC_0fecb.dir/build.make CMakeFiles/cmTC_0fecb.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_41681/fast"
+/usr/bin/make -f CMakeFiles/cmTC_41681.dir/build.make CMakeFiles/cmTC_41681.dir/build
 make[1]: ingresso nella directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Building C object CMakeFiles/cmTC_0fecb.dir/CheckSymbolExists.c.o
-/usr/bin/cc   -fPIC    -o CMakeFiles/cmTC_0fecb.dir/CheckSymbolExists.c.o   -c /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
-Linking C executable cmTC_0fecb
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0fecb.dir/link.txt --verbose=1
-/usr/bin/cc -fPIC     -rdynamic CMakeFiles/cmTC_0fecb.dir/CheckSymbolExists.c.o  -o cmTC_0fecb 
-CMakeFiles/cmTC_0fecb.dir/CheckSymbolExists.c.o: nella funzione "main":
+Building C object CMakeFiles/cmTC_41681.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIC    -o CMakeFiles/cmTC_41681.dir/CheckSymbolExists.c.o   -c /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_41681
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_41681.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC     -rdynamic CMakeFiles/cmTC_41681.dir/CheckSymbolExists.c.o  -o cmTC_41681 
+CMakeFiles/cmTC_41681.dir/CheckSymbolExists.c.o: nella funzione "main":
 CheckSymbolExists.c:(.text+0x1b): riferimento non definito a "pthread_create"
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_0fecb.dir/build.make:86: recipe for target 'cmTC_0fecb' failed
-make[1]: *** [cmTC_0fecb] Error 1
+CMakeFiles/cmTC_41681.dir/build.make:86: recipe for target 'cmTC_41681' failed
+make[1]: *** [cmTC_41681] Error 1
 make[1]: uscita dalla directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Makefile:121: recipe for target 'cmTC_0fecb/fast' failed
-make: *** [cmTC_0fecb/fast] Error 2
+Makefile:121: recipe for target 'cmTC_41681/fast' failed
+make: *** [cmTC_41681/fast] Error 2
 
 File /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
 /* */
@@ -36,20 +36,20 @@ int main(int argc, char** argv)
 Determining if the function pthread_create exists in the pthreads failed with the following output:
 Change Dir: /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_4e791/fast"
-/usr/bin/make -f CMakeFiles/cmTC_4e791.dir/build.make CMakeFiles/cmTC_4e791.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_80b34/fast"
+/usr/bin/make -f CMakeFiles/cmTC_80b34.dir/build.make CMakeFiles/cmTC_80b34.dir/build
 make[1]: ingresso nella directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Building C object CMakeFiles/cmTC_4e791.dir/CheckFunctionExists.c.o
-/usr/bin/cc   -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_4e791.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.12/Modules/CheckFunctionExists.c
-Linking C executable cmTC_4e791
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_4e791.dir/link.txt --verbose=1
-/usr/bin/cc -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_4e791.dir/CheckFunctionExists.c.o  -o cmTC_4e791 -lpthreads 
+Building C object CMakeFiles/cmTC_80b34.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_80b34.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.12/Modules/CheckFunctionExists.c
+Linking C executable cmTC_80b34
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_80b34.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_80b34.dir/CheckFunctionExists.c.o  -o cmTC_80b34 -lpthreads 
 /usr/bin/ld: impossibile trovare -lpthreads
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_4e791.dir/build.make:86: recipe for target 'cmTC_4e791' failed
-make[1]: *** [cmTC_4e791] Error 1
+CMakeFiles/cmTC_80b34.dir/build.make:86: recipe for target 'cmTC_80b34' failed
+make[1]: *** [cmTC_80b34] Error 1
 make[1]: uscita dalla directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Makefile:121: recipe for target 'cmTC_4e791/fast' failed
-make: *** [cmTC_4e791/fast] Error 2
+Makefile:121: recipe for target 'cmTC_80b34/fast' failed
+make: *** [cmTC_80b34/fast] Error 2
 
 

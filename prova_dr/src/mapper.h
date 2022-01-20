@@ -70,6 +70,7 @@ class Mapper{
 
     void selectNewCandidates();
     void trackExistingCandidates();
+    void trackExistingCandidatesGT();
 
   private:
     Dtam* const dtam_;

@@ -146,7 +146,8 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       tracker_->trackCam(true);
       keyframe_handler_->addKeyframe(true);
       if(frame_current_==1){
-        mapper_->trackExistingCandidates();
+        // mapper_->trackExistingCandidates();
+        mapper_->trackExistingCandidatesGT();
         cand_tracked_.notify_all();
       }
       mapper_->selectNewCandidates();
@@ -156,13 +157,13 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     }
 
     // sharedCoutDebug("Front end part of frame: "+std::to_string(frame_current_)+" ...");
-
     tracker_->trackCam(take_gt_poses,track_candidates);
     break;
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
       // bundle_adj_->projectAndMarginalizeActivePoints();
-      mapper_->trackExistingCandidates();
+      // mapper_->trackExistingCandidates();
+      mapper_->trackExistingCandidatesGT();
       cand_tracked_.notify_all();
       mapper_->selectNewCandidates();
       tracker_->collectCandidatesInCoarseRegions();
@@ -297,6 +298,8 @@ void Dtam::test_mapping(){
   // camera_vector_->at(camera_vector_->size()-2)->showProjCandidates(2);
   // camera_vector_->at(0)->showCandidates(2);
   camera_vector_->at(0)->showCandidates(2);
+  camera_vector_->at(0)->invdepth_map_->show(2);
+  // camera_vector_->at(1)->invdepth_map_->show(2);
   // camera_vector_->at(7)->showProjCandidates(2);
   camera_vector_->at(1)->showProjCandidates(2);
   // camera_vector_->at(5)->showProjCandidates(2);
@@ -328,6 +331,9 @@ void Dtam::test_tracking(){
   // optimization_thread.join();
   frontend_thread_.join();
   update_cameras_thread_.join();
+
+  // camera_vector_->at(0)->invdepth_map_->show(2);
+  // camera_vector_->at(0)->invdepth_map_->show(2);
 
   cv::waitKey(0);
 

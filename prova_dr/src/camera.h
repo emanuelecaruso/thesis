@@ -34,6 +34,19 @@ class Camera{
            frame_world_wrt_camera_(new Eigen::Isometry3f)
            { };
 
+    Camera(const std::string& name, const CamParameters* cam_parameters,
+            const Image<pixelIntensity>* image_intensity,
+            Image<float>* invdepth_map ):
+            name_(name),
+            cam_parameters_(cam_parameters),
+            K_(compute_K()),
+            Kinv_( new Eigen::Matrix3f(K_->inverse()) ),
+            image_intensity_( image_intensity ),
+            invdepth_map_( invdepth_map ),
+            frame_camera_wrt_world_(new Eigen::Isometry3f),
+            frame_world_wrt_camera_(new Eigen::Isometry3f)
+            { };
+
      Camera(const std::string& name, const CamParameters* cam_parameters,
             const std::string& path_rgb):
             name_(name),
@@ -249,6 +262,8 @@ class Candidate : public CandidateBase{
       }
       delete this;
     }
+
+    void setInvdepthGroundtruth();
 };
 
 
@@ -370,7 +385,6 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
       int idx = xyToIdx( reg_x, reg_y);
 
       // push the projected candidate inside the region (sorted by invdepth var)
-
       std::vector<CandidateProjected*>* cands_vec_ = region_vec_->at(idx)->cands_vec_;
 
       auto lb_cmp = [](CandidateProjected* const & x, float d) -> bool
@@ -400,8 +414,10 @@ class CameraForMapping: public Camera{
     friend class Dtam;
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
-           const Image<pixelIntensity>* image_intensity, Params* parameters):
-           Camera( name, cam_parameters, image_intensity),
+           const Image<pixelIntensity>* image_intensity, Image<float>* invdepth_map,
+           Params* parameters):
+
+           Camera( name, cam_parameters, image_intensity, invdepth_map),
            wavelet_dec_(new Wvlt_dec(parameters->coarsest_level+1,new Image<pixelIntensity>(image_intensity_), this)),
            candidates_(new std::vector<Candidate*>),
            active_points_(new std::vector<ActivePoint*>),
@@ -424,19 +440,21 @@ class CameraForMapping: public Camera{
 
            };
 
-    CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
-            const Image<pixelIntensity>* image_intensity, Eigen::Isometry3f* frame_world_wrt_camera,
-                Eigen::Isometry3f* frame_camera_wrt_world, Params* parameters):
-            CameraForMapping( name, cam_parameters, image_intensity, parameters)
-            {
-              frame_world_wrt_camera_=frame_world_wrt_camera;
-              frame_camera_wrt_world_=frame_camera_wrt_world;
-            };
+    // CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
+    //         const Image<pixelIntensity>* image_intensity, Eigen::Isometry3f* frame_world_wrt_camera,
+    //             Eigen::Isometry3f* frame_camera_wrt_world, Params* parameters):
+    //         CameraForMapping( name, cam_parameters, image_intensity, parameters)
+    //         {
+    //           frame_world_wrt_camera_=frame_world_wrt_camera;
+    //           frame_camera_wrt_world_=frame_camera_wrt_world;
+    //         };
 
-    CameraForMapping(Camera* cam, Params* parameters):
-           CameraForMapping( cam->name_, cam->cam_parameters_, cam->image_intensity_, parameters)
+    CameraForMapping(Camera* env_cam, Params* parameters):
+           CameraForMapping( env_cam->name_, env_cam->cam_parameters_, env_cam->image_intensity_,
+                              env_cam->invdepth_map_, parameters)
            {  };
 
+    colorRGB invdepthToRgb(float invdepth);
     void showCandidates(float size);
     void showCoarseCandidates(float size);
     void showProjCandidates(float size);

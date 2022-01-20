@@ -275,6 +275,37 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
 
 }
 
+void Mapper::trackExistingCandidatesGT(){
+
+  CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  sharedCoutDebug("   - Tracking existing candidates (grountruth)");
+
+  std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
+
+  //iterate through active keyframes
+  for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
+
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(i));
+    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
+
+    // iterate through all candidates
+    for(int k=keyframe->candidates_->size()-1; k>=0; k--){
+
+      Candidate* cand = keyframe->candidates_->at(k);
+      cand->invdepth_var_=0.00001;
+      cand->setInvdepthGroundtruth();
+      cand->one_min_=true;
+      cand->cam_->pointAtDepth(cand->uv_, 1.0/cand->invdepth_, *(cand->p_), *(cand->p_incamframe_));
+      CandidateProjected* projected_cand=projectCandidate( cand, cam_couple);
+      cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+
+    }
+
+
+
+  }
+}
+
 void Mapper::trackExistingCandidates(){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
@@ -359,7 +390,7 @@ void Mapper::trackExistingCandidates(){
           //   // if (dtam_->frame_current_==7){
           //   // if (flag){
           //   // if(j==cand->bounds_->size()-1)
-          //   flag=0;
+          //   // flag=0;
           //   // ep_segment->showEpipolar(cand->level_);
           //   ep_segment->showEpipolarWithMin(cand->level_);
           //
@@ -371,7 +402,7 @@ void Mapper::trackExistingCandidates(){
           //   // dh_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dh_rob last");
           //   // Image<float>* dv_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
           //   // dv_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dv_rob last");
-          //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude_img;
+          //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
           //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
           //
           //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);

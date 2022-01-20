@@ -150,23 +150,6 @@ class Image{
       std::cout << "Could not read the image: " << path << std::endl;
     }
 
-    inline Image< float >* getChannel(int channel) const{
-      if (channel<0 || channel>2){
-        sharedCout("wrong channel in 'get channel'");
-        return nullptr;
-      }
-
-      Image<  float >* out =new Image< float >(std::to_string(channel)+"chan_"+name_);
-
-      std::vector<cv::Mat> channels(3);
-
-      split(image_, channels);
-
-      out->image_=channels[channel];
-
-      return out;
-    }
-
 
     inline Image< pixelIntensity>* compute_sobel_x(const std::string& name) const{
       Image<  pixelIntensity >* img_sobel_x=new Image< pixelIntensity >(name);
@@ -259,6 +242,11 @@ class Image{
       cv::circle	(	image_,point,radius,color, thickness);
     }
 
+    inline void drawCircle(colorRGB color, Eigen::Vector2i point, int radius=2, int thickness=2){
+      cv::Point2f point_(point.x(),point.y());
+      cv::circle	(	image_,point_ ,radius,color, thickness);
+    }
+
     inline void drawRectangle(cv::Rect rect, colorRGB color, int type, float alpha=1){
       cv::Mat roi = image_(rect);
       cv::Mat clr(roi.size(), colorRGB_CODE, color);
@@ -268,8 +256,15 @@ class Image{
 
 
     inline void showImgWithColoredPixel(const Eigen::Vector2i pixel, float size, const std::string& name) const{
-      Image< colorRGB >* out = returnColoredImgFromIntensityImg(name);
-      out->setPixel( pixel, red);
-      out->show(size, name);
+      Image< colorRGB >* show_image = returnColoredImgFromIntensityImg(name);
+      show_image->setPixel( pixel, red);
+      show_image->show(size, name);
+    }
+
+    inline void showImgWithCircledPixel(const Eigen::Vector2i pixel, float size, const std::string& name, int radius=2, int thickness=2) const{
+      Image< colorRGB >* show_image = returnColoredImgFromIntensityImg(name);
+      // show_image->setPixel( pixel, red);
+      show_image->drawCircle(red, pixel, radius, thickness);
+      show_image->show(size, name);
     }
 };
