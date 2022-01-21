@@ -253,16 +253,7 @@ class Candidate : public CandidateBase{
       return (1.0/d1)-(1.0/d2);
     }
 
-    inline void marginalize() const {
-      std::vector<Candidate*>* v1 = region_sampling_->cands_vec_;
-      v1->erase(std::remove(v1->begin(), v1->end(), this), v1->end());
-
-      for(RegionWithCandidates* reg : *regions_coarse_){
-        std::vector<Candidate*>* v2 = reg->cands_vec_;
-        v2->erase(std::remove(v2->begin(), v2->end(), this), v2->end());
-      }
-      delete this;
-    }
+    void marginalize() const;
 
     void setInvdepthGroundtruth();
 };

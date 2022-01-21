@@ -69,8 +69,10 @@ class Mapper{
       {};
 
     void selectNewCandidates();
-    void trackExistingCandidates();
-    void trackExistingCandidatesGT();
+
+    void trackExistingCandidates(bool take_gt_points=false);
+
+
 
   private:
     Dtam* const dtam_;
@@ -84,5 +86,6 @@ class Mapper{
 
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple );
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line );
-
+    void trackExistingCandidates_();
+    void trackExistingCandidatesGT();
 };

@@ -313,7 +313,9 @@ void Tracker::filterOutOcclusionsGT(){
       v= keyframe->candidates_;
 
       // for each candidate
-      for(Candidate* cand : *v){
+      for(int i=v->size()-1; i>=0; i--){
+
+        Candidate* cand = v->at(i);
         if (cand->one_min_){
           Eigen::Vector2f uv_newframe;
           Eigen::Vector2i pixel_newframe;
@@ -328,8 +330,9 @@ void Tracker::filterOutOcclusionsGT(){
           float invdepth_proj = 1.0/point_newframe.z();
           float invdepth_gt = invdepth_val/frame_new->cam_parameters_->min_depth;
 
-          if (abs(invdepth_gt-invdepth_proj)>0.01)
+          if (abs(invdepth_gt-invdepth_proj)>0.01){
             cand->marginalize();
+          }
 
         }
       }
@@ -346,8 +349,9 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
   CameraForMapping* frame_new = dtam_->getCurrentCamera();
 
   // collect coarse candidates
+  collectCandidatesInCoarseRegions();
 
-  filterOutOcclusionsGT();
+  // filterOutOcclusionsGT();
   for(int keyframe_idx : *(dtam_->keyframe_vector_)){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
     collectCoarseCandidates(keyframe);
@@ -417,14 +421,16 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
         Vector6f dx=-H.inverse()*b;
         current_guess=v2t(dx)*current_guess;
         chi_vec.push_back(chi);
+
         // DEBUG
         // std::cout << "H " << H << std::endl;
         // std::cout << "b " << b << std::endl;
         std::cout << "chi " << chi << std::endl;
+
         if (chi_vec.size()==2)
           first_chi_der=chi_vec.at(0)-chi_vec.at(1);
         if(chi_vec.size()>2)
-          if( ((chi_vec.at(chi_vec.size()-2)-chi)/first_chi_der)<0.1  ){
+          if( ((chi_vec.at(chi_vec.size()-2)-chi)/first_chi_der)<0.15  ){
             break;
           }
         iterations++;

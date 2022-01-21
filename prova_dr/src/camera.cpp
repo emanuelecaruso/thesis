@@ -257,6 +257,20 @@ void Camera::showDepthMap(int image_scale) const {
   invdepth_map_->show(image_scale);
 }
 
+void Candidate::marginalize() const{
+  std::vector<Candidate*>* v1 = region_sampling_->cands_vec_;
+  v1->erase(std::remove(v1->begin(), v1->end(), this), v1->end());
+
+  std::vector<Candidate*>* v2 = cam_->candidates_;
+  v2->erase(std::remove(v2->begin(), v2->end(), this), v2->end());
+
+  for(RegionWithCandidates* reg : *regions_coarse_){
+    std::vector<Candidate*>* v3 = reg->cands_vec_;
+    v3->erase(std::remove(v3->begin(), v3->end(), this), v3->end());
+  }
+  delete this;
+}
+
 void Candidate::setInvdepthGroundtruth(){
 
   Eigen::Vector2i pixel;

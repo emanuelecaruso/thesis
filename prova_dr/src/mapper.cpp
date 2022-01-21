@@ -306,7 +306,14 @@ void Mapper::trackExistingCandidatesGT(){
   }
 }
 
-void Mapper::trackExistingCandidates(){
+void Mapper::trackExistingCandidates(bool take_gt_points){
+  if(take_gt_points)
+    trackExistingCandidatesGT();
+  else
+    trackExistingCandidates_();
+}
+
+void Mapper::trackExistingCandidates_(){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
   sharedCoutDebug("   - Tracking existing candidates");
