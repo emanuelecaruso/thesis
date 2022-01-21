@@ -378,6 +378,8 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
       std::cout << "\nLevel: " << i << std::endl;
 
       std::vector<float> chi_vec;
+      float first_chi_der = 0;
+
       while(iterations<dtam_->parameters_->max_iterations_ls){
 
         H.setZero();
@@ -419,8 +421,10 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
         // std::cout << "H " << H << std::endl;
         // std::cout << "b " << b << std::endl;
         std::cout << "chi " << chi << std::endl;
-        if(chi_vec.size()>1)
-          if(chi_vec.at(chi_vec.size()-2)-chi<1){
+        if (chi_vec.size()==2)
+          first_chi_der=chi_vec.at(0)-chi_vec.at(1);
+        if(chi_vec.size()>2)
+          if( ((chi_vec.at(chi_vec.size()-2)-chi)/first_chi_der)<0.1  ){
             break;
           }
         iterations++;
