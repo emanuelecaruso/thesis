@@ -102,15 +102,7 @@ void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_co
 uv2pixelCoords(uv, pixel_coords, -1);
 }
 
-void Camera::pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const {
 
-  Eigen::Vector2f product = uv * depth;
-  p_K_dot_incamframe.x() = product.x();
-  p_K_dot_incamframe.y() = product.y();
-  p_K_dot_incamframe.z() = depth;
-  p_incamframe = (*Kinv_)*p_K_dot_incamframe;
-
-}
 
 void Camera::pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe ) const {
 
@@ -138,12 +130,6 @@ void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3
 
 }
 
-void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const {
-
-  pointAtDepthInCamFrame( uv, depth, p_incamframe, p_K_dot_incamframe);
-  p = *frame_camera_wrt_world_*p_incamframe;
-
-}
 
 bool Camera::projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const {
 

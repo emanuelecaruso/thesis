@@ -11,13 +11,12 @@
 #include <mutex>
 
 // coarsest level
-static int coarsest_level_= 3; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
+static int coarsest_level_= 2; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // static int coarsest_level_= 0; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // levels for regions
-static int wavelet_levels_=3; // e.g. 3 levels -> lev 0,1,2
-// static int wavelet_levels_=1; // e.g. 3 levels -> lev 0,1,2
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
-static float grad_threshold_=0.1;
+// static float grad_threshold_=0.1;
+static float grad_threshold_=0.01;
 static float grad_perc_threshold_=0.75;
 // static float cost_threshold_=0.7;
 static float cost_threshold_=0.4;
@@ -42,7 +41,6 @@ static float ransacReprojThreshold_ = 1;
 struct Params{
 
   int coarsest_level=coarsest_level_;
-  int wavelet_levels=wavelet_levels_;
   int reg_level=reg_level_;
   float grad_threshold=grad_threshold_;
   float grad_perc_threshold=grad_perc_threshold_;
@@ -64,12 +62,8 @@ struct Params{
   float ransacReprojThreshold=ransacReprojThreshold_;
 
   Params(){
-    if (coarsest_level<wavelet_levels-1){
-      std::cout << "Error in parameters: coarsest_level less than wavelet_levels!" << std::endl;
-      exit(1);
-    }
-    if (wavelet_levels>reg_level+1){
-      std::cout << "Error in parameters: reg_level+1 less than wavelet_levels!" << std::endl;
+    if (coarsest_level<reg_level){
+      std::cout << "Error in parameters: coarsest level less than reg_level!" << std::endl;
       exit(1);
     }
   };

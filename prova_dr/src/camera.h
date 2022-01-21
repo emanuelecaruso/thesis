@@ -108,8 +108,6 @@ class Camera{
     void uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe) const;
-    void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const;
-    void pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const;
     void pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe) const;
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const;
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv) const;
@@ -196,14 +194,13 @@ class Candidate : public CandidateBase{
               float intensity_dx, float intensity_dy,
               float grad_magnitude_dx, float grad_magnitude_dy,
               float invdepth, float invdepth_var, Eigen::Vector3f* p,
-              Eigen::Vector3f* p_incamframe, Eigen::Vector3f* p_K_dot_incamframe ):
+              Eigen::Vector3f* p_incamframe ):
     CandidateBase( level, pixel, uv),
     cam_(cam),
     bounds_(nullptr),
     one_min_(true),
     invdepth_(invdepth),
     p_incamframe_(p_incamframe),
-    p_K_dot_incamframe_(p_K_dot_incamframe),
     p_(p),
     invdepth_var_(invdepth_var),
     region_sampling_(nullptr),
@@ -225,7 +222,6 @@ class Candidate : public CandidateBase{
     one_min_(false),
     invdepth_(-1),
     p_incamframe_(new Eigen::Vector3f),
-    p_K_dot_incamframe_(new Eigen::Vector3f),
     p_(new Eigen::Vector3f),
     invdepth_var_(-1),
     region_sampling_(region_sampling),
@@ -243,7 +239,6 @@ class Candidate : public CandidateBase{
     bool one_min_;
     float invdepth_;
     Eigen::Vector3f* p_incamframe_;
-    Eigen::Vector3f* p_K_dot_incamframe_;
     Eigen::Vector3f* p_;
     float invdepth_var_;
     RegionWithCandidates* region_sampling_;

@@ -158,6 +158,12 @@ class Image{
       kernel <<  -1,  0, 1,
                  -2,  0, 2,
                  -1,  0, 1;
+       // normalize
+       kernel/=8;
+       
+       // kernel <<  -0,  0, 0,
+       //            -1,  0, 1,
+       //             0,  0, 0;
 
       filter2D(image_, img_sobel_x->image_, pixelIntensity_CODE, kernel);
 
@@ -171,6 +177,12 @@ class Image{
       kernel <<  -1, -2, -1,
                   0,  0,  0,
                   1,  2,  1;
+      // normalize
+      kernel/=8;
+
+      // kernel <<   0, -1,  0,
+      //             0,  0,  0,
+      //             0,  1,  0;
 
       filter2D(image_, img_sobel_y->image_, pixelIntensity_CODE, kernel);
 

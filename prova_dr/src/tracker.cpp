@@ -130,8 +130,7 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
           invdepth = d_over_v_sum/inv_v_sum;
           Eigen::Vector3f* p = new Eigen::Vector3f ;
           Eigen::Vector3f* p_incamframe = new Eigen::Vector3f ;
-          Eigen::Vector3f* p_K_dot_incamframe = new Eigen::Vector3f ;
-          keyframe->pointAtDepth(uv,1.0/invdepth,*p,*p_incamframe, *p_K_dot_incamframe);
+          keyframe->pointAtDepth(uv,1.0/invdepth,*p,*p_incamframe);
           // compute invdepth variance as average of variances
           invdepth_var = (float)num_cands/inv_v_sum;
 
@@ -139,7 +138,7 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
           Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe, magn_cd,c,
                                                       c_dx, c_dy, magn_cd_dx, magn_cd_dy,
                                                       invdepth,invdepth_var,
-                                                      p,p_incamframe,p_K_dot_incamframe);
+                                                      p,p_incamframe);
           // push candidate inside coarse candidates
           keyframe->candidates_coarse_->at(i-1)->push_back(candidate_coarse);
         }
@@ -163,13 +162,19 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
   Eigen::Vector3f point_newframe;
   Eigen::Vector3f* point = cand->p_;
   Eigen::Vector3f* point_incamframe = cand->p_incamframe_;
-  Eigen::Vector3f* point_K_dot_incamframe = cand->p_K_dot_incamframe_;
   float invdepth = cand->invdepth_;
   float invdepth_var = cand->invdepth_var_;
   float invdepth_der = -1/pow(invdepth,2);
   Eigen::Isometry3f* w_T_candframe = cand->cam_->frame_camera_wrt_world_;
 
   point_newframe= current_guess*(*point);
+
+  Eigen::Vector3f p_proj = K*point_newframe;
+  // return false if the projected point is behind the camera
+  if (p_proj.z()<frame_new->cam_parameters_->lens)
+    return false;
+  uv_newframe = p_proj.head<2>()*(1./p_proj.z());
+
   frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
   frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, cand->level_);
 
@@ -177,8 +182,8 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
   Eigen::Matrix<float, 3,6> state_jacobian;
   // Eigen::Matrix<float, 3,1> normalizer_jacobian;
 
-  proj_jacobian << 1./point_K_dot_incamframe->z(), 0, -point_K_dot_incamframe->x()/pow(point_K_dot_incamframe->z(),2),
-                   0, 1./point_K_dot_incamframe->z(), -point_K_dot_incamframe->y()/pow(point_K_dot_incamframe->z(),2);
+  proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
+                   0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
 
   state_jacobian << 1, 0, 0,  0                   ,  point_newframe.z()  , -point_newframe.y(),
                     0, 1, 0, -point_newframe.z() ,  0                    ,  point_newframe.x(),
@@ -199,8 +204,10 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
       return false;
     }
 
+
     // error
-    float error = squareNorm(z-z_hat);
+    // float error = squareNorm(z-z_hat);
+    float error = z_hat-z;
 
     // jacobian
     Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
@@ -214,7 +221,9 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
     intermediate_jacobian = ((img_jacobian*proj_jacobian)*K);
 
     // without normalizer
-    float coeff = squareNormDerivative(error)*pixels_meter_ratio;
+    float coeff = pixels_meter_ratio/pow(2,cand->level_+1);
+    // float coeff = pixels_meter_ratio;
+    // float coeff = squareNormDerivative(error)*pixels_meter_ratio/pow(2,cand->level_+1);
 
     // BEFORE SIMPLIFYING PIXELS METERS RATIO
     // float normalizer = pixels_meter_ratio*((intermediate_jacobian*current_guess.linear())*Kinv)*normalizer_jacobian;
@@ -231,7 +240,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
     // update
     H+=Jtransp*weight*J;
     b+=Jtransp*weight*error;
-    chi+=error;
+    chi+=error*error;
 
   // }
 
@@ -368,12 +377,12 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
       int iterations = 0;
       std::cout << "\nLevel: " << i << std::endl;
 
+      std::vector<float> chi_vec;
       while(iterations<dtam_->parameters_->max_iterations_ls){
 
         H.setZero();
         b.setZero();
         chi=0;
-
 
         //DEBUG
         showProjectCandsWithCurrGuess(current_guess, i);
@@ -405,12 +414,18 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
         }
         Vector6f dx=-H.inverse()*b;
         current_guess=v2t(dx)*current_guess;
-        iterations++;
-
+        chi_vec.push_back(chi);
         // DEBUG
         // std::cout << "H " << H << std::endl;
         // std::cout << "b " << b << std::endl;
         std::cout << "chi " << chi << std::endl;
+        if(chi_vec.size()>1)
+          if(chi_vec.at(chi_vec.size()-2)-chi<1){
+            break;
+          }
+        iterations++;
+
+
       }
       // update initial guess for next level
       // std::cout << "H: " << H << std::endl;

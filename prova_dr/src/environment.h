@@ -6,7 +6,7 @@ class Environment{
 
     const std::string dataset_name_;
     const int fps_;
-    const int wavelet_levels_;
+    const int coarsest_level_;
     const CamParameters* cam_parameters_;
     const std::vector<Camera*>* camera_vector_; // vector containing pointers to camera objects
 
@@ -14,7 +14,7 @@ class Environment{
     Environment(const std::string& path_name, const std::string& dataset_name, Params* parameters):
     dataset_name_(dataset_name),
     fps_(parameters->fps),
-    wavelet_levels_(parameters->wavelet_levels),
+    coarsest_level_(parameters->coarsest_level),
     cam_parameters_(loadCamParameters( path_name, dataset_name)),
     camera_vector_(loadCameraVector( path_name, dataset_name, parameters->end_frame))
     { };
