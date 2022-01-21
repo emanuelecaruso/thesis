@@ -155,9 +155,9 @@ class Image{
       Image<  pixelIntensity >* img_sobel_x=new Image< pixelIntensity >(name);
 
       cv::Mat_<float> kernel(3,3);
-      kernel <<  1,  0, -1,
-                 2,  0, -2,
-                 1,  0, -1;
+      kernel <<  -1,  0, 1,
+                 -2,  0, 2,
+                 -1,  0, 1;
 
       filter2D(image_, img_sobel_x->image_, pixelIntensity_CODE, kernel);
 
@@ -168,9 +168,9 @@ class Image{
       Image< pixelIntensity >* img_sobel_y =new Image< pixelIntensity >(name);
 
       cv::Mat_<float> kernel(3,3);
-      kernel <<   1,  2,  1,
+      kernel <<  -1, -2, -1,
                   0,  0,  0,
-                 -1, -2, -1;
+                  1,  2,  1;
 
       filter2D(image_, img_sobel_y->image_, pixelIntensity_CODE, kernel);
 

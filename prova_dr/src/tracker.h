@@ -22,9 +22,13 @@ class Tracker{
     void trackLS(bool track_candidates=false);
     Eigen::Isometry3f doLS(Eigen::Isometry3f& initial_guess, bool track_candidates=false);
     void collectCoarseCandidates(CameraForMapping* keyframe);
+    void showProjectCandsWithCurrGuess( Eigen::Isometry3f& current_guess, int level);
     bool iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess );
-    Eigen::Isometry3f computeInitialGuess( );
+    Eigen::Isometry3f computeInitialGuess( int guess_type=VELOCITY_CONSTANT );
     Eigen::Isometry3f computeInitialGuessGT( );
+    Eigen::Isometry3f poseConstantModel();
     Eigen::Isometry3f velocityConstantModel();
+    void filterOutOcclusionsGT();
+
 
 };

@@ -102,14 +102,24 @@ void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_co
 uv2pixelCoords(uv, pixel_coords, -1);
 }
 
-void Camera::pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe) const {
+void Camera::pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const {
 
-  Eigen::Vector3f p_proj;
   Eigen::Vector2f product = uv * depth;
-  p_proj.x() = product.x();
-  p_proj.y() = product.y();
-  p_proj.z() = depth;
-  p_incamframe = (*Kinv_)*p_proj;
+  p_K_dot_incamframe.x() = product.x();
+  p_K_dot_incamframe.y() = product.y();
+  p_K_dot_incamframe.z() = depth;
+  p_incamframe = (*Kinv_)*p_K_dot_incamframe;
+
+}
+
+void Camera::pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe ) const {
+
+  Eigen::Vector3f p_K_dot_incamframe;
+  Eigen::Vector2f product = uv * depth;
+  p_K_dot_incamframe.x() = product.x();
+  p_K_dot_incamframe.y() = product.y();
+  p_K_dot_incamframe.z() = depth;
+  p_incamframe = (*Kinv_)*p_K_dot_incamframe;
 
 }
 
@@ -124,6 +134,13 @@ void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3
 void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe) const {
 
   pointAtDepthInCamFrame( uv, depth, p_incamframe);
+  p = *frame_camera_wrt_world_*p_incamframe;
+
+}
+
+void Camera::pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const {
+
+  pointAtDepthInCamFrame( uv, depth, p_incamframe, p_K_dot_incamframe);
   p = *frame_camera_wrt_world_*p_incamframe;
 
 }
@@ -258,7 +275,7 @@ void Candidate::setInvdepthGroundtruth(){
 
   Eigen::Vector2i pixel;
   this->cam_->uv2pixelCoords( this->uv_, pixel);
-  float invdepth_val = cam_->invdepth_map_->evalPixel(pixel);
+  float invdepth_val = cam_->grountruth_camera_->invdepth_map_->evalPixel(pixel);
   float invdepth_gt = invdepth_val/cam_->cam_parameters_->min_depth;
   this->invdepth_=invdepth_gt;
 
@@ -532,43 +549,40 @@ void CameraForMapping::showCandidates(float size){
 }
 
 
-void CameraForMapping::showCoarseCandidates(float size){
+void CameraForMapping::showCoarseCandidates(int level, float size){
 
   // std::vector<colorRGB> color_map{black,red,green,blue,magenta,cyan};
 
   double alpha = 1;
 
-  int num_coarse_cands=0;
-  for(std::vector<Candidate*>* v : *candidates_coarse_)
-  {
-    num_coarse_cands+=v->size();
-  }
-  std::string name = name_+" , "+std::to_string(num_coarse_cands)+" coarse candidates";
+  int num_coarse_cands=candidates_coarse_->at(level-1)->size();
+
+  std::string name = name_+" , "+std::to_string(num_coarse_cands)+" coarse candidates, level "+std::to_string(level);
   Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg(name);
   // Image<colorRGB>* show_img = new Image<colorRGB>(image_intensity_);
 
-  for(std::vector<Candidate*>* v : *candidates_coarse_){
-    int i =0;
-    for(Candidate* candidate : *v){
+  // for(std::vector<Candidate*>* v : *candidates_coarse_){
+  //   int i =0;
+  for(Candidate* candidate : *(candidates_coarse_->at(level-1))){
 
-      // get level
-      int level = candidate->level_;
+    // get level
+    // int level = candidate->level_;
 
-      Eigen::Vector2i pixel= candidate->pixel_;
-      pixel*=pow(2,level+1);
+    Eigen::Vector2i pixel= candidate->pixel_;
+    pixel*=pow(2,level+1);
 
-      // compute corners
-      cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
+    // compute corners
+    cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
 
-      colorRGB color = black;
-      if(candidate->one_min_)
-        color = invdepthToRgb(candidate->invdepth_);
+    colorRGB color = black;
+    if(candidate->one_min_)
+      color = invdepthToRgb(candidate->invdepth_);
 
-      show_img->drawRectangle(r, color, cv::FILLED, alpha);
-      // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+    show_img->drawRectangle(r, color, cv::FILLED, alpha);
+    // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
 
-    }
   }
+  // }
 
   show_img->show(size);
   // selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);

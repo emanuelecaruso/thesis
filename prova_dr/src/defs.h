@@ -368,6 +368,10 @@ namespace pr {
     return T;
   }
 
+  #define POSE_CONSTANT 0
+  #define VELOCITY_CONSTANT 1
+
+
   inline int lowerBound(std::vector<int> const& vec, int value) {
     auto const it = std::lower_bound(vec.begin(), vec.end(), value);
     if (it == vec.end()) { return -1; }

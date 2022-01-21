@@ -108,6 +108,8 @@ class Camera{
     void uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe) const;
+    void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const;
+    void pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe, Eigen::Vector3f& p_K_dot_incamframe) const;
     void pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe) const;
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const;
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv) const;
@@ -193,13 +195,15 @@ class Candidate : public CandidateBase{
               float grad_magnitude, pixelIntensity intensity,
               float intensity_dx, float intensity_dy,
               float grad_magnitude_dx, float grad_magnitude_dy,
-              float invdepth, float invdepth_var, Eigen::Vector3f* p, Eigen::Vector3f* p_incamframe ):
+              float invdepth, float invdepth_var, Eigen::Vector3f* p,
+              Eigen::Vector3f* p_incamframe, Eigen::Vector3f* p_K_dot_incamframe ):
     CandidateBase( level, pixel, uv),
     cam_(cam),
     bounds_(nullptr),
     one_min_(true),
     invdepth_(invdepth),
     p_incamframe_(p_incamframe),
+    p_K_dot_incamframe_(p_K_dot_incamframe),
     p_(p),
     invdepth_var_(invdepth_var),
     region_sampling_(nullptr),
@@ -221,6 +225,7 @@ class Candidate : public CandidateBase{
     one_min_(false),
     invdepth_(-1),
     p_incamframe_(new Eigen::Vector3f),
+    p_K_dot_incamframe_(new Eigen::Vector3f),
     p_(new Eigen::Vector3f),
     invdepth_var_(-1),
     region_sampling_(region_sampling),
@@ -238,6 +243,7 @@ class Candidate : public CandidateBase{
     bool one_min_;
     float invdepth_;
     Eigen::Vector3f* p_incamframe_;
+    Eigen::Vector3f* p_K_dot_incamframe_;
     Eigen::Vector3f* p_;
     float invdepth_var_;
     RegionWithCandidates* region_sampling_;
@@ -399,7 +405,7 @@ class CameraForMapping: public Camera{
 
   public:
 
-
+    Camera* grountruth_camera_;
     Wvlt_dec* wavelet_dec_;
     std::vector<Candidate*>* candidates_;
     std::vector<ActivePoint*>* active_points_;
@@ -415,8 +421,9 @@ class CameraForMapping: public Camera{
 
     CameraForMapping(const std::string& name, const CamParameters* cam_parameters,
            const Image<pixelIntensity>* image_intensity, Image<float>* invdepth_map,
-           Params* parameters):
+           Params* parameters, Camera* grountruth_camera):
 
+           grountruth_camera_(grountruth_camera),
            Camera( name, cam_parameters, image_intensity, invdepth_map),
            wavelet_dec_(new Wvlt_dec(parameters->coarsest_level+1,new Image<pixelIntensity>(image_intensity_), this)),
            candidates_(new std::vector<Candidate*>),
@@ -451,12 +458,12 @@ class CameraForMapping: public Camera{
 
     CameraForMapping(Camera* env_cam, Params* parameters):
            CameraForMapping( env_cam->name_, env_cam->cam_parameters_, env_cam->image_intensity_,
-                              env_cam->invdepth_map_, parameters)
+                              env_cam->invdepth_map_, parameters, env_cam)
            {  };
 
     colorRGB invdepthToRgb(float invdepth);
     void showCandidates(float size);
-    void showCoarseCandidates(float size);
+    void showCoarseCandidates(int level, float size=1);
     void showProjCandidates(float size);
     void showActivePoints(float size);
 

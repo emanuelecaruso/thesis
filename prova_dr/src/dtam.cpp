@@ -47,7 +47,8 @@ void Dtam::addCamera(int counter){
   // CameraForStudy* env_cam=environment_->camera_vector_->at(counter);
   Camera* env_cam=environment_->camera_vector_->at(counter);
   CameraForMapping* new_cam=new CameraForMapping (env_cam, parameters_);
-  new_cam->regions_sampling_->collectCandidates(parameters_->wavelet_levels);
+  // new_cam->regions_sampling_->collectCandidates(parameters_->wavelet_levels);
+  new_cam->regions_sampling_->collectCandidates(1);
   camera_vector_->push_back(new_cam);
 }
 
