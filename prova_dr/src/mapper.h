@@ -37,7 +37,8 @@ class CamCouple{
     // void showEpSegment(Candidate* candidate);
 
     void getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v);
-    void getBound(float u1, float v1, float d1, float& bound, bool u_or_v);
+    void getCoord(float u1, float v1, float d1, float& coord, bool u_or_v);
+    void getUv(float u1, float v1, float d1, float& u2, float& v2 );
     void getD1(float u1, float v1, float& d1, float coord, bool u_or_v);
     void getD2(float u1, float v1, float d1, float& d2);
     void getSlope(float u1, float v1, float& slope_m);
@@ -70,7 +71,7 @@ class Mapper{
 
     void selectNewCandidates();
 
-    void trackExistingCandidates(bool take_gt_points=false);
+    void trackExistingCandidates(bool take_gt_points=false, bool debug_mapping=false);
 
 
 
@@ -86,6 +87,6 @@ class Mapper{
 
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple );
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line );
-    void trackExistingCandidates_();
+    void trackExistingCandidates_( bool debug_mapping);
     void trackExistingCandidatesGT();
 };

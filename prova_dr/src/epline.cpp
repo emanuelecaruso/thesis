@@ -1,3 +1,4 @@
+#include "mapper.h"
 #include "epline.h"
 #include <math.h>
 #include "utils.h"
@@ -62,27 +63,174 @@ void EpipolarLine::lineTraverse(int level)
 
 
 
-float EpipolarLine::getCostMagn(const pixelIntensity magnitude_r, const pixelIntensity magnitude_m,
-                            const pixelIntensity intensity_r, const pixelIntensity intensity_m) {
+float EpipolarLine::getCostMagn(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
+                                const pixelIntensity magnitude_r, const pixelIntensity magnitude_m) {
   float cost_magn = abs(magnitude_r-magnitude_m);
   float cost_col = abs(intensity_r-intensity_m);
   // return cost_magn;
   return cost_magn+cost_col;
 }
 
-
-float EpipolarLine::getCostNew(const pixelIntensity dh_r, const pixelIntensity dh_m,
-                            const pixelIntensity dv_r, const pixelIntensity dv_m,
-                            const pixelIntensity intensity_r, const pixelIntensity intensity_m ) {
-  float cost_dh = abs(dh_r-dh_m);
-  float cost_dv = abs(dv_r-dv_m);
+float EpipolarLine::getCostMagn2(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
+                                const pixelIntensity magnitude_r, const pixelIntensity magnitude_m,
+                                const pixelIntensity magnitude2_r, const pixelIntensity magnitude2_m) {
   float cost_col = abs(intensity_r-intensity_m);
-
-  return cost_dh+cost_dv+2*cost_col;
-  // return cost_dh+cost_dv;
+  float cost_magn = abs(magnitude_r-magnitude_m);
+  float cost_magn2 = abs(magnitude2_r-magnitude2_m);
+  // return cost_magn;
+  return cost_magn+cost_magn2+2*cost_col;
 }
 
+std::vector<Eigen::Vector2f>* EpipolarLine::collectUvsROfDSOPattern(Candidate* cand){
+  std::vector<Eigen::Vector2f>* uvs = new std::vector<Eigen::Vector2f>;
+  float pixel_width = cand->cam_->cam_parameters_->width/(float)(cand->cam_->cam_parameters_->resolution_x/(pow(2,cand->level_+1)));
 
+  // Eigen::Vector2f uv_central = cand->uv_;
+  // uvs->push_back(uv_central);
+
+  Eigen::Vector2f uv_new;
+  uv_new.x() = cand->uv_.x()+pixel_width*2;
+  uv_new.y() = cand->uv_.y();
+  uvs->push_back(uv_new);
+  uv_new.x() = cand->uv_.x()-pixel_width*2;
+  uv_new.y() = cand->uv_.y();
+  uvs->push_back(uv_new);
+  uv_new.x() = cand->uv_.x();
+  uv_new.y() = cand->uv_.y()+pixel_width*2;
+  uvs->push_back(uv_new);
+  uv_new.x() = cand->uv_.x();
+  uv_new.y() = cand->uv_.y()-pixel_width*2;
+  uvs->push_back(uv_new);
+  uv_new.x() = cand->uv_.x()+pixel_width;
+  uv_new.y() = cand->uv_.y()+pixel_width;
+  uvs->push_back(uv_new);
+  uv_new.x() = cand->uv_.x()-pixel_width;
+  uv_new.y() = cand->uv_.y()+pixel_width;
+  uvs->push_back(uv_new);
+  uv_new.x() = cand->uv_.x()-pixel_width;
+  uv_new.y() = cand->uv_.y()-pixel_width;
+  uvs->push_back(uv_new);
+
+  return uvs;
+}
+
+std::vector<pixelIntensity>* EpipolarLine::collectIntensitiesMOfDSOPattern(Candidate* cand, Eigen::Vector2f& uv_m, CamCouple* cam_couple, std::vector<pixelIntensity>* intensities_r, std::vector<pixelIntensity>* intensities_m ){
+
+  Image<pixelIntensity>* c_r = cam_couple->cam_r_->wavelet_dec_->vector_wavelets->at(cand->level_)->c;
+  Image<pixelIntensity>* c_m = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(cand->level_)->c;
+
+  // collect uvs r
+  std::vector<Eigen::Vector2f>* uvs_r = collectUvsROfDSOPattern(cand);
+
+  // get d1
+  float d1;
+  float coord;
+  if(u_or_v){
+    coord=uv_m.x();
+  }else{
+    coord=uv_m.y();
+  }
+  cam_couple->getD1(cand->uv_.x(),cand->uv_.y(),d1,coord,u_or_v);
+
+  // push central pixel
+  Eigen::Vector2i pixel_central_m;
+  cam_couple->cam_m_->uv2pixelCoords(uv_m,pixel_central_m,cand->level_);
+  pixelIntensity intensity_central_r = c_r->evalPixel(cand->pixel_);
+  pixelIntensity intensity_central_m = c_m->evalPixel(pixel_central_m);
+  intensities_r->push_back(intensity_central_r);
+  intensities_m->push_back(intensity_central_m);
+
+  //project each point inside r on cam m
+  for(Eigen::Vector2f uv_r : *uvs_r){
+    Eigen::Vector2f uv_m;
+    Eigen::Vector2i pixel_r, pixel_m;
+    cam_couple->getUv(uv_r.x(),uv_r.y(),d1,uv_m.x(),uv_m.y());
+    cam_couple->cam_r_->uv2pixelCoords(uv_r,pixel_r,cand->level_);
+    cam_couple->cam_m_->uv2pixelCoords(uv_m,pixel_m,cand->level_);
+    pixelIntensity intensity_r = c_r->evalPixel(pixel_r);
+    pixelIntensity intensity_m = c_m->evalPixel(pixel_m);
+    intensities_r->push_back(intensity_r);
+    intensities_m->push_back(intensity_m);
+  }
+
+}
+
+float EpipolarLine::getCostSSD(std::vector<pixelIntensity>* intensities_r, std::vector<pixelIntensity>* intensities_m){
+  float cost = 0;
+  for(int i=0; i<intensities_r->size(); i++){
+    cost+=pow(intensities_r->at(i)-intensities_m->at(i),2);
+  }
+  return cost;
+}
+
+bool EpipolarLine::searchMinDSO(Candidate* candidate, Params* parameters, CamCouple* cam_couple ){
+  // iterate through uvs
+  float prev_cost = FLT_MAX;
+  int min_uv_idx;
+
+  pixelIntensity intensity_r = candidate->intensity_;
+  float magnitude_r = candidate->grad_magnitude_;
+  float magnitude2_r = candidate->grad_magnitude2_;
+
+  bool sign=true;
+
+  for(int i=0; i<uvs->size(); i++){
+    Eigen::Vector2f uv = uvs->at(i);
+    Eigen::Vector2i pixel;
+    cam->uv2pixelCoords(uv,pixel,candidate->level_);
+
+    float magnitude_m;
+
+    if(! cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m)){
+      continue;
+    }
+
+    // hard thresholding on magnitude
+    bool magnitude_under_threshold=magnitude_m<magnitude_r*parameters->grad_perc_threshold;
+    // bool magnitude_under_threshold=abs(magnitude_m-magnitude_r)>parameters->cost_grad_threshold;
+    // bool magnitude_under_threshold=abs(magnitude_m-magnitude_r)>parameters->cost_grad_threshold;
+    // bool magnitude_under_threshold=false;
+
+    if(magnitude_under_threshold){
+      // check if previous cost is a local minimum
+      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold )){
+      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_) )){
+      // if(sign && prev_cost<(parameters->cost_threshold )){
+        // add previous cost inside minimums
+        uv_idxs_mins->push_back(i-1);
+      }
+      // restart search
+      sign=false;
+      prev_cost = FLT_MAX;
+      continue;
+    }
+
+    std::vector<pixelIntensity>* intensities_r = new std::vector<pixelIntensity>;
+    std::vector<pixelIntensity>* intensities_m = new std::vector<pixelIntensity>;
+    collectIntensitiesMOfDSOPattern( candidate, uv, cam_couple, intensities_r, intensities_m);
+
+    // get cost
+    float cost = getCostSSD(intensities_r, intensities_m);
+
+    if (cost<prev_cost){
+      sign=true;
+    }
+    else{
+      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
+      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
+      // if(sign && prev_cost<(parameters->cost_threshold)){
+        uv_idxs_mins->push_back(i-1);
+      }
+      sign=false;
+    }
+    prev_cost = cost;
+  }
+  // std::cout << prev_cost << std::endl;
+  if(uv_idxs_mins->empty())
+    return 0;
+  return 1;
+
+}
 
 bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
   // iterate through uvs
@@ -91,10 +239,8 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
   pixelIntensity intensity_r = candidate->intensity_;
   float magnitude_r = candidate->grad_magnitude_;
+  float magnitude2_r = candidate->grad_magnitude2_;
 
-  // cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(candidate->pixel_, magnitude_m);
-
-  // for(Eigen::Vector2f uv : *uvs){
 
   bool sign=true;
 
@@ -105,49 +251,53 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
     pixelIntensity intensity_m;
     float magnitude_m;
+    float magnitude2_m;
 
 
-    // check if pixel is within the image
-    if(cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m))
-    {
+    if(!cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, intensity_m))
+      continue;
 
-      // hard thresholding on magnitude
-      bool magnitude_under_threshold=magnitude_m<magnitude_r*parameters->grad_perc_threshold;
+    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m);
+    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd2->evalPixel(pixel, magnitude2_m);
 
-      if(magnitude_under_threshold){
-        // check if previous cost is a local minimum
-        // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold )){
-        if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_) )){
-        // if(sign && prev_cost<(parameters->cost_threshold )){
-          // add previous cost inside minimums
-          uv_idxs_mins->push_back(i-1);
-        }
-        // restart search
-        sign=false;
-        prev_cost = FLT_MAX;
-        continue;
+
+    // hard thresholding on magnitude
+    bool magnitude_under_threshold=magnitude_m<magnitude_r*parameters->grad_perc_threshold;
+
+    if(magnitude_under_threshold){
+      // check if previous cost is a local minimum
+      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold )){
+      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_) )){
+      // if(sign && prev_cost<(parameters->cost_threshold )){
+        // add previous cost inside minimums
+        uv_idxs_mins->push_back(i-1);
       }
-
-
-      // get cost
-      cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, intensity_m);
-
-      // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, intensity_r,intensity_m );
-      float cost = getCostMagn(magnitude_r, magnitude_m, intensity_r, intensity_m);
-      if (cost<prev_cost){
-        sign=true;
-      }
-      else{
-        // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
-        if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
-        // if(sign && prev_cost<(parameters->cost_threshold)){
-          uv_idxs_mins->push_back(i-1);
-        }
-        sign=false;
-      }
-      prev_cost = cost;
-
+      // restart search
+      sign=false;
+      prev_cost = FLT_MAX;
+      continue;
     }
+
+
+    // get cost
+
+    // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, intensity_r,intensity_m );
+    float cost = getCostMagn(intensity_r, intensity_m, magnitude_r, magnitude_m);
+    // float cost = getCostMagn2(intensity_r, intensity_m, magnitude_r, magnitude_m, magnitude2_r, magnitude2_m);
+    if (cost<prev_cost){
+      sign=true;
+    }
+    else{
+      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
+      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
+      // if(sign && prev_cost<(parameters->cost_threshold)){
+        uv_idxs_mins->push_back(i-1);
+      }
+      sign=false;
+    }
+    prev_cost = cost;
+
+
 
 
 

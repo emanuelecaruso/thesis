@@ -90,9 +90,23 @@ class Image{
       return new_img;
     }
 
+    inline bool pixelInRange(const Eigen::Vector2i& pixel_coords) const{
+      if (pixel_coords.y()>=0 && pixel_coords.y()<image_.rows && pixel_coords.x()>=0 && pixel_coords.x()<image_.cols){
+        return true;
+      }
+      return false;
+    }
+
+    inline bool pixelInRange(const int row, const int col) const{
+      if (row>=0 && row<image_.rows && col>=0 && col<image_.cols){
+        return true;
+      }
+      return false;
+    }
+
     inline T evalPixel(const Eigen::Vector2i& pixel_coords) const{
       T color;
-      if (pixel_coords.y()>=0 && pixel_coords.y()<image_.rows && pixel_coords.x()>=0 && pixel_coords.x()<image_.cols)
+      if(pixelInRange(pixel_coords))
       {
         color = image_.template at<T>(pixel_coords.y(),pixel_coords.x());
       }
@@ -101,7 +115,7 @@ class Image{
 
     inline T evalPixel(const int row, const int col) const{
       T color;
-      if (row>=0 && row<image_.rows && col>=0 && col<image_.cols)
+      if(pixelInRange(row, col))
       {
         color = image_.template at<T>(row,col);
       }
@@ -109,7 +123,7 @@ class Image{
     }
 
     inline bool evalPixel(const Eigen::Vector2i& pixel_coords, T& color) const{
-      if (pixel_coords.y()>=0 && pixel_coords.y()<image_.rows && pixel_coords.x()>=0 && pixel_coords.x()<image_.cols)
+      if(pixelInRange(pixel_coords))
       {
         color = image_.template at<T>(pixel_coords.y(),pixel_coords.x());
         return true;
@@ -118,7 +132,7 @@ class Image{
     }
 
     inline bool evalPixel(const int row, const int col, T& color) const{
-      if (row>=0 && row<image_.rows && col>=0 && col<image_.cols)
+      if(pixelInRange(row, col))
       {
         color = image_.template at<T>(row,col);
         return true;
@@ -127,7 +141,7 @@ class Image{
     }
 
     inline bool setPixel(const Eigen::Vector2i& pixel_coords, const T& color){
-      if (pixel_coords.y()>=0 && pixel_coords.y()<image_.rows && pixel_coords.x()>=0 && pixel_coords.x()<image_.cols)
+      if(pixelInRange(pixel_coords))
       {
         image_.template at<T>(pixel_coords.y(),pixel_coords.x()) = color;
         return true;
@@ -136,7 +150,7 @@ class Image{
     }
 
     inline bool setPixel(const int row, const int col, const T& color){
-      if (row>=0 && row<image_.rows && col>=0 && col<image_.cols)
+      if(pixelInRange(row, col))
       {
         image_.template at<T>(row,col) = color;
         return true;
@@ -189,7 +203,7 @@ class Image{
       return compute_sobel_y("fy_"+name_);
     }
 
-    inline Image< pixelIntensity>* compute_graddiff_x(const std::string& name) const{
+    inline Image< pixelIntensity>* compute_sobel_2nd_x(const std::string& name) const{
       Image<  pixelIntensity >* img_graddiff_x=new Image< pixelIntensity >(name);
 
       cv::Mat_<float> kernel(3,3);
@@ -202,7 +216,7 @@ class Image{
       return img_graddiff_x;
     }
 
-    inline Image<pixelIntensity>* compute_graddiff_y(const std::string& name) const{
+    inline Image<pixelIntensity>* compute_sobel_2nd_y(const std::string& name) const{
       Image< pixelIntensity >* img_graddiff_y =new Image< pixelIntensity >(name);
 
       cv::Mat_<float> kernel(3,3);
@@ -215,12 +229,12 @@ class Image{
       return img_graddiff_y;
     }
 
-    inline Image< pixelIntensity>* compute_graddiff_x() const{
-      return compute_graddiff_x("graddiff_x_"+name_);
+    inline Image< pixelIntensity>* compute_sobel_2nd_x() const{
+      return compute_sobel_2nd_x("sobel_2nd_x_"+name_);
     }
 
-    inline Image<pixelIntensity>* compute_graddiff_y() const{
-      return compute_graddiff_y("graddiff_y_"+name_);
+    inline Image<pixelIntensity>* compute_sobel_2nd_y() const{
+      return compute_sobel_2nd_y("sobel_2nd_y_"+name_);
     }
 
     inline Image<pixelIntensity>* squared() const{

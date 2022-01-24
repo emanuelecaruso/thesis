@@ -30,3 +30,5 @@
 - return real variance TODO (camera.h)
 
 - regions projected candidates -> vector projected candidates ?
+
+- warp function for tracking can be optimized (tracking may be faster)

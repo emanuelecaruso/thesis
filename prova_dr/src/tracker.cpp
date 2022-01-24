@@ -108,6 +108,9 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
         pixelIntensity magn_cd = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd->evalPixel(reg->y_,reg->x_);
         pixelIntensity magn_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dx->evalPixel(reg->y_,reg->x_);
         pixelIntensity magn_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dy->evalPixel(reg->y_,reg->x_);
+        pixelIntensity magn_cd2 = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd2->evalPixel(reg->y_,reg->x_);
+        pixelIntensity magn_cd2_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd2_dx->evalPixel(reg->y_,reg->x_);
+        pixelIntensity magn_cd2_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd2_dy->evalPixel(reg->y_,reg->x_);
 
 
         // iterate along collected candidates
@@ -135,8 +138,13 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
           invdepth_var = (float)num_cands/inv_v_sum;
 
           // create coarse candidate
-          Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe, magn_cd,c,
-                                                      c_dx, c_dy, magn_cd_dx, magn_cd_dy,
+          Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe,
+                                                      c,
+                                                      magn_cd,
+                                                      magn_cd2,
+                                                      c_dx, c_dy,
+                                                      magn_cd_dx, magn_cd_dy,
+                                                      magn_cd2_dx, magn_cd2_dy,
                                                       invdepth,invdepth_var,
                                                       p,p_incamframe);
           // push candidate inside coarse candidates
@@ -154,7 +162,9 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
   float gauss_img_intensity_noise = 0.01;// Gaussian image intensity noise
   Eigen::Matrix3f K = *(frame_new->K_);
   Eigen::Matrix3f Kinv = *(frame_new->Kinv_);
-  float weight = 1;
+  float variance = dtam_->parameters_->variance;
+  int ni = dtam_->parameters_->robustifier_dofs;
+
 
   // variables
   Eigen::Vector2f uv_newframe;
@@ -208,6 +218,9 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
     // error
     // float error = squareNorm(z-z_hat);
     float error = z_hat-z;
+
+    // weight
+    float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
 
     // jacobian
     Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
@@ -408,8 +421,6 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
           }
           else
             v= keyframe->candidates_;
-
-          // std::cout << "level " << i << ", cands: " << v->size() << std::endl;
 
           // for each candidate
           for(Candidate* cand : *v){

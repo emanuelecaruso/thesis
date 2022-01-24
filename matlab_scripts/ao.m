@@ -1,27 +1,27 @@
 clear
 clc
 
-syms a b c p1 p2 p3
+syms da db dc p1 p2 p3
 
 p=[p1;p2;p3];
 
 
 Rx=[ 1      0       0;
-     0 cos(a) -sin(a);
-     0 sin(a)  cos(a)];
+     0 cos(da) -sin(da);
+     0 sin(da)  cos(da)];
  
-Ry= [cos(b)  0  sin(b);
+Ry= [cos(db)  0  sin(db);
      0       1       0;
-     -sin(b) 0  cos(b)];
+     -sin(db) 0  cos(db)];
 
-Rz= [ cos(c) -sin(c) 0;
-      sin(c)  cos(c) 0;
+Rz= [ cos(dc) -sin(dc) 0;
+      sin(dc)  cos(dc) 0;
       0       0      1];
 
-R = Rx*Ry*Rz;
-A=R*p;
-A=jacobian(A,[a,b,c]);
-A=subs(A,[a,b,c],[0,0,0])
+R = Rx*Ry*Rz
+% A=R*p;
+% A=jacobian(A,[a,b,c]);
+% A=subs(A,[a,b,c],[0,0,0])
   
 
 

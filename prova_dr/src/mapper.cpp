@@ -59,21 +59,25 @@ void CamCouple::getSlope(float u1, float v1, float& slope_m){
 
 void CamCouple::getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v){
 
-  getBound(u1, v1, min_depth, bound_low, u_or_v);
-  getBound(u1, v1, max_depth, bound_up, u_or_v);
+  getCoord(u1, v1, min_depth, bound_low, u_or_v);
+  getCoord(u1, v1, max_depth, bound_up, u_or_v);
 
 }
 
-void CamCouple::getBound(float u1, float v1, float d1, float& bound, bool u_or_v){
+void CamCouple::getCoord(float u1, float v1, float d1, float& coord, bool u_or_v){
   // u2
   if (u_or_v){
-    bound=(A_bu*u1*d1+B_bu*v1*d1+C_bu*d1+D_bu)/(E_bu*u1*d1+F_bu*v1*d1+G_bu*d1+H_bu);
+    coord=(A_bu*u1*d1+B_bu*v1*d1+C_bu*d1+D_bu)/(E_bu*u1*d1+F_bu*v1*d1+G_bu*d1+H_bu);
   }
   // v2
   else{
-    bound=(A_bv*u1*d1+B_bv*v1*d1+C_bv*d1+D_bv)/(E_bv*u1*d1+F_bv*v1*d1+G_bv*d1+H_bv);
+    coord=(A_bv*u1*d1+B_bv*v1*d1+C_bv*d1+D_bv)/(E_bv*u1*d1+F_bv*v1*d1+G_bv*d1+H_bv);
   }
+}
 
+void CamCouple::getUv(float u1, float v1, float d1, float& u2, float& v2 ){
+  u2=(A_bu*u1*d1+B_bu*v1*d1+C_bu*d1+D_bu)/(E_bu*u1*d1+F_bu*v1*d1+G_bu*d1+H_bu);
+  v2=(A_bv*u1*d1+B_bv*v1*d1+C_bv*d1+D_bv)/(E_bv*u1*d1+F_bv*v1*d1+G_bv*d1+H_bv);
 }
 
 void CamCouple::getD1(float u1, float v1, float& d1, float coord, bool u_or_v){
@@ -243,11 +247,16 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   Eigen::Vector2f uv;
   Eigen::Vector2i pixel_coords;
   float depth_m;
-  cam_couple->cam_r_->pointAtDepth(candidate->uv_,1.0/candidate->invdepth_,p);
-  cam_couple->cam_m_->projectPoint( p, uv, depth_m );
+
+  cam_couple->getUv(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, uv.x(), uv.y() );
+
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
-  CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_coords, uv, 1.0/depth_m );
-  return projected_cand;
+  if (candidate->cam_->image_intensity_->pixelInRange(pixel_coords)){
+    CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_coords, uv, 1.0/depth_m );
+    return projected_cand;
+  }
+  return nullptr;
+
 }
 
 CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line ){
@@ -306,19 +315,21 @@ void Mapper::trackExistingCandidatesGT(){
   }
 }
 
-void Mapper::trackExistingCandidates(bool take_gt_points){
+void Mapper::trackExistingCandidates(bool take_gt_points, bool debug_mapping){
   if(take_gt_points)
     trackExistingCandidatesGT();
   else
-    trackExistingCandidates_();
+    trackExistingCandidates_(  debug_mapping);
 }
 
-void Mapper::trackExistingCandidates_(){
+void Mapper::trackExistingCandidates_(bool debug_mapping){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
   sharedCoutDebug("   - Tracking existing candidates");
 
   std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
+
+  float total_error=0;
 
   //iterate through active keyframes
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
@@ -334,8 +345,14 @@ void Mapper::trackExistingCandidates_(){
 
     int n_cand_to_track = keyframe->candidates_->size();
     int n_cand_tracked = 0;
+    int n_cand_without_mins = 0;
+    int n_cand_updated = 0;
+    int n_cand_repetitive = 0;
+    int n_cand_not_updated = 0;
+    int n_cand_not_in_newframe = 0;
 
     // bool flag = 1;
+
 
 
     // iterate through all candidates
@@ -358,16 +375,19 @@ void Mapper::trackExistingCandidates_(){
         // if uvs is empty, uvs are outside the frustum
         if(ep_segment->uvs->empty()){
           // those bounds are non valid
+          n_cand_not_in_newframe++;
           continue;
         }
 
-        // if uvs<3, epipolar segment is too short to update bounds
-        if(ep_segment->uvs->size()<3){
+        // if uvs<=3, epipolar segment is too short to update bounds
+        if(ep_segment->uvs->size()<=3){
 
           // push the same bounds
           cand->bounds_->push_back(cand->bounds_->at(j));
 
           keep_cand=true;
+          n_cand_not_updated++;
+
           // if there are no mins till now
           if(!num_mins){
             // save projected cand in case is going to be pushed
@@ -382,44 +402,34 @@ void Mapper::trackExistingCandidates_(){
 
         // if no mins are found
         else if (!ep_segment->searchMin(cand, parameters_)){
+        // else if (!ep_segment->searchMinDSO(cand, parameters_, cam_couple)){
           // those bounds are not valid
+          n_cand_without_mins++;
           continue;
         }
         // if too much mins are found (higly repetitive texture)
         else if (ep_segment->uv_idxs_mins->size()>parameters_->max_num_mins){
           keep_cand=false;
+          n_cand_repetitive++;
           // discard candidate
+
+          // ep_segment->showEpipolarWithMin(cand->level_);
+          // Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
+          // magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+          // cv::waitKey(0);
+
           break;
         }
         else{
 
-          // // if (ep_segment->uv_idxs_mins->size()==1){
-          //   // if (dtam_->frame_current_==7){
-          //   // if (flag){
-          //   // if(j==cand->bounds_->size()-1)
-          //   // flag=0;
-          //   // ep_segment->showEpipolar(cand->level_);
-          //   ep_segment->showEpipolarWithMin(cand->level_);
-          //
-          //   // Image<float>* dh_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
-          //   // dh_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dh_rob");
-          //   // Image<float>* dv_rob = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
-          //   // dv_rob->show(pow(2,cand->level_+1), keyframe->name_+"_dv_rob");
-          //   // Image<float>* dh_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dh_robust->returnImgForGradientVisualization("dh_rob");
-          //   // dh_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dh_rob last");
-          //   // Image<float>* dv_rob_l = last_keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->dv_robust->returnImgForGradientVisualization("dv_rob");
-          //   // dv_rob_l->show(pow(2,cand->level_+1), last_keyframe->name_+"_dv_rob last");
-          //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
-          //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-          //
-          //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->c->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_);
-          //   // keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magnitude3C_img->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"_phase");
-          //   cv::waitKey(0);
-          //   // cv::destroyAllWindows();
-          // // }
+          n_cand_updated++;
 
-          // cam_couple->compareEpSegmentWithGt(cand);
-          // cam_couple->showEpSegment(cand);
+
+          // ep_segment->showEpipolarWithMin(cand->level_);
+          // Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
+          // magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+          // cv::waitKey(0);
+
 
           // if there are no mins till now, and only 1 min has been found
           if(!num_mins && ep_segment->uv_idxs_mins->size()==1 ){
@@ -439,16 +449,29 @@ void Mapper::trackExistingCandidates_(){
 
       }
 
+
       if (keep_cand){
         n_cand_tracked++;
         // erase old bounds
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
 
-        if(num_mins==1){
+        if(num_mins==1 ){
           // push inside "candidates projected vec" in new keyframe
-          cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
-          cand->invdepth_var_=cand->getInvdepthVar();
-          cand->one_min_=true;
+          if(projected_cand!=nullptr){
+            cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+            cand->invdepth_var_=cand->getInvdepthVar();
+            cand->one_min_=true;
+          }
+
+
+          if(debug_mapping && projected_cand!=nullptr){
+            Eigen::Vector2i pixel_proj;
+            last_keyframe->uv2pixelCoords(projected_cand->uv_, pixel_proj);
+            float invdepth_val = last_keyframe->grountruth_camera_->invdepth_map_->evalPixel(pixel_proj);
+            float invdepth_gt = invdepth_val/last_keyframe->cam_parameters_->min_depth;
+            total_error+=pow(invdepth_gt-projected_cand->invdepth_,2);
+          }
+
         }
         else if(num_mins>1){
           cand->invdepth_var_=-1;
@@ -462,14 +485,30 @@ void Mapper::trackExistingCandidates_(){
       else{
         keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
         cand->marginalize();
+
       }
+
+
 
 
     }
 
-    sharedCoutDebug("         - # candidates tracked: "+std::to_string(n_cand_tracked)+ " out of "+std::to_string(n_cand_to_track));
 
+
+    // sharedCoutDebug("         - # candidates tracked: "+std::to_string(n_cand_tracked)+ " out of "+std::to_string(n_cand_to_track));
+    sharedCoutDebug("         - tracked: "+std::to_string(n_cand_tracked)+ " ("+std::to_string(n_cand_updated)+" bounds updated, "+std::to_string(n_cand_not_updated)+" bounds not updated) out of "+std::to_string(n_cand_to_track));
+    sharedCoutDebug("         - not tracked: "+std::to_string(n_cand_to_track-n_cand_tracked)+ " ("+std::to_string(n_cand_without_mins)+" bounds with no mins, "+std::to_string(n_cand_repetitive)+" bounds repetitive, "+std::to_string(n_cand_not_in_newframe)+" bounds outdide frustum ) out of "+std::to_string(n_cand_to_track));
+    //DEBUG
+    if(debug_mapping){
+      keyframe->showCandidates(2);
+    }
   }
+  if(debug_mapping)
+  {
+    last_keyframe->showProjCandidates(2);
+    std::cout << "total error: " << total_error << cv::waitKey(0);
+  }
+  // cv::destroyAllWindows();
 
 }
 

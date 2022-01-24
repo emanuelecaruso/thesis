@@ -21,10 +21,14 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
   c=new Image<pixelIntensity>("c");
   c_dx=new Image<pixelIntensity>("c_dx");
   c_dy=new Image<pixelIntensity>("c_dy");
+  c_d2x=new Image<pixelIntensity>("c_d2x");
+  c_d2y=new Image<pixelIntensity>("c_d2y");
   magn_cd=new Image<float>("magn_cd");
   magn_cd_dx=new Image<pixelIntensity>("magn_cd_dx");
   magn_cd_dy=new Image<pixelIntensity>("magn_cd_dy");
-
+  magn_cd2=new Image<float>("magn_cd2");
+  magn_cd2_dx=new Image<pixelIntensity>("magn_cd2_dx");
+  magn_cd2_dy=new Image<pixelIntensity>("magn_cd2_dy");
   int width=img->image_.cols;
   int height=img->image_.rows;
 
@@ -33,8 +37,12 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
   magn_cd->initImage(height/2, width/2);
   c_dx->initImage(height/2, width/2);
   c_dy->initImage(height/2, width/2);
+  c_d2x->initImage(height/2, width/2);
+  c_d2y->initImage(height/2, width/2);
   magn_cd_dx->initImage(height/2, width/2);
   magn_cd_dy->initImage(height/2, width/2);
+  magn_cd2_dx->initImage(height/2, width/2);
+  magn_cd2_dy->initImage(height/2, width/2);
 
   cv::resize(img->image_, c->image_, cv::Size(), 0.5, 0.5, cv::INTER_LINEAR );
   // c->image_=img->image_;
@@ -49,11 +57,16 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
 
   c_dx=c->compute_sobel_x();
   c_dy=c->compute_sobel_y();
+  c_d2x=c->compute_sobel_2nd_x();
+  c_d2y=c->compute_sobel_2nd_y();
 
   magn_cd=getMagnitude(c_dx,c_dy);
   magn_cd_dx=magn_cd->compute_sobel_x();
   magn_cd_dy=magn_cd->compute_sobel_y();
 
+  magn_cd2=getMagnitude(c_d2x,c_d2y);
+  magn_cd2_dx=magn_cd->compute_sobel_x();
+  magn_cd2_dy=magn_cd->compute_sobel_y();
 }
 
 Wvlt_lvl* Wvlt_dec::getWavLevel(int level){

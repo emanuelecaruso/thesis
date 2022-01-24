@@ -1,9 +1,10 @@
 #pragma once
 #include "camera.h"
 #include "image.h"
+#include "mapper.h"
 
 class Dtam; //forward declaration
-
+class CamCouple;
 
 
 
@@ -63,16 +64,24 @@ class EpipolarLine{
     void showEpipolarComparison(EpipolarLine* ep_line_2, const std::string& name, bool print, float size);
     void drawEpipolar(Image<colorRGB>* img, const colorRGB& color, int level=-1);
 
-    bool searchMin(Candidate* candidate, Params* parameters);
+    bool searchMinDSO(Candidate* candidate, Params* parameters, CamCouple* cam_couple );
+    bool searchMin(Candidate* candidate, Params* parameters );
+    
     float getCost(const pixelIntensity magnitude3C_r, const pixelIntensity magnitude3C_m,
                   const pixelIntensity phase3C_r, const pixelIntensity phase3C_m,
                   const pixelIntensity color_r, const pixelIntensity color_m );
-    float getCostNew(const pixelIntensity dh_r, const pixelIntensity dh_m,
-                  const pixelIntensity dv_r, const pixelIntensity dv_m,
-                  const pixelIntensity color_r, const pixelIntensity color_m );
-    float getCostMagn(const pixelIntensity magnitude3C_r, const pixelIntensity magnitude3C_m,
-                      const pixelIntensity color_r, const pixelIntensity color_m );
-    float getCostPhase( const pixelIntensity phase3C_r, const pixelIntensity phase3C_m);
+
+    float getCostMagn(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
+                      const pixelIntensity magnitude_r, const pixelIntensity magnitude_m);
+    float getCostMagn2(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
+                      const pixelIntensity magnitude_r, const pixelIntensity magnitude_m,
+                      const pixelIntensity magnitude2_r, const pixelIntensity magnitude2_m);
+
+    float getCostSSD(std::vector<pixelIntensity>* intensities_r, std::vector<pixelIntensity>* intensities_m);
+
+    std::vector<Eigen::Vector2f>* collectUvsROfDSOPattern(Candidate* cand);
+    std::vector<pixelIntensity>* collectIntensitiesMOfDSOPattern(Candidate* cand, Eigen::Vector2f& uv, CamCouple* cam_couple,
+                                    std::vector<pixelIntensity>* intensities_r, std::vector<pixelIntensity>* intensities_m );
 
   private:
 

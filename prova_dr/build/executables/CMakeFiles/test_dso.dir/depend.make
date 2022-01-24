@@ -1363,6 +1363,7 @@ executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/defs.h
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/epline.cpp
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/epline.h
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/image.h
+executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/mapper.h
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/parameters.h
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/utils.h
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/wavelet.h
