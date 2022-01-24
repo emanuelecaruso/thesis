@@ -18,9 +18,9 @@ class Wvlt_lvl{
     Image<float>* magn_cd;
     Image<float>* magn_cd_dx;
     Image<float>* magn_cd_dy;
-    Image<float>* magn_cd2;
-    Image<float>* magn_cd2_dx;
-    Image<float>* magn_cd2_dy;
+    Image<float>* phase_cd;
+    Image<float>* phase_cd_dx;
+    Image<float>* phase_cd_dy;
 
     // clone
     Wvlt_lvl(Image<pixelIntensity>* c_,
@@ -28,7 +28,8 @@ class Wvlt_lvl{
             Image<pixelIntensity>* c_d2x_, Image<pixelIntensity>* c_d2y_,
             Image<float>* magn_cd_,
             Image<pixelIntensity>* magn_cd_dx, Image<pixelIntensity>* magn_cd_dy,
-            Image<pixelIntensity>* magn_cd2_dx, Image<pixelIntensity>* magn_cd2_dy,
+            Image<float>* phase_cd_,
+            Image<pixelIntensity>* phase_cd_dx, Image<pixelIntensity>* phase_cd_dy,
            const int level_, const Wvlt_dec* wvlt_dec_):
               level(level_),
               wvlt_dec(wvlt_dec_),
@@ -37,11 +38,12 @@ class Wvlt_lvl{
               c_dy(c_dy_->clone()),
               c_d2x(c_d2x_->clone()),
               c_d2y(c_d2y_->clone()),
+              magn_cd(magn_cd_->clone()),
               magn_cd_dx(magn_cd_dx->clone()),
               magn_cd_dy(magn_cd_dy->clone()),
-              magn_cd2_dx(magn_cd2_dx->clone()),
-              magn_cd2_dy(magn_cd2_dy->clone()),
-              magn_cd(magn_cd_->clone())
+              phase_cd(phase_cd->clone()),
+              phase_cd_dx(phase_cd_dx->clone()),
+              phase_cd_dy(phase_cd_dy->clone())
     {  };
 
     // create first level
@@ -59,11 +61,12 @@ class Wvlt_lvl{
       WaveletDecHaar( wvlt_lvl_previous->c);
     };
     inline Wvlt_lvl* clone(){
-      return new Wvlt_lvl(c,c_dx,c_dy,c_d2x,c_d2y, magn_cd, magn_cd_dx, magn_cd_dy,magn_cd2_dx, magn_cd2_dy, level, wvlt_dec);};
+      return new Wvlt_lvl(c,c_dx,c_dy,c_d2x,c_d2y, magn_cd, magn_cd_dx, magn_cd_dy,phase_cd,phase_cd_dx, phase_cd_dy, level, wvlt_dec);};
 
   private:
     void WaveletDecHaar(const Image<pixelIntensity>* img);
     Image<float>* getMagnitude(Image<pixelIntensity>* dx, Image<pixelIntensity>* dy);
+    Image<float>* getPhase(Image<pixelIntensity>* dx, Image<pixelIntensity>* dy);
     // void WaveletDecHaar(Wvlt_lvl* wvlt_lvl_previous);
 
 };

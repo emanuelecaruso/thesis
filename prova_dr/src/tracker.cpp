@@ -108,9 +108,9 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
         pixelIntensity magn_cd = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd->evalPixel(reg->y_,reg->x_);
         pixelIntensity magn_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dx->evalPixel(reg->y_,reg->x_);
         pixelIntensity magn_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dy->evalPixel(reg->y_,reg->x_);
-        pixelIntensity magn_cd2 = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd2->evalPixel(reg->y_,reg->x_);
-        pixelIntensity magn_cd2_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd2_dx->evalPixel(reg->y_,reg->x_);
-        pixelIntensity magn_cd2_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd2_dy->evalPixel(reg->y_,reg->x_);
+        pixelIntensity phase_cd = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd->evalPixel(reg->y_,reg->x_);
+        pixelIntensity phase_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dx->evalPixel(reg->y_,reg->x_);
+        pixelIntensity phase_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dy->evalPixel(reg->y_,reg->x_);
 
 
         // iterate along collected candidates
@@ -141,10 +141,10 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
           Candidate* candidate_coarse = new Candidate(i,pixel, uv, keyframe,
                                                       c,
                                                       magn_cd,
-                                                      magn_cd2,
-                                                      c_dx, c_dy,
-                                                      magn_cd_dx, magn_cd_dy,
-                                                      magn_cd2_dx, magn_cd2_dy,
+                                                      phase_cd,
+                                                      // c_dx, c_dy,
+                                                      // magn_cd_dx, magn_cd_dy,
+                                                      // phase_cd_dx, phase_cd_dy,
                                                       invdepth,invdepth_var,
                                                       p,p_incamframe);
           // push candidate inside coarse candidates

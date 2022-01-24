@@ -17,11 +17,11 @@ static int coarsest_level_= 2; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 static float grad_threshold_=0.02;
 // static float grad_threshold_=0.1;
-static float grad_perc_threshold_=0.75;
 // static float cost_threshold_=0.7;
-// static float cost_threshold_=0.2;
-static float cost_threshold_=0.4;  // for DSO
-static float cost_grad_threshold_=0.4;
+static float cost_threshold_=0.02;
+// static float cost_threshold_=0.4;  // for DSO
+// static float cost_threshold_=0.03;  // for DSO
+static float cost_grad_threshold_=0.01;
 static int num_candidates_=4000;
 // static int num_candidates_=100;
 static int max_num_active_points_=num_candidates_;
@@ -48,7 +48,6 @@ struct Params{
   int coarsest_level=coarsest_level_;
   int reg_level=reg_level_;
   float grad_threshold=grad_threshold_;
-  float grad_perc_threshold=grad_perc_threshold_;
   float cost_threshold=cost_threshold_;
   float cost_grad_threshold=cost_grad_threshold_;
   int num_candidates=num_candidates_;

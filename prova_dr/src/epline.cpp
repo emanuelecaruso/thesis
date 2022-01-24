@@ -73,10 +73,10 @@ float EpipolarLine::getCostMagn(const pixelIntensity intensity_r, const pixelInt
 
 float EpipolarLine::getCostMagn2(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
                                 const pixelIntensity magnitude_r, const pixelIntensity magnitude_m,
-                                const pixelIntensity magnitude2_r, const pixelIntensity magnitude2_m) {
+                                const pixelIntensity phase_r, const pixelIntensity phase_m) {
   float cost_col = abs(intensity_r-intensity_m);
   float cost_magn = abs(magnitude_r-magnitude_m);
-  float cost_magn2 = abs(magnitude2_r-magnitude2_m);
+  float cost_magn2 = abs(phase_r-phase_m);
   // return cost_magn;
   return cost_magn+cost_magn2+2*cost_col;
 }
@@ -170,7 +170,6 @@ bool EpipolarLine::searchMinDSO(Candidate* candidate, Params* parameters, CamCou
 
   pixelIntensity intensity_r = candidate->intensity_;
   float magnitude_r = candidate->grad_magnitude_;
-  float magnitude2_r = candidate->grad_magnitude2_;
 
   bool sign=true;
 
@@ -186,16 +185,13 @@ bool EpipolarLine::searchMinDSO(Candidate* candidate, Params* parameters, CamCou
     }
 
     // hard thresholding on magnitude
-    bool magnitude_under_threshold=magnitude_m<magnitude_r*parameters->grad_perc_threshold;
-    // bool magnitude_under_threshold=abs(magnitude_m-magnitude_r)>parameters->cost_grad_threshold;
-    // bool magnitude_under_threshold=abs(magnitude_m-magnitude_r)>parameters->cost_grad_threshold;
-    // bool magnitude_under_threshold=false;
+    // bool magnitude_under_threshold=magnitude_m<magnitude_r*parameters->grad_perc_threshold;
+    bool magnitude_under_threshold=abs(magnitude_m-magnitude_r)>parameters->cost_grad_threshold;
+    // std::cout << abs(magnitude_m-magnitude_r) << "\n";
 
     if(magnitude_under_threshold){
       // check if previous cost is a local minimum
-      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold )){
-      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_) )){
-      // if(sign && prev_cost<(parameters->cost_threshold )){
+      if(sign && prev_cost<(parameters->cost_threshold )){
         // add previous cost inside minimums
         uv_idxs_mins->push_back(i-1);
       }
@@ -216,9 +212,7 @@ bool EpipolarLine::searchMinDSO(Candidate* candidate, Params* parameters, CamCou
       sign=true;
     }
     else{
-      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
-      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
-      // if(sign && prev_cost<(parameters->cost_threshold)){
+      if(sign && prev_cost<(parameters->cost_threshold)){
         uv_idxs_mins->push_back(i-1);
       }
       sign=false;
@@ -239,7 +233,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
   pixelIntensity intensity_r = candidate->intensity_;
   float magnitude_r = candidate->grad_magnitude_;
-  float magnitude2_r = candidate->grad_magnitude2_;
+  float phase_r = candidate->grad_phase_;
 
 
   bool sign=true;
@@ -251,24 +245,25 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
     pixelIntensity intensity_m;
     float magnitude_m;
-    float magnitude2_m;
+    float phase_m;
 
 
     if(!cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, intensity_m))
       continue;
 
     cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m);
-    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd2->evalPixel(pixel, magnitude2_m);
+    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixel(pixel, phase_m);
 
 
     // hard thresholding on magnitude
-    bool magnitude_under_threshold=magnitude_m<magnitude_r*parameters->grad_perc_threshold;
+    // bool magnitude_under_threshold=magnitude_m<magnitude_r*parameters->grad_perc_threshold;
+    bool magnitude_under_threshold=abs(magnitude_m-magnitude_r)>parameters->cost_grad_threshold;
 
     if(magnitude_under_threshold){
       // check if previous cost is a local minimum
       // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold )){
-      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_) )){
-      // if(sign && prev_cost<(parameters->cost_threshold )){
+      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_) )){
+      if(sign && prev_cost<(parameters->cost_threshold )){
         // add previous cost inside minimums
         uv_idxs_mins->push_back(i-1);
       }
@@ -283,14 +278,14 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
 
     // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, intensity_r,intensity_m );
     float cost = getCostMagn(intensity_r, intensity_m, magnitude_r, magnitude_m);
-    // float cost = getCostMagn2(intensity_r, intensity_m, magnitude_r, magnitude_m, magnitude2_r, magnitude2_m);
+    // float cost = getCostMagn2(intensity_r, intensity_m, magnitude_r, magnitude_m, phase_r, phase_m);
     if (cost<prev_cost){
       sign=true;
     }
     else{
       // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
-      if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
-      // if(sign && prev_cost<(parameters->cost_threshold)){
+      // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
+      if(sign && prev_cost<(parameters->cost_threshold)){
         uv_idxs_mins->push_back(i-1);
       }
       sign=false;

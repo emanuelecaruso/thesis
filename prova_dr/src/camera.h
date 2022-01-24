@@ -192,10 +192,10 @@ class Candidate : public CandidateBase{
               CameraForMapping* cam,
               pixelIntensity intensity,
               float grad_magnitude,
-              float grad_magnitude2,
-              float intensity_dx, float intensity_dy,
-              float grad_magnitude_dx, float grad_magnitude_dy,
-              float grad_magnitude_d2x, float grad_magnitude_d2y,
+              float grad_phase,
+              // float intensity_dx, float intensity_dy,
+              // float grad_magnitude_dx, float grad_magnitude_dy,
+              // float grad_phase_dx, float grad_phase_dy,
               float invdepth, float invdepth_var, Eigen::Vector3f* p,
               Eigen::Vector3f* p_incamframe ):
     CandidateBase( level, pixel, uv),
@@ -210,7 +210,7 @@ class Candidate : public CandidateBase{
     regions_coarse_(nullptr),
     intensity_(intensity),
     grad_magnitude_(grad_magnitude),
-    grad_magnitude2_(grad_magnitude2)
+    grad_phase_(grad_phase)
     {    }
 
 
@@ -218,10 +218,10 @@ class Candidate : public CandidateBase{
               CameraForMapping* cam,
               pixelIntensity intensity,
               float grad_magnitude,
-              float grad_magnitude2,
-              float intensity_dx, float intensity_dy,
-              float grad_magnitude_dx, float grad_magnitude_dy,
-              float grad_magnitude_d2x, float grad_magnitude_d2y,
+              float grad_phase,
+              // float intensity_dx, float intensity_dy,
+              // float grad_magnitude_dx, float grad_magnitude_dy,
+              // float grad_phase_dx, float grad_phase_dy,
               std::vector<bound>* bounds, RegionWithCandidates* region_sampling ):
     CandidateBase( level, pixel, uv),
     cam_(cam),
@@ -235,7 +235,7 @@ class Candidate : public CandidateBase{
     regions_coarse_(new std::vector<RegionWithCandidates*>),
     intensity_(intensity),
     grad_magnitude_(grad_magnitude),
-    grad_magnitude2_(grad_magnitude2)
+    grad_phase_(grad_phase)
     {};
 
     ~Candidate(){
@@ -253,7 +253,7 @@ class Candidate : public CandidateBase{
     std::vector<RegionWithCandidates*>* regions_coarse_;
     const pixelIntensity intensity_;
     const float grad_magnitude_;
-    const float grad_magnitude2_;
+    const float grad_phase_;
 
     inline float getInvdepthVar() const{
       float d2 = bounds_->at(0).second;
@@ -385,9 +385,6 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
       int reg_x = projected_cand->pixel_.x()/scale_offs;
       int reg_y = projected_cand->pixel_.y()/scale_offs;
       int idx = xyToIdx( reg_x, reg_y);
-
-      std::vector<RegionWithProjCandidates*>* porcodio = region_vec_;
-
 
       // push the projected candidate inside the region (sorted by invdepth var)
       std::vector<CandidateProjected*>* cands_vec_ = region_vec_->at(idx)->cands_vec_;

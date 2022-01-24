@@ -248,6 +248,7 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   Eigen::Vector2i pixel_coords;
   float depth_m;
 
+  cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, depth_m );
   cam_couple->getUv(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, uv.x(), uv.y() );
 
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
@@ -424,13 +425,6 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
 
           n_cand_updated++;
 
-
-          // ep_segment->showEpipolarWithMin(cand->level_);
-          // Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
-          // magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-          // cv::waitKey(0);
-
-
           // if there are no mins till now, and only 1 min has been found
           if(!num_mins && ep_segment->uv_idxs_mins->size()==1 ){
             // save projected cand in case is going to be pushed
@@ -455,16 +449,13 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         // erase old bounds
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
 
-        if(num_mins==1 ){
+        if(num_mins==1 && projected_cand!=nullptr ){
           // push inside "candidates projected vec" in new keyframe
-          if(projected_cand!=nullptr){
-            cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
-            cand->invdepth_var_=cand->getInvdepthVar();
-            cand->one_min_=true;
-          }
+          cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+          cand->invdepth_var_=cand->getInvdepthVar();
+          cand->one_min_=true;
 
-
-          if(debug_mapping && projected_cand!=nullptr){
+          if(debug_mapping ){
             Eigen::Vector2i pixel_proj;
             last_keyframe->uv2pixelCoords(projected_cand->uv_, pixel_proj);
             float invdepth_val = last_keyframe->grountruth_camera_->invdepth_map_->evalPixel(pixel_proj);
@@ -485,15 +476,9 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
       else{
         keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
         cand->marginalize();
-
       }
 
-
-
-
     }
-
-
 
     // sharedCoutDebug("         - # candidates tracked: "+std::to_string(n_cand_tracked)+ " out of "+std::to_string(n_cand_to_track));
     sharedCoutDebug("         - tracked: "+std::to_string(n_cand_tracked)+ " ("+std::to_string(n_cand_updated)+" bounds updated, "+std::to_string(n_cand_not_updated)+" bounds not updated) out of "+std::to_string(n_cand_to_track));

@@ -319,9 +319,9 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
         float magnitude = wvlt_lvl->magn_cd->evalPixel(y_curr,x_curr);
         pixelIntensity magn_cd_dx = wvlt_lvl->magn_cd_dx->evalPixel(y_curr,x_curr);
         pixelIntensity magn_cd_dy = wvlt_lvl->magn_cd_dy->evalPixel(y_curr,x_curr);
-        float magnitude2 = wvlt_lvl->magn_cd2->evalPixel(y_curr,x_curr);
-        pixelIntensity magn_cd2_dx = wvlt_lvl->magn_cd2_dx->evalPixel(y_curr,x_curr);
-        pixelIntensity magn_cd2_dy = wvlt_lvl->magn_cd2_dy->evalPixel(y_curr,x_curr);
+        float phase_cd = wvlt_lvl->phase_cd->evalPixel(y_curr,x_curr);
+        pixelIntensity phase_cd_dx = wvlt_lvl->phase_cd_dx->evalPixel(y_curr,x_curr);
+        pixelIntensity phase_cd_dy = wvlt_lvl->phase_cd_dy->evalPixel(y_curr,x_curr);
 
         Eigen::Vector2i pixel_coords{x_curr,y_curr};
         Eigen::Vector2f uv;
@@ -338,10 +338,10 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
           Candidate* candidate = new Candidate(wav_level,pixel_coords,uv,cam_,
                                                 c,
                                                 magnitude,
-                                                magnitude2,
-                                                c_dx, c_dy,
-                                                magn_cd_dx, magn_cd_dy,
-                                                magn_cd2_dx, magn_cd2_dy,
+                                                phase_cd,
+                                                // c_dx, c_dy,
+                                                // magn_cd_dx, magn_cd_dy,
+                                                // phase_cd_dx, phase_cd_dy,
                                                 bounds, this );
 
           // // add children

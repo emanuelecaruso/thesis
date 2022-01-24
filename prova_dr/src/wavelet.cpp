@@ -15,6 +15,19 @@ Image<float>* Wvlt_lvl::getMagnitude(Image<pixelIntensity>* dx, Image<pixelInten
   return magn;
 }
 
+Image<float>* Wvlt_lvl::getPhase(Image<pixelIntensity>* dx, Image<pixelIntensity>* dy )
+{
+  Image<pixelIntensity>* phase = new Image<pixelIntensity>("phase_"+dx->name_+" "+dy->name_);
+
+  int width=dx->image_.cols;
+  int height=dx->image_.rows;
+
+  phase->initImage(height/2, width/2);
+
+  cv::magnitude(dx->image_, dy->image_, phase->image_);
+
+  return phase;
+}
 
 
 void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
@@ -26,9 +39,9 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
   magn_cd=new Image<float>("magn_cd");
   magn_cd_dx=new Image<pixelIntensity>("magn_cd_dx");
   magn_cd_dy=new Image<pixelIntensity>("magn_cd_dy");
-  magn_cd2=new Image<float>("magn_cd2");
-  magn_cd2_dx=new Image<pixelIntensity>("magn_cd2_dx");
-  magn_cd2_dy=new Image<pixelIntensity>("magn_cd2_dy");
+  phase_cd=new Image<float>("phase_cd");
+  phase_cd_dx=new Image<pixelIntensity>("phase_cd_dx");
+  phase_cd_dy=new Image<pixelIntensity>("phase_cd_dy");
   int width=img->image_.cols;
   int height=img->image_.rows;
 
@@ -41,8 +54,9 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
   c_d2y->initImage(height/2, width/2);
   magn_cd_dx->initImage(height/2, width/2);
   magn_cd_dy->initImage(height/2, width/2);
-  magn_cd2_dx->initImage(height/2, width/2);
-  magn_cd2_dy->initImage(height/2, width/2);
+  phase_cd->initImage(height/2, width/2);
+  phase_cd_dx->initImage(height/2, width/2);
+  phase_cd_dy->initImage(height/2, width/2);
 
   cv::resize(img->image_, c->image_, cv::Size(), 0.5, 0.5, cv::INTER_LINEAR );
   // c->image_=img->image_;
@@ -64,9 +78,9 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
   magn_cd_dx=magn_cd->compute_sobel_x();
   magn_cd_dy=magn_cd->compute_sobel_y();
 
-  magn_cd2=getMagnitude(c_d2x,c_d2y);
-  magn_cd2_dx=magn_cd->compute_sobel_x();
-  magn_cd2_dy=magn_cd->compute_sobel_y();
+  phase_cd=getPhase(c_dx,c_dy);
+  phase_cd_dx=magn_cd->compute_sobel_x();
+  phase_cd_dy=magn_cd->compute_sobel_y();
 }
 
 Wvlt_lvl* Wvlt_dec::getWavLevel(int level){
