@@ -17,14 +17,14 @@ void Tracker::trackGroundtruth(){
   sharedCoutDebug("   - Frame tracked (groundtruth)");
 }
 
-void Tracker::trackLS(bool track_candidates){
+void Tracker::trackLS(bool track_candidates, int guess_type){
 
   double t_start=getTime();
 
   CameraForMapping* last_cam = dtam_->getLastCamera();
   CameraForMapping* curr_cam = dtam_->getCurrentCamera();
 
-  Eigen::Isometry3f initial_guess = computeInitialGuess( POSE_CONSTANT );
+  Eigen::Isometry3f initial_guess = computeInitialGuess( guess_type );
   // Eigen::Isometry3f initial_guess = computeInitialGuess( VELOCITY_CONSTANT );
   // Eigen::Isometry3f initial_guess = computeInitialGuessGT( );
 
@@ -32,6 +32,7 @@ void Tracker::trackLS(bool track_candidates){
 
   // final guess = curr_T_last -> pose = w_T_last * last_T_curr
   Eigen::Isometry3f frame_camera_wrt_world_ = final_guess.inverse();
+
 
   curr_cam->assignPose(frame_camera_wrt_world_);
 
@@ -59,7 +60,6 @@ void Tracker::collectCandidatesInCoarseRegions(){
     for(Candidate* cand : *(keyframe->candidates_)){
       // if level of candidate is less than current coarse level
       // and if candidate has one min
-      // if(cand->level_<i && cand->one_min_){
       if(cand->level_<i ){
 
         int level_diff = i-cand->level_;
@@ -103,14 +103,14 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
         keyframe->pixelCoords2uv(pixel,uv, i);
 
         pixelIntensity c = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel);
-        pixelIntensity c_dx = keyframe->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(pixel);
-        pixelIntensity c_dy = keyframe->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(pixel);
+        // pixelIntensity c_dx = keyframe->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(pixel);
+        // pixelIntensity c_dy = keyframe->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(pixel);
         pixelIntensity magn_cd = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd->evalPixel(reg->y_,reg->x_);
-        pixelIntensity magn_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dx->evalPixel(reg->y_,reg->x_);
-        pixelIntensity magn_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dy->evalPixel(reg->y_,reg->x_);
+        // pixelIntensity magn_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dx->evalPixel(reg->y_,reg->x_);
+        // pixelIntensity magn_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dy->evalPixel(reg->y_,reg->x_);
         pixelIntensity phase_cd = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd->evalPixel(reg->y_,reg->x_);
-        pixelIntensity phase_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dx->evalPixel(reg->y_,reg->x_);
-        pixelIntensity phase_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dy->evalPixel(reg->y_,reg->x_);
+        // pixelIntensity phase_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dx->evalPixel(reg->y_,reg->x_);
+        // pixelIntensity phase_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dy->evalPixel(reg->y_,reg->x_);
 
 
         // iterate along collected candidates
@@ -378,11 +378,9 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
     // cv::waitKey(0);
   }
 
-
+  Eigen::Isometry3f current_guess = initial_guess;
 
   if(track_candidates){
-
-    Eigen::Isometry3f current_guess = initial_guess;
 
     Matrix6f H;
     Vector6f b;
@@ -422,10 +420,13 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
           else
             v= keyframe->candidates_;
 
+
           // for each candidate
           for(Candidate* cand : *v){
-            if (cand->one_min_)
+
+            if (cand->one_min_){
               iterationLS( H, b, chi, cand, frame_new, current_guess );
+            }
           }
 
         }
@@ -441,7 +442,7 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
         if (chi_vec.size()==2)
           first_chi_der=chi_vec.at(0)-chi_vec.at(1);
         if(chi_vec.size()>2)
-          if( ((chi_vec.at(chi_vec.size()-2)-chi)/first_chi_der)<0.15  ){
+          if( ((chi_vec.at(chi_vec.size()-2)-chi)/first_chi_der)<dtam_->parameters_->ratio_for_convergence  ){
             break;
           }
         iterations++;
@@ -456,15 +457,15 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
 
   }
 
-  return initial_guess;
+  return current_guess;
 }
 
-void Tracker::trackCam(bool takeGtPoses, bool track_candidates){
+void Tracker::trackCam(bool takeGtPoses, bool track_candidates, int guess_type){
   if(takeGtPoses){
     trackGroundtruth();
   }
   else{
-    trackLS(track_candidates);
+    trackLS(track_candidates, guess_type);
   }
 }
 

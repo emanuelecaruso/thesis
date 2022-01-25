@@ -107,7 +107,7 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
         sharedCoutDebug("   - Pose found");
         if(debug_initialization)
           initializer_->showCornersTrackCurr();
-          
+
         if(!initialization_loop){
           // ... add last keyframe
           keyframe_handler_->addKeyframe(true);
@@ -136,7 +136,7 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
   }
 }
 
-void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool take_gt_poses, bool take_gt_points, bool track_candidates, bool debug_mapping, bool debug_tracking){
+void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool take_gt_poses, bool take_gt_points, bool track_candidates, int guess_type, bool debug_mapping, bool debug_tracking){
   if(wait_for_initialization)
     waitForInitialization();
 
@@ -163,13 +163,14 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
         cand_tracked_.notify_all();
       }
       mapper_->selectNewCandidates();
+
       tracker_->collectCandidatesInCoarseRegions();
 
       continue;
     }
 
     // sharedCoutDebug("Front end part of frame: "+std::to_string(frame_current_)+" ...");
-    tracker_->trackCam(take_gt_poses,track_candidates);
+    tracker_->trackCam(take_gt_poses,track_candidates,guess_type);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
       // bundle_adj_->projectAndMarginalizeActivePoints();
@@ -216,9 +217,6 @@ void Dtam::doOptimization(bool active_all_candidates){
 }
 
 
-void Dtam::doTracking(){
-
-}
 
 void Dtam::updateCamerasFromEnvironment(){
 
@@ -289,13 +287,14 @@ void Dtam::test_mapping(){
   bool take_gt_poses=true;
   bool take_gt_points=false;
   bool track_candidates=false;
+  int guess_type=VELOCITY_CONSTANT;
 
   bool all_keyframes=true;
   bool wait_for_initialization=false;
   // bool active_all_candidates=true;
 
   // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
-  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, debug_mapping, debug_tracking);
+  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
 
@@ -338,11 +337,12 @@ void Dtam::test_tracking(){
   bool take_gt_poses=false;
   bool take_gt_points=true;
   bool track_candidates=true;
+  int guess_type=POSE_CONSTANT;
 
   bool all_keyframes=true;
   bool wait_for_initialization=false;
 
-  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, debug_mapping, debug_tracking);
+  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
   // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
 
@@ -368,11 +368,13 @@ void Dtam::test_dso(){
   bool take_gt_poses=false;
   bool take_gt_points=false;
   bool track_candidates=true;
+  int guess_type=VELOCITY_CONSTANT;
+
   bool all_keyframes=true;
   bool wait_for_initialization=true;
   bool active_all_candidates=true;
 
-  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, debug_mapping, debug_tracking);
+  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
   std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);

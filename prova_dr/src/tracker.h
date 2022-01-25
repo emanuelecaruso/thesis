@@ -12,14 +12,14 @@ class Tracker{
     Tracker(Dtam* dtam):
     dtam_(dtam){};
 
-    void trackCam(bool takeGtPoses, bool track_candidates=false);
+    void trackCam(bool takeGtPoses, bool track_candidates=false, int guess_type=VELOCITY_CONSTANT);
 
     void collectCandidatesInCoarseRegions();
 
   protected:
     Dtam* const dtam_;
     void trackGroundtruth();
-    void trackLS(bool track_candidates=false);
+    void trackLS(bool track_candidates=false, int guess_type=VELOCITY_CONSTANT);
     Eigen::Isometry3f doLS(Eigen::Isometry3f& initial_guess, bool track_candidates=false);
     void collectCoarseCandidates(CameraForMapping* keyframe);
     void showProjectCandsWithCurrGuess( Eigen::Isometry3f& current_guess, int level);

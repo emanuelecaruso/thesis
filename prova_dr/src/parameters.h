@@ -11,7 +11,7 @@
 #include <mutex>
 
 // coarsest level
-static int coarsest_level_= 2; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
+static int coarsest_level_= 3; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // static int coarsest_level_= 0; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // levels for regions
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
@@ -30,9 +30,10 @@ static float max_invdepth_var_=0.05;
 static int end_frame_=5;
 static int fps_=30;
 // tracker parameters
-static int max_iterations_ls_=2000;
+static int max_iterations_ls_=15;
 static float variance_ = 0.1;
 static int robustifier_dofs_=2;
+static float ratio_for_convergence_ = 0.1;
 // initializer parameters
 static int n_corners_ = 1000;
 static float quality_level_ = 0.01;
@@ -60,6 +61,7 @@ struct Params{
   int max_iterations_ls=max_iterations_ls_;
   float variance=variance_;
   int robustifier_dofs=robustifier_dofs_;
+  int ratio_for_convergence=ratio_for_convergence_;
   int n_corners=n_corners_;
   float quality_level=quality_level_;
   float min_distance=min_distance_;

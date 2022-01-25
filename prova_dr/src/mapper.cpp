@@ -299,6 +299,8 @@ void Mapper::trackExistingCandidatesGT(){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(i));
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
 
+
+
     // iterate through all candidates
     for(int k=keyframe->candidates_->size()-1; k>=0; k--){
 
@@ -308,9 +310,10 @@ void Mapper::trackExistingCandidatesGT(){
       cand->one_min_=true;
       cand->cam_->pointAtDepth(cand->uv_, 1.0/cand->invdepth_, *(cand->p_), *(cand->p_incamframe_));
       CandidateProjected* projected_cand=projectCandidate( cand, cam_couple);
-      cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
-
+      if (projected_cand != nullptr)
+        cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
     }
+
 
 
 
@@ -318,8 +321,9 @@ void Mapper::trackExistingCandidatesGT(){
 }
 
 void Mapper::trackExistingCandidates(bool take_gt_points, bool debug_mapping){
-  if(take_gt_points)
+  if(take_gt_points){
     trackExistingCandidatesGT();
+  }
   else
     trackExistingCandidates_(  debug_mapping);
 }
@@ -458,7 +462,6 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           cand->invdepth_var_=cand->getInvdepthVar();
           cand->one_min_=true;
 
-
           if(debug_mapping ){
             Eigen::Vector2i pixel_proj;
             last_keyframe->uv2pixelCoords(projected_cand->uv_, pixel_proj);
@@ -479,7 +482,6 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
       }
       // if candidate has not been tracked, marginalize it
       else{
-        keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
         cand->marginalize();
       }
 
@@ -498,7 +500,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
   if(debug_mapping)
   {
     last_keyframe->showProjCandidates(2);
-    std::cout << "total error: " << total_error << cv::waitKey(0);
+    std::cout << "         - total error: " << total_error << cv::waitKey(0);
   }
   // cv::destroyAllWindows();
 
