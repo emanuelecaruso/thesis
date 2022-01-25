@@ -379,8 +379,9 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
 
     inline void pushCandidate(CandidateProjected* projected_cand){
 
+
       // get associated region
-      int scale_offs = pow(2,parameters_->reg_level-projected_cand->level_);
+      int scale_offs = pow(2,parameters_->reg_level);
       // int scale_offs = 1;
       int reg_x = projected_cand->pixel_.x()/scale_offs;
       int reg_y = projected_cand->pixel_.y()/scale_offs;
@@ -388,7 +389,6 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
 
       // push the projected candidate inside the region (sorted by invdepth var)
       std::vector<CandidateProjected*>* cands_vec_ = region_vec_->at(idx)->cands_vec_;
-
 
       auto lb_cmp = [](CandidateProjected* const & x, float d) -> bool
         { return x->cand_->getInvdepthVar() < d; };

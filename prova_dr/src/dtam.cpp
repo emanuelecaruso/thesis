@@ -72,12 +72,15 @@ void Dtam::waitForInitialization(){
   locker.unlock();
 }
 
-void Dtam::doInitialization(bool initialization_loop){
+void Dtam::doInitialization(bool initialization_loop, bool debug_initialization, bool debug_mapping){
   bool initialization_done = false;
 
-  while(!end_flag_){
+  while( true ){
+
     if(frame_current_==camera_vector_->size()-1)
       waitForNewFrame();
+    // if(end_flag_)
+    //   break;
 
     double t_start=getTime();
 
@@ -91,19 +94,27 @@ void Dtam::doInitialization(bool initialization_loop){
       keyframe_handler_->addKeyframe(true);
       initializer_->compute_cv_K();
       initializer_->extractCorners();
+      if(debug_initialization)
+        initializer_->showCornersTrackCurr();
       mapper_->selectNewCandidates();
       tracker_->collectCandidatesInCoarseRegions();
     }
     else{
       initializer_->trackCornersLK();
+
       // if pose is found ...
       if(initializer_->findPose()){
         sharedCoutDebug("   - Pose found");
+        if(debug_initialization)
+          initializer_->showCornersTrackCurr();
+          
         if(!initialization_loop){
           // ... add last keyframe
           keyframe_handler_->addKeyframe(true);
+
           // start initializing the model
-          mapper_->trackExistingCandidates(false,false);
+          mapper_->trackExistingCandidates(false,debug_mapping);
+
           mapper_->selectNewCandidates();
           tracker_->collectCandidatesInCoarseRegions();
           initialization_done=true;
@@ -253,16 +264,19 @@ void Dtam::updateCamerasFromEnvironment(){
 
 void Dtam::eval_initializer(){
 
+  bool debug_initialization=true;
+  bool debug_mapping=false;
+
   bool initialization_loop=true;
 
-  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop);
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping );
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   update_cameras_thread_.join();
   initialization_thread_.join();
 
   // initializer_->showCornersRef();
-  initializer_->showCornersTrack();
+  initializer_->showCornersTrackSequence();
   cv::waitKey(0);
 
 }
@@ -346,11 +360,12 @@ void Dtam::test_tracking(){
 
 void Dtam::test_dso(){
 
-  bool debug_mapping=false;
-  bool debug_tracking=false;
+  bool debug_initialization=true;
+  bool debug_mapping=true;
+  bool debug_tracking=true;
 
   bool initialization_loop=false;
-  bool take_gt_poses=true;
+  bool take_gt_poses=false;
   bool take_gt_points=false;
   bool track_candidates=true;
   bool all_keyframes=true;
@@ -358,7 +373,7 @@ void Dtam::test_dso(){
   bool active_all_candidates=true;
 
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, debug_mapping, debug_tracking);
-  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop);
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
   std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
 

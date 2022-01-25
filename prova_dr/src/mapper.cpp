@@ -252,7 +252,8 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   cam_couple->getUv(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, uv.x(), uv.y() );
 
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
-  if (candidate->cam_->image_intensity_->pixelInRange(pixel_coords)){
+
+  if (candidate->cam_->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->pixelInRange(pixel_coords)){
     CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_coords, uv, 1.0/depth_m );
     return projected_cand;
   }
@@ -402,7 +403,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         }
 
         // if no mins are found
-        else if (!ep_segment->searchMin(cand, parameters_)){
+        // else if (!ep_segment->searchMin(cand, parameters_)){
+        else if (!ep_segment->searchMin(cand, parameters_, cam_couple)){
         // else if (!ep_segment->searchMinDSO(cand, parameters_, cam_couple)){
           // those bounds are not valid
           n_cand_without_mins++;
@@ -415,8 +417,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           // discard candidate
 
           // ep_segment->showEpipolarWithMin(cand->level_);
-          // Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
-          // magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+          // Image<float>* phase = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->phase_cd;
+          // phase->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
           // cv::waitKey(0);
 
           break;
@@ -449,11 +451,13 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         // erase old bounds
         cand->bounds_->erase (cand->bounds_->begin(),cand->bounds_->begin()+bounds_size);
 
-        if(num_mins==1 && projected_cand!=nullptr ){
+        if( num_mins==1 && projected_cand!=nullptr ){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+
           cand->invdepth_var_=cand->getInvdepthVar();
           cand->one_min_=true;
+
 
           if(debug_mapping ){
             Eigen::Vector2i pixel_proj;
@@ -462,6 +466,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
             float invdepth_gt = invdepth_val/last_keyframe->cam_parameters_->min_depth;
             total_error+=pow(invdepth_gt-projected_cand->invdepth_,2);
           }
+
 
         }
         else if(num_mins>1){
@@ -477,6 +482,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         keyframe->candidates_->erase(keyframe->candidates_->begin()+k);
         cand->marginalize();
       }
+
+
 
     }
 

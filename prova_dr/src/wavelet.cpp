@@ -24,7 +24,7 @@ Image<float>* Wvlt_lvl::getPhase(Image<pixelIntensity>* dx, Image<pixelIntensity
 
   phase->initImage(height/2, width/2);
 
-  cv::magnitude(dx->image_, dy->image_, phase->image_);
+  cv::phase(dx->image_, dy->image_, phase->image_);
 
   return phase;
 }

@@ -66,7 +66,7 @@ void Initializer::showCornersRef(){
     show_image->drawCircle(red, corner);
   }
   show_image->show(2);
-  // cv::waitKey(0);
+  cv::waitKey(0);
 }
 
 void Initializer::trackCornersLK(){
@@ -298,8 +298,7 @@ cv::Mat Initializer::findHomography(){
   return H;
 }
 
-void Initializer::showCornersTrack(){
-  std::vector<colorRGB> colors;
+void Initializer::initializeColors(){
   for (int i=0; i<corners_vec_->at(0)->size(); i++){
     float r = ((float)rand()/RAND_MAX);
     float g = ((float)rand()/RAND_MAX);
@@ -307,38 +306,48 @@ void Initializer::showCornersTrack(){
     colorRGB color = colorRGB {b,g,r};
     colors.push_back(color);
   }
+}
+
+void Initializer::showCornersTrackCurr(int i){
+
+    // for(int i=0; i<corners_vec_->size(); i++){
+
+  if (i==0)
+    initializeColors();
+
+  CameraForMapping* cam_r =dtam_->camera_vector_->at(ref_frame_idx_);
+  CameraForMapping* cam_m =dtam_->camera_vector_->at(ref_frame_idx_+i);
+  Image<colorRGB>* show_image= cam_m->image_intensity_->returnColoredImgFromIntensityImg("corners tracking");
+
+  for (int j=0; j<corners_vec_->at(i)->size(); j++){
+    cv::Point2f corner = corners_vec_->at(i)->at(j);
+    show_image->drawCircle(colors[j], corner);
+  }
+  if (i>0){
+    CamCouple* cam_couple = new CamCouple(cam_r,cam_m);
+    for (int j=0; j<corners_vec_->at(i)->size(); j++){
+      float u= (corners_vec_->at(ref_frame_idx_)->at(j).x/dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->resolution_x)*dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->width;
+      float v= (corners_vec_->at(ref_frame_idx_)->at(j).y/dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->resolution_y)*dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->height;
+
+      EpipolarLine* ep_line = cam_couple->getEpSegmentDefaultBounds(u,v);
+      if ( inliers_vec_->at(i)->at(j) )
+      ep_line->drawEpipolar(show_image, colors[j] );
+    }
+  }
+  show_image->show(2);
+  cv::waitKey(0);
+
+}
+
+void Initializer::showCornersTrackCurr(){
+  showCornersTrackCurr(corners_vec_->size()-1);
+}
+
+void Initializer::showCornersTrackSequence(){
+
   while(true){
     for(int i=0; i<corners_vec_->size(); i++){
-
-      CameraForMapping* cam_r =dtam_->camera_vector_->at(ref_frame_idx_);
-      CameraForMapping* cam_m =dtam_->camera_vector_->at(ref_frame_idx_+i);
-      Image<colorRGB>* show_image= cam_m->image_intensity_->returnColoredImgFromIntensityImg("corners tracking");
-      // int j=0;
-      // for (cv::Point2f corner : *(corners_vec_->at(i))){
-      for (int j=0; j<corners_vec_->at(i)->size(); j++){
-        cv::Point2f corner = corners_vec_->at(i)->at(j);
-        // corner.x=(corner.x/dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->width)*dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->resolution_x;
-        // corner.y=(corner.y/dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->height)*dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->resolution_y;
-        show_image->drawCircle(colors[j], corner);
-        // j++;
-        //
-        // show_image->drawCircle(colors[j], corners_vec_->at(i)->at(j));
-      }
-      if (i>0){
-        CamCouple* cam_couple = new CamCouple(cam_r,cam_m);
-        for (int j=0; j<corners_vec_->at(i)->size(); j++){
-          float u= (corners_vec_->at(ref_frame_idx_)->at(j).x/dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->resolution_x)*dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->width;
-          float v= (corners_vec_->at(ref_frame_idx_)->at(j).y/dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->resolution_y)*dtam_->camera_vector_->at(ref_frame_idx_)->cam_parameters_->height;
-          // float v=corners_vec_->at(0)->at(j).y;
-          // std::cout << u << std::endl;
-
-          EpipolarLine* ep_line = cam_couple->getEpSegmentDefaultBounds(u,v);
-          if ( inliers_vec_->at(i)->at(j) )
-          ep_line->drawEpipolar(show_image, colors[j] );
-        }
-      }
-      show_image->show(2);
-      cv::waitKey(0);
+      showCornersTrackCurr(i);
     }
 
   }

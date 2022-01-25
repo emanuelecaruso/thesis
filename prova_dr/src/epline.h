@@ -65,8 +65,9 @@ class EpipolarLine{
     void drawEpipolar(Image<colorRGB>* img, const colorRGB& color, int level=-1);
 
     bool searchMinDSO(Candidate* candidate, Params* parameters, CamCouple* cam_couple );
-    bool searchMin(Candidate* candidate, Params* parameters );
-    
+    bool searchMin(Candidate* candidate, Params* parameters, CamCouple* cam_couple );
+    // bool searchMin(Candidate* candidate, Params* parameters );
+
     float getCost(const pixelIntensity magnitude3C_r, const pixelIntensity magnitude3C_m,
                   const pixelIntensity phase3C_r, const pixelIntensity phase3C_m,
                   const pixelIntensity color_r, const pixelIntensity color_m );
@@ -76,6 +77,8 @@ class EpipolarLine{
     float getCostMagn2(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
                       const pixelIntensity magnitude_r, const pixelIntensity magnitude_m,
                       const pixelIntensity magnitude2_r, const pixelIntensity magnitude2_m);
+
+    bool checkPhaseInRange(Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple);
 
     float getCostSSD(std::vector<pixelIntensity>* intensities_r, std::vector<pixelIntensity>* intensities_m);
 

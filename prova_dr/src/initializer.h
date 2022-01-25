@@ -22,7 +22,8 @@ class Initializer{
     void extractCorners();
     void showCornersRef();
     void trackCornersLK();
-    void showCornersTrack();
+    void showCornersTrackSequence();
+    void showCornersTrackCurr();
     bool findPose();
 
   private:
@@ -36,6 +37,8 @@ class Initializer{
     std::vector<std::vector<uchar>*>* inliers_vec_;
     cv::Mat cv_K;
 
+    std::vector<colorRGB> colors;
+
     const Image<float>* getReferenceImage();
     const Image<float>* getCurrentImage();
     const Image<float>* getPrevImage();
@@ -47,5 +50,8 @@ class Initializer{
     Eigen::Isometry3f essential2pose(cv::Mat& E);
     Eigen::Isometry3f homography2pose(cv::Mat& H);
     Eigen::Isometry3f computeRelativePoseGt();
+
+    void showCornersTrackCurr(int i);
+    void initializeColors();
 
 };

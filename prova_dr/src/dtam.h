@@ -86,7 +86,7 @@ class Dtam{
     void updateCamerasFromEnvironment();
     void updateCamerasFromVideostream();
     void doMapping();
-    void doInitialization(bool initialization_loop=false);
+    void doInitialization(bool initialization_loop=false, bool debug_initialization=true, bool debug_mapping=false);
     void doFrontEndPart(bool all_keyframes=false, bool wait_for_initialization=true,  bool take_gt_poses=false, bool take_gt_points=false, bool track_candidates=false, bool debug_mapping=false, bool debug_tracking=false);
     void doOptimization(bool active_all_candidates=false);
     void doTracking();
