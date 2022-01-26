@@ -79,8 +79,10 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
     if(frame_current_==camera_vector_->size()-1)
       waitForNewFrame();
-    // if(end_flag_)
-    //   break;
+
+    // if still frame current is last camera, new frame is the end signal
+    if(frame_current_==camera_vector_->size()-1)
+      break;
 
     double t_start=getTime();
 
@@ -117,6 +119,7 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
           mapper_->selectNewCandidates();
           tracker_->collectCandidatesInCoarseRegions();
+
           initialization_done=true;
         }
 
@@ -134,6 +137,7 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
     }
 
   }
+
 }
 
 void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool take_gt_poses, bool take_gt_points, bool track_candidates, int guess_type, bool debug_mapping, bool debug_tracking){
@@ -144,8 +148,10 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
     if(frame_current_==camera_vector_->size()-1)
       waitForNewFrame();
-    // if(end_flag_)
-    //   break;
+
+    // if still frame current is last camera, new frame is the end signal
+    if(frame_current_==camera_vector_->size()-1)
+      break;
 
     double t_start=getTime();
 
@@ -154,7 +160,10 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     int frame_delay = camera_vector_->size()-frame_current_-1;
     sharedCoutDebug("\nFRONT END for Frame "+std::to_string(frame_current_)+" ("+camera_vector_->at(frame_current_)->name_+") , frame delay: "+std::to_string(frame_delay));
 
+
+
     if(frame_current_<=1){
+
       tracker_->trackCam(true);
       keyframe_handler_->addKeyframe(true);
       if(frame_current_==1){
@@ -170,7 +179,8 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     }
 
     // sharedCoutDebug("Front end part of frame: "+std::to_string(frame_current_)+" ...");
-    tracker_->trackCam(take_gt_poses,track_candidates,guess_type);
+
+    tracker_->trackCam(take_gt_poses,track_candidates,guess_type,debug_tracking);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
       // bundle_adj_->projectAndMarginalizeActivePoints();
@@ -178,6 +188,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       // mapper_->trackExistingCandidates(true,debug_mapping);
       cand_tracked_.notify_all();
       mapper_->selectNewCandidates();
+      tracker_->collectCandidatesInCoarseRegions();
 
       // bundle_adj_->activateNewPoints(); in other thread
       // bundle_adj_->optimize(); in other thread
@@ -320,7 +331,7 @@ void Dtam::test_mapping(){
 
   // camera_vector_->at(keyframe_vector_->back())->regions_sampling_->region_vec_->at(1)->showRegion(2);
 
-  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(1));
+  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
   // testRotationalInvariance();
   cv::waitKey(0);
@@ -360,7 +371,7 @@ void Dtam::test_tracking(){
 
 void Dtam::test_dso(){
 
-  bool debug_initialization=true;
+  bool debug_initialization=false;
   bool debug_mapping=true;
   bool debug_tracking=true;
 
@@ -377,12 +388,17 @@ void Dtam::test_dso(){
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
-  std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
+  // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
 
-  optimization_thread.join();
+  // optimization_thread.join();
   frontend_thread_.join();
   update_cameras_thread_.join();
   initialization_thread_.join();
+
+
+  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(10));
+
+
 
 }
 
@@ -390,6 +406,7 @@ void Dtam::test_dso(){
 // TODO remove
 bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* camera){
 
+  std::cout << "creating json" << std::endl;
 
     const char* path_name_ = path_name.c_str(); // dataset name
     struct stat info;
@@ -415,8 +432,11 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
 
     j["cameras"][camera->name_];
     int count=0;
-    for(RegionWithProjCandidates* reg : *(camera->regions_projected_cands_->region_vec_) ){
-      for(CandidateProjected* cand_proj : *(reg->cands_vec_)){
+    for(RegionWithProjCandidates* reg_proj : *(camera->regions_projected_cands_->region_vec_) ){
+      for(CandidateProjected* cand_proj : *(reg_proj->cands_vec_)){
+        if(!cand_proj->cand_->one_min_){
+          continue;
+        }
         int level = cand_proj->level_;
         Eigen::Vector2f uv = cand_proj->uv_ ;
         Eigen::Vector3f p;

@@ -240,7 +240,6 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 // }
 
 
-
 CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple){
 
   Eigen::Vector3f p;
@@ -250,6 +249,10 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
 
   cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, depth_m );
   cam_couple->getUv(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, uv.x(), uv.y() );
+
+  if(1.0/candidate->invdepth_<0){
+    std::cout << "T'HO BECCATO MERDA!" << std::endl;
+  }
 
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
 
@@ -261,9 +264,10 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
 
 }
 
-CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line ){
 
-  Eigen::Vector2f uv_curr=ep_line->uvs->at(ep_line->uv_idxs_mins->at(0));
+
+CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line , Eigen::Vector2f uv_curr){
+
   Eigen::Vector2i pixel_curr;
   cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
 
@@ -280,11 +284,16 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   candidate->invdepth_=1/d1;
   cam_couple->cam_r_->pointAtDepth(candidate->uv_, d1, *(candidate->p_), *(candidate->p_incamframe_));
 
-  CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
+  if (candidate->cam_->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->pixelInRange(pixel_curr)){
+    CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
+    return projected_cand;
+  }
+  return nullptr;
 
-  return projected_cand;
+  // return projected_cand;
 
 }
+
 
 void Mapper::trackExistingCandidatesGT(){
 
@@ -357,9 +366,6 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
     int n_cand_not_updated = 0;
     int n_cand_not_in_newframe = 0;
 
-    // bool flag = 1;
-
-
 
     // iterate through all candidates
     for(int k=keyframe->candidates_->size()-1; k>=0; k--){
@@ -395,9 +401,10 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           n_cand_not_updated++;
 
           // if there are no mins till now
-          if(!num_mins){
+          if(!num_mins ){
             // save projected cand in case is going to be pushed
-            projected_cand=projectCandidate( cand, cam_couple);
+            // projected_cand=projectCandidate( cand, cam_couple );
+            projected_cand=projectCandidate( cand, cam_couple, ep_segment , ep_segment->uvs->at(1));
             projected_cand_created=true;
           }
 
@@ -434,7 +441,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           // if there are no mins till now, and only 1 min has been found
           if(!num_mins && ep_segment->uv_idxs_mins->size()==1 ){
             // save projected cand in case is going to be pushed
-            projected_cand=projectCandidate( cand, cam_couple, ep_segment);
+            projected_cand=projectCandidate( cand, cam_couple, ep_segment , ep_segment->uvs->at(ep_segment->uv_idxs_mins->at(0)) );
             projected_cand_created=true;
           }
 
@@ -458,7 +465,6 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         if( num_mins==1 && projected_cand!=nullptr ){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
-
           cand->invdepth_var_=cand->getInvdepthVar();
           cand->one_min_=true;
 
@@ -469,7 +475,6 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
             float invdepth_gt = invdepth_val/last_keyframe->cam_parameters_->min_depth;
             total_error+=pow(invdepth_gt-projected_cand->invdepth_,2);
           }
-
 
         }
         else if(num_mins>1){
@@ -486,7 +491,6 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
       }
 
 
-
     }
 
     // sharedCoutDebug("         - # candidates tracked: "+std::to_string(n_cand_tracked)+ " out of "+std::to_string(n_cand_to_track));
@@ -500,7 +504,9 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
   if(debug_mapping)
   {
     last_keyframe->showProjCandidates(2);
-    std::cout << "         - total error: " << total_error << cv::waitKey(0);
+    sharedCoutDebug("         - DEBUG: total error: "+std::to_string(total_error));
+    cv::waitKey(0);
+    cv::destroyAllWindows();
   }
   // cv::destroyAllWindows();
 

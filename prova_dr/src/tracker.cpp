@@ -17,7 +17,7 @@ void Tracker::trackGroundtruth(){
   sharedCoutDebug("   - Frame tracked (groundtruth)");
 }
 
-void Tracker::trackLS(bool track_candidates, int guess_type){
+void Tracker::trackLS(bool track_candidates, int guess_type, bool debug_tracking){
 
   double t_start=getTime();
 
@@ -28,7 +28,7 @@ void Tracker::trackLS(bool track_candidates, int guess_type){
   // Eigen::Isometry3f initial_guess = computeInitialGuess( VELOCITY_CONSTANT );
   // Eigen::Isometry3f initial_guess = computeInitialGuessGT( );
 
-  Eigen::Isometry3f final_guess = doLS(initial_guess, track_candidates);
+  Eigen::Isometry3f final_guess = doLS(initial_guess, track_candidates, debug_tracking);
 
   // final guess = curr_T_last -> pose = w_T_last * last_T_curr
   Eigen::Isometry3f frame_camera_wrt_world_ = final_guess.inverse();
@@ -117,15 +117,22 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
         float invdepth, invdepth_var;
         float d_over_v_sum = 0, inv_v_sum = 0;
         int num_cands = 0;
+
         for(Candidate* cand : *(reg->cands_vec_)){
-          if(!cand->one_min_)
+          if(!cand->one_min_){
             continue;
+          }
 
           num_cands++;
           // update d_over_v_sum
           d_over_v_sum+= cand->invdepth_/cand->invdepth_var_;
           // update inv_v_sum
           inv_v_sum+= 1./cand->invdepth_var_;
+
+          // d_over_v_sum = cand->invdepth_;
+          // inv_v_sum= 1;
+          // num_cands=1;
+          // break;
 
         }
         if (num_cands){
@@ -155,6 +162,34 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
     }
   }
 }
+bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float, 2,6>& jacobian_to_mul, Eigen::Matrix<float, 2,1>& jacobian_to_mul_normalizer, pixelIntensity z, pixelIntensity z_hat, Eigen::Matrix<float, 1,2>& img_jacobian, float ni, float variance, float coeff, float invdepth_var ){
+
+
+  float normalizer = img_jacobian*jacobian_to_mul_normalizer;
+  normalizer *= coeff*invdepth_var;
+  normalizer+=0.7;
+
+
+  // float normalizer = invdepth_var+0.5;
+
+  // error
+  float error = (z_hat-z)/normalizer;
+
+  // weight
+  float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
+
+
+  // jacobian
+  Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
+  Eigen::Matrix<float, 6, 1> Jtransp; // 1 row, 6 cols
+
+  J=coeff*(img_jacobian*jacobian_to_mul);
+  Jtransp = J.transpose();
+  // update
+  H+=Jtransp*weight*J;
+  b+=Jtransp*weight*error;
+  chi+=error*error;
+}
 
 bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
 
@@ -164,7 +199,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
   Eigen::Matrix3f Kinv = *(frame_new->Kinv_);
   float variance = dtam_->parameters_->variance;
   int ni = dtam_->parameters_->robustifier_dofs;
-
+  float coeff = pixels_meter_ratio/pow(2,cand->level_+1);
 
   // variables
   Eigen::Vector2f uv_newframe;
@@ -188,9 +223,14 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
   frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
   frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, cand->level_);
 
+  if(!frame_new->wavelet_dec_->getWavLevel(cand->level_)->c->pixelInRange(pixel_newframe))
+    return false;
+
   Eigen::Matrix<float, 2,3> proj_jacobian;
   Eigen::Matrix<float, 3,6> state_jacobian;
-  // Eigen::Matrix<float, 3,1> normalizer_jacobian;
+  Eigen::Matrix<float, 2,6> jacobian_to_mul;
+  Eigen::Matrix<float, 2,1> jacobian_to_mul_normalizer;
+  Eigen::Matrix<float, 3,1> normalizer_jacobian;
 
   proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
                    0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
@@ -199,63 +239,29 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
                     0, 1, 0, -point_newframe.z() ,  0                    ,  point_newframe.x(),
                     0, 0, 1,  point_newframe.y() , -point_newframe.x()  ,  0         ;
 
-  // normalizer_jacobian << point_incamframe->x()*invdepth_der,
-  //                        point_incamframe->y()*invdepth_der,
-  //                        invdepth_der;
+  normalizer_jacobian << -cand->uv_.x()/pow(invdepth,2),
+                         -cand->uv_.y()/pow(invdepth,2),
+                         -1/pow(invdepth,2);
 
-  // for each feature
-  // for( int i=0; i<1; i++){
+  jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(cand->cam_->frame_camera_wrt_world_->linear()*normalizer_jacobian)));
 
-    // measurement -> pixel value inside the camera in which candidate has been sampled
-    pixelIntensity z = cand->intensity_;
-    // measurement predicted
-    pixelIntensity z_hat;
-    if(! (frame_new->wavelet_dec_->getWavLevel(cand->level_)->c->evalPixel(pixel_newframe,z_hat)) ){
-      return false;
-    }
+  jacobian_to_mul = (proj_jacobian*K)*state_jacobian;
+
+  Eigen::Matrix<float, 1,2> img_jacobian;
+  pixelIntensity z, z_hat;
+
+  z = cand->intensity_;
+  z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->c->evalPixel(pixel_newframe);
+  img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dy->evalPixel(pixel_newframe);
+  updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
 
 
-    // error
-    // float error = squareNorm(z-z_hat);
-    float error = z_hat-z;
+  // z = cand->grad_magnitude_;
+  // z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd->evalPixel(pixel_newframe);
+  // img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dy->evalPixel(pixel_newframe);
+  // updateLS( H, b, chi, jacobian_to_mul, z, z_hat, img_jacobian, ni, variance, coeff );
 
-    // weight
-    float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
 
-    // jacobian
-    Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
-    Eigen::Matrix<float, 6, 1> Jtransp; // 1 row, 6 cols
-    Eigen::Matrix<float, 1,2> img_jacobian;
-
-    Eigen::Matrix<float, 1,3> intermediate_jacobian;
-
-    img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dy->evalPixel(pixel_newframe);
-
-    intermediate_jacobian = ((img_jacobian*proj_jacobian)*K);
-
-    // without normalizer
-    float coeff = pixels_meter_ratio/pow(2,cand->level_+1);
-    // float coeff = pixels_meter_ratio;
-    // float coeff = squareNormDerivative(error)*pixels_meter_ratio/pow(2,cand->level_+1);
-
-    // BEFORE SIMPLIFYING PIXELS METERS RATIO
-    // float normalizer = pixels_meter_ratio*((intermediate_jacobian*current_guess.linear())*Kinv)*normalizer_jacobian;
-    // float coeff = squareNormDerivative(error)*pixels_meter_ratio/normalizer;
-
-    // float der_residual_wrt_invdepth = ((intermediate_jacobian*current_guess.linear())*Kinv)*normalizer_jacobian;
-    // float normalizer = gauss_img_intensity_noise+pow(der_residual_wrt_invdepth,2)*invdepth_var;
-    // float coeff = squareNormDerivative(error)/normalizer;
-
-    // std::cout << "invdepth " << invdepth << ", invdepthvar " << invdepth_var << ", level " << cand->level_  << std::endl;
-    // std::cout << "invdepth " << invdepth << ", invdepthvar " << invdepth_var << ", level " << cand->level_ << ", normalizer " << normalizer << std::endl;
-    J=coeff*(intermediate_jacobian*state_jacobian);
-    Jtransp = J.transpose();
-    // update
-    H+=Jtransp*weight*J;
-    b+=Jtransp*weight*error;
-    chi+=error*error;
-
-  // }
 
   // // DEBUG
   // // show images
@@ -356,7 +362,7 @@ void Tracker::filterOutOcclusionsGT(){
 }
 
 
-Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates){
+Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates, bool debug_tracking){
 
   // get new frame
   CameraForMapping* frame_new = dtam_->getCurrentCamera();
@@ -378,6 +384,7 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
     // cv::waitKey(0);
   }
 
+
   Eigen::Isometry3f current_guess = initial_guess;
 
   if(track_candidates){
@@ -390,7 +397,9 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
     for(int i=dtam_->parameters_->coarsest_level; i>=0; i--){
 
       int iterations = 0;
-      std::cout << "\nLevel: " << i << std::endl;
+
+      if(debug_tracking)
+        std::cout << "\nLevel: " << i << std::endl;
 
       std::vector<float> chi_vec;
       float first_chi_der = 0;
@@ -402,7 +411,8 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
         chi=0;
 
         //DEBUG
-        showProjectCandsWithCurrGuess(current_guess, i);
+        if(debug_tracking)
+          showProjectCandsWithCurrGuess(current_guess, i);
 
 
         // for each active keyframe
@@ -420,13 +430,13 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
           else
             v= keyframe->candidates_;
 
-
           // for each candidate
           for(Candidate* cand : *v){
 
             if (cand->one_min_){
               iterationLS( H, b, chi, cand, frame_new, current_guess );
             }
+
           }
 
         }
@@ -435,9 +445,10 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
         chi_vec.push_back(chi);
 
         // DEBUG
-        // std::cout << "H " << H << std::endl;
-        // std::cout << "b " << b << std::endl;
-        std::cout << "chi " << chi << std::endl;
+        if(debug_tracking){
+          std::cout << "chi " << chi << std::endl;
+        }
+
 
         if (chi_vec.size()==2)
           first_chi_der=chi_vec.at(0)-chi_vec.at(1);
@@ -460,12 +471,12 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
   return current_guess;
 }
 
-void Tracker::trackCam(bool takeGtPoses, bool track_candidates, int guess_type){
+void Tracker::trackCam(bool takeGtPoses, bool track_candidates, int guess_type, bool debug_tracking){
   if(takeGtPoses){
     trackGroundtruth();
   }
   else{
-    trackLS(track_candidates, guess_type);
+    trackLS(track_candidates, guess_type, debug_tracking);
   }
 }
 

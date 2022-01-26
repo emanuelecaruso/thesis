@@ -85,6 +85,7 @@ class Mapper{
 
     void updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple);
 
+    CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line , Eigen::Vector2f uv_curr );
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple );
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line );
     void trackExistingCandidates_( bool debug_mapping);
