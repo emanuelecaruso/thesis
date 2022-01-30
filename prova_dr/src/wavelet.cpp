@@ -31,17 +31,17 @@ Image<float>* Wvlt_lvl::getPhase(Image<pixelIntensity>* dx, Image<pixelIntensity
 
 
 void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
-  c=new Image<pixelIntensity>("c");
-  c_dx=new Image<pixelIntensity>("c_dx");
-  c_dy=new Image<pixelIntensity>("c_dy");
-  c_d2x=new Image<pixelIntensity>("c_d2x");
-  c_d2y=new Image<pixelIntensity>("c_d2y");
-  magn_cd=new Image<float>("magn_cd");
-  magn_cd_dx=new Image<pixelIntensity>("magn_cd_dx");
-  magn_cd_dy=new Image<pixelIntensity>("magn_cd_dy");
-  phase_cd=new Image<float>("phase_cd");
-  phase_cd_dx=new Image<pixelIntensity>("phase_cd_dx");
-  phase_cd_dy=new Image<pixelIntensity>("phase_cd_dy");
+  c=new Image<pixelIntensity>("c"+img->name_);
+  c_dx=new Image<pixelIntensity>("c_dx"+img->name_);
+  c_dy=new Image<pixelIntensity>("c_dy"+img->name_);
+  c_d2x=new Image<pixelIntensity>("c_d2x"+img->name_);
+  c_d2y=new Image<pixelIntensity>("c_d2y"+img->name_);
+  magn_cd=new Image<float>("magn_cd"+img->name_);
+  magn_cd_dx=new Image<pixelIntensity>("magn_cd_dx"+img->name_);
+  magn_cd_dy=new Image<pixelIntensity>("magn_cd_dy"+img->name_);
+  phase_cd=new Image<float>("phase_cd"+img->name_);
+  phase_cd_dx=new Image<pixelIntensity>("phase_cd_dx"+img->name_);
+  phase_cd_dy=new Image<pixelIntensity>("phase_cd_dy"+img->name_);
   int width=img->image_.cols;
   int height=img->image_.rows;
 

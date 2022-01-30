@@ -26,7 +26,7 @@ bool KeyframeHandler::addKeyframe_all(){
 
 bool KeyframeHandler::addKeyframe_select(){
   // select keyframe TODO
-  return true;
+  return false;
 }
 
 bool KeyframeHandler::marginalize_keyframe(bool all_keyframes){

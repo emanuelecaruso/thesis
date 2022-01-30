@@ -56,7 +56,8 @@ void Dtam::addCamera(int counter){
 
 void Dtam::waitForNewFrame(){
   std::unique_lock<std::mutex> locker(mu_frame_);
-  frame_updated_.wait(locker);
+  if(!end_flag_)
+    frame_updated_.wait(locker);
   locker.unlock();
 }
 
@@ -72,7 +73,7 @@ void Dtam::waitForInitialization(){
   locker.unlock();
 }
 
-void Dtam::doInitialization(bool initialization_loop, bool debug_initialization, bool debug_mapping){
+void Dtam::doInitialization(bool initialization_loop, bool debug_initialization, bool debug_mapping, bool track_candidates){
   bool initialization_done = false;
 
   while( true ){
@@ -99,12 +100,13 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
       if(debug_initialization)
         initializer_->showCornersTrackCurr();
       mapper_->selectNewCandidates();
-      tracker_->collectCandidatesInCoarseRegions();
+      if(track_candidates)
+        tracker_->collectCandidatesInCoarseRegions();
     }
     else{
       initializer_->trackCornersLK();
 
-      // if pose is found ...
+      // if a good pose is found ...
       if(initializer_->findPose()){
         sharedCoutDebug("   - Pose found");
         if(debug_initialization)
@@ -116,9 +118,13 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
           // start initializing the model
           mapper_->trackExistingCandidates(false,debug_mapping);
+          cand_tracked_.notify_all();
+
 
           mapper_->selectNewCandidates();
-          tracker_->collectCandidatesInCoarseRegions();
+
+          if(track_candidates)
+            tracker_->collectCandidatesInCoarseRegions();
 
           initialization_done=true;
         }
@@ -150,8 +156,9 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       waitForNewFrame();
 
     // if still frame current is last camera, new frame is the end signal
-    if(frame_current_==camera_vector_->size()-1)
+    if(frame_current_==camera_vector_->size()-1){
       break;
+    }
 
     double t_start=getTime();
 
@@ -173,12 +180,12 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       }
       mapper_->selectNewCandidates();
 
-      tracker_->collectCandidatesInCoarseRegions();
+      if (track_candidates)
+        tracker_->collectCandidatesInCoarseRegions();
 
       continue;
     }
 
-    // sharedCoutDebug("Front end part of frame: "+std::to_string(frame_current_)+" ...");
 
     tracker_->trackCam(take_gt_poses,track_candidates,guess_type,debug_tracking);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
@@ -188,7 +195,8 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       // mapper_->trackExistingCandidates(true,debug_mapping);
       cand_tracked_.notify_all();
       mapper_->selectNewCandidates();
-      tracker_->collectCandidatesInCoarseRegions();
+      if (track_candidates)
+        tracker_->collectCandidatesInCoarseRegions();
 
       // bundle_adj_->activateNewPoints(); in other thread
       // bundle_adj_->optimize(); in other thread
@@ -206,24 +214,14 @@ void Dtam::doOptimization(bool active_all_candidates){
   while( true ){
 
     // if current frame of bundle adjustment is still latest keyframe
-    if(bundle_adj_->getFrameCurrentBA()==keyframe_vector_->back()){
-      // and is not over
-      if ( end_flag_ )
-        break;
+    if(bundle_adj_->getFrameCurrentBA()==frame_current_){
       //optimize
       waitForTrackedCandidates();
-
     }
-    // otherwise
-    else{
-      // activate new points
-      bundle_adj_->activateNewPoints();
-      // project active points and marginalize the ones
-      // outside of the frustum
-      bundle_adj_->projectAndMarginalizeActivePoints();
-      // marginalize old keyframe
 
-    }
+    // activate new points
+    bundle_adj_->activateNewPoints();
+
   }
 }
 
@@ -275,10 +273,11 @@ void Dtam::eval_initializer(){
 
   bool debug_initialization=true;
   bool debug_mapping=false;
+  bool track_candidates=false;
 
   bool initialization_loop=true;
 
-  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping );
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping, track_candidates );
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   update_cameras_thread_.join();
@@ -378,6 +377,7 @@ void Dtam::test_dso(){
   bool initialization_loop=false;
   bool take_gt_poses=false;
   bool take_gt_points=false;
+
   bool track_candidates=true;
   int guess_type=VELOCITY_CONSTANT;
 
@@ -386,15 +386,17 @@ void Dtam::test_dso(){
   bool active_all_candidates=true;
 
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
-  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping);
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping, track_candidates);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
-  // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
 
-  // optimization_thread.join();
-  frontend_thread_.join();
-  update_cameras_thread_.join();
+  if(!track_candidates){
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
+    optimization_thread.join();
+  }
+
   initialization_thread_.join();
-
+  update_cameras_thread_.join();
+  frontend_thread_.join();
 
   makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(10));
 
@@ -433,10 +435,12 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
     j["cameras"][camera->name_];
     int count=0;
     for(RegionWithProjCandidates* reg_proj : *(camera->regions_projected_cands_->region_vec_) ){
-      for(CandidateProjected* cand_proj : *(reg_proj->cands_vec_)){
-        if(!cand_proj->cand_->one_min_){
-          continue;
-        }
+
+
+      for(int i=0; i<reg_proj->cands_vec_->size(); i++){
+
+        CandidateProjected* cand_proj = reg_proj->cands_vec_->at(i);
+
         int level = cand_proj->level_;
         Eigen::Vector2f uv = cand_proj->uv_ ;
         Eigen::Vector3f p;
@@ -446,10 +450,11 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
         std::string idx = ss.str();
         j["cameras"][camera->name_]["p"+idx] = {
           {"level", level},
-          {"invdepth_var", cand_proj->cand_->getInvdepthVar()},
+          {"invdepth_var", cand_proj->cand_->invdepth_var_},
           {"position", {p[0],p[1],p[2]}}
         };
         count++;
+
       }
 
     }

@@ -74,10 +74,8 @@ class EpipolarLine{
 
     float getCostMagn(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
                       const pixelIntensity magnitude_r, const pixelIntensity magnitude_m);
-    float getCostMagn2(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
-                      const pixelIntensity magnitude_r, const pixelIntensity magnitude_m,
-                      const pixelIntensity magnitude2_r, const pixelIntensity magnitude2_m);
-
+                      
+    float getCostPhase(Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple);
     bool checkPhaseInRange(Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple);
 
     float getCostSSD(std::vector<pixelIntensity>* intensities_r, std::vector<pixelIntensity>* intensities_m);

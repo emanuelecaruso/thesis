@@ -186,60 +186,6 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
 
 
 
-// void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple,
-//                           CandidateProjected*& projected_cand, bool no_mins_till_now){
-//
-//   int num_mins = ep_line->uv_idxs_mins->size();
-//   float bound_min;
-//   float bound_max;
-//   float d2;
-//   float coord;
-//   int sign = pow(-1,(ep_line->start>ep_line->end));
-//   float pixel_width = ep_line->cam->getPixelWidth(candidate->level_);  // GET PIXEL WIDTH
-//
-//   // iterate through mins
-//   for (int i=0; i<num_mins; i++){
-//     // uv min
-//     Eigen::Vector2f uv_curr=ep_line->uvs->at(ep_line->uv_idxs_mins->at(i));
-//
-//     if(ep_line->u_or_v)
-//       coord=uv_curr.x();
-//     else
-//       coord=uv_curr.y();
-//
-//     // from uv to bound
-//     float coord_min = coord-sign*pixel_width*0.5;
-//     float coord_max = coord+sign*pixel_width*0.5;
-//
-//
-//     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
-//     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, coord, ep_line->u_or_v);
-//     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
-//
-//     cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), candidate->depth_, d2);
-//
-//     bound bound_{bound_min,bound_max};
-//
-//     if (num_mins==1 && no_mins_till_now){
-//
-//       Eigen::Vector2i pixel_curr;
-//       cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
-//
-//       // create projected
-//       projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
-//
-//     }
-//
-//
-//     // push back new bound
-//     candidate->bounds_->push_back(bound_);
-//
-//   }
-//
-//
-// }
-
-
 CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple){
 
   Eigen::Vector3f p;
@@ -249,10 +195,6 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
 
   cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, depth_m );
   cam_couple->getUv(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, uv.x(), uv.y() );
-
-  if(1.0/candidate->invdepth_<0){
-    std::cout << "T'HO BECCATO MERDA!" << std::endl;
-  }
 
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
 
@@ -427,14 +369,27 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           n_cand_repetitive++;
           // discard candidate
 
-          // ep_segment->showEpipolarWithMin(cand->level_);
-          // Image<float>* phase = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->phase_cd;
-          // phase->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-          // cv::waitKey(0);
+          // //DEBUG
+          // // if(true){
+          // if(keyframe->name_=="Camera0008"){
+          //   ep_segment->showEpipolarWithMin(cand->level_);
+          //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
+          //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+          //   cv::waitKey(0);
+          // }
 
           break;
         }
         else{
+
+          //DEBUG
+          // if(true){
+          // if(cam_couple->cam_m_->name_=="Camera0010" && cam_couple->cam_r_->name_=="Camera0009"){
+          //   ep_segment->showEpipolarWithMin(cand->level_);
+          //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
+          //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+          //   cv::waitKey(0);
+          // }
 
           n_cand_updated++;
 

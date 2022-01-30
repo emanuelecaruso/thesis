@@ -68,18 +68,9 @@ float EpipolarLine::getCostMagn(const pixelIntensity intensity_r, const pixelInt
   float cost_magn = abs(magnitude_r-magnitude_m);
   float cost_col = abs(intensity_r-intensity_m);
   // return cost_magn;
-  return cost_magn+cost_col;
+  return 2*cost_magn+cost_col;
 }
 
-float EpipolarLine::getCostMagn2(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
-                                const pixelIntensity magnitude_r, const pixelIntensity magnitude_m,
-                                const pixelIntensity phase_r, const pixelIntensity phase_m) {
-  float cost_col = abs(intensity_r-intensity_m);
-  float cost_magn = abs(magnitude_r-magnitude_m);
-  float cost_magn2 = abs(phase_r-phase_m);
-  // return cost_magn;
-  return cost_magn+cost_magn2+2*cost_col;
-}
 
 std::vector<Eigen::Vector2f>* EpipolarLine::collectUvsROfDSOPattern(Candidate* cand){
   std::vector<Eigen::Vector2f>* uvs = new std::vector<Eigen::Vector2f>;
@@ -163,16 +154,43 @@ float EpipolarLine::getCostSSD(std::vector<pixelIntensity>* intensities_r, std::
   return cost;
 }
 
-// bool EpipolarLine::checkPhaseInRange( Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple){
-//
-//   float phase_r = cand->grad_phase_;
-//
-//   // if( (phase_far < phase_m && phase_m < phase_close) || (phase_far > phase_m && phase_m > phase_close) ){
-//   if( ( abs(radiansSub(phase_r,phase_m))) < 0.1 ){
-//     return true;
-//   }
-//   return false;
-// }
+
+
+float EpipolarLine::getCostPhase( Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple){
+
+  float pixel_width=cand->cam_->cam_parameters_->width/((float)cam->cam_parameters_->resolution_x/pow(2,cand->level_+1));
+  float phase_r = cand->grad_phase_;
+  Eigen::Vector2f grad_direction_r {cos(phase_r)*pixel_width,sin(phase_r)*pixel_width};
+
+  // std::cout << "\nphase r: " << phase_r << ", grad dir r:\n" << grad_direction_r << std::endl;
+  Eigen::Vector2f tip_to_project = cand->uv_+grad_direction_r;
+  float d1, coord;
+  if(u_or_v)
+    coord = uv_m.x();
+  else
+    coord = uv_m.y();
+
+  cam_couple->getD1(cand->uv_.x(), cand->uv_.y(), d1, coord, u_or_v);
+
+  Eigen::Vector2f tip_m, direction_m;
+
+  cam_couple->getUv(tip_to_project.x(), tip_to_project.y(), d1, tip_m.x(), tip_m.y() );
+
+  direction_m=tip_m-uv_m;
+
+  // std::cout << "\n1:\n" << direction_m << " 2:\n " << grad_direction_r << std::endl;
+
+  float phase_m_ = std::atan2(direction_m.y(),direction_m.x());
+
+  if (phase_m_<0)
+    phase_m_+=2*PI;
+  if (phase_m_<0)
+    phase_m_+=2*PI;
+
+  // if( (phase_far < phase_m && phase_m < phase_close) || (phase_far > phase_m && phase_m > phase_close) ){
+  return abs(radiansSub(phase_m_,phase_m)/PI);
+
+}
 
 bool EpipolarLine::checkPhaseInRange( Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple){
 
@@ -211,88 +229,6 @@ bool EpipolarLine::checkPhaseInRange( Candidate* cand, Eigen::Vector2f& uv_m, fl
   }
   return false;
 }
-
-
-// bool EpipolarLine::checkPhaseInRange( Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple){
-//
-//   float d_range = 100;
-//
-//   float pixel_width=cand->cam_->cam_parameters_->width/((float)cam->cam_parameters_->resolution_x/pow(2,cand->level_+1));
-//   float phase_r = cand->grad_phase_;
-//   Eigen::Vector2f grad_direction_r {cos(phase_r)*pixel_width,sin(phase_r)*pixel_width};
-//
-//   // std::cout << "\nphase r: " << phase_r << ", grad dir r:\n" << grad_direction_r << std::endl;
-//   Eigen::Vector2f tip_to_project = cand->uv_+grad_direction_r;
-//   float d1, coord;
-//   if(u_or_v)
-//     coord = uv_m.x();
-//   else
-//     coord = uv_m.y();
-//
-//   cam_couple->getD1(cand->uv_.x(), cand->uv_.y(), d1, coord, u_or_v);
-//
-//   Eigen::Vector2f tip_far, tip_close, direction_far, direction_close;
-//
-//   cam_couple->getUv(tip_to_project.x(), tip_to_project.y(), d1-d_range, tip_close.x(), tip_close.y() );
-//   cam_couple->getUv(tip_to_project.x(), tip_to_project.y(), d1+d_range, tip_far.x(), tip_far.y() );
-//   // cam_couple->getUv(tip_to_project.x(), tip_to_project.y(), 1.0/((1.0/d1)-(1/d_range)), tip_close.x(), tip_close.y() );
-//   // cam_couple->getUv(tip_to_project.x(), tip_to_project.y(), 1.0/((1.0/d1)+(1/d_range)), tip_far.x(), tip_far.y() );
-//
-//   direction_far=tip_far-uv_m;
-//   direction_close=tip_close-uv_m;
-//
-//   float phase_far = std::atan2(direction_far.y(),direction_far.x());
-//   float phase_close = std::atan2(direction_close.y(),direction_close.x());
-//   if (phase_far<0)
-//     phase_far+=2*PI;
-//   if (phase_close<0)
-//     phase_close+=2*PI;
-//
-//
-//   if( ( radiansSub(phase_far,phase_m) < 0 && radiansSub(phase_m,phase_close) < 0) || ( radiansSub(phase_far, phase_m) > 0  && radiansSub(phase_m,phase_close) > 0) ){
-//   // if( (abs(radiansSub(phase_m_,phase_m))) < 0.1 ){
-//     return true;
-//   }
-//   return false;
-// }
-
-
-// bool EpipolarLine::checkPhaseInRange( Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple){
-//   float d_range = 1;
-//   float pixel_width=cand->cam_->cam_parameters_->width/((float)cam->cam_parameters_->resolution_x/pow(2,cand->level_+1));
-//   float phase_r = cand->grad_phase_;
-// //   }
-//   Eigen::Vector2f grad_direction_r {cos(phase_r)*pixel_width,sin(phase_r)*pixel_width};
-//
-//   Eigen::Vector2f tip_to_project = cand->uv_+grad_direction_r;
-//   float d1, coord;
-//   if(u_or_v)
-//     coord = uv_m.x();
-//   else
-//     coord = uv_m.y();
-//
-//   cam_couple->getD1(cand->uv_.x(), cand->uv_.y(), d1, coord, u_or_v);
-//
-//   Eigen::Vector2f tip_far, tip_close, direction_far, direction_close;
-//
-//   cam_couple->getUv(tip_to_project.x(), tip_to_project.y(), d1-d_range, tip_close.x(), tip_close.y() );
-//   cam_couple->getUv(tip_to_project.x(), tip_to_project.y(), d1+d_range, tip_far.x(), tip_far.y() );
-//
-//   direction_far=tip_far-uv_m;
-//   direction_close=tip_close-uv_m;
-//   float phase_far = std::atan2(direction_far.y(),direction_far.x());
-//   float phase_close = std::atan2(direction_close.y(),direction_close.x());
-//   if (phase_far<0)
-//     phase_far+=2*PI;
-//   if (phase_close<0)
-//     phase_close+=2*PI;
-//
-//   // if( (phase_far < phase_m && phase_m < phase_close) || (phase_far > phase_m && phase_m > phase_close) ){
-//   if( ( radiansSub(phase_far,phase_m) < 0 && radiansSub(phase_m,phase_close) < 0) || ( radiansSub(phase_far, phase_m) > 0  && radiansSub(phase_m,phase_close) > 0) ){
-//     return true;
-//   }
-//   return false;
-// }
 
 bool EpipolarLine::searchMinDSO(Candidate* candidate, Params* parameters, CamCouple* cam_couple ){
   // iterate through uvs
@@ -362,7 +298,6 @@ bool EpipolarLine::searchMinDSO(Candidate* candidate, Params* parameters, CamCou
 bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple* cam_couple ){
   // iterate through uvs
   float prev_cost = FLT_MAX;
-  bool prev_phase_in_range = false;
   int min_uv_idx;
 
   pixelIntensity intensity_r = candidate->intensity_;
@@ -396,25 +331,24 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
 
     if(rough_cost_too_high){
       // check if previous cost is good enough for a local minimum
-      if(sign && prev_cost<(parameters->cost_threshold && prev_phase_in_range )){
+      if(sign && prev_cost<(parameters->cost_threshold  )){
         // add previous cost inside minimums
         uv_idxs_mins->push_back(i-1);
       }
       // restart search
       sign=false;
       prev_cost = FLT_MAX;
-      prev_phase_in_range = false;
       continue;
     }
 
 
     // get cost
-    bool phase_in_range = checkPhaseInRange( candidate, uv, phase_m, cam_couple);
+    float cost_phase = getCostPhase(candidate, uv, phase_m, cam_couple);
+    cost += cost_phase;
     // bool phase_in_range = true;
 
-    if (cost<prev_cost && phase_in_range){
+    if (cost<prev_cost){
       sign=true;
-      prev_phase_in_range=true;
       prev_cost = cost;
     }
     else{
@@ -425,7 +359,6 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
       }
       sign=false;
       prev_cost = FLT_MAX;
-      prev_phase_in_range = false;
     }
 
   }
@@ -435,82 +368,6 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
   return 1;
 
 }
-
-
-// bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters ){
-//   // iterate through uvs
-//   float prev_cost = FLT_MAX;
-//   int min_uv_idx;
-//
-//   pixelIntensity intensity_r = candidate->intensity_;
-//   float magnitude_r = candidate->grad_magnitude_;
-//   float phase_r = candidate->grad_phase_;
-//
-//
-//   bool sign=true;
-//
-//   for(int i=0; i<uvs->size(); i++){
-//     Eigen::Vector2f uv = uvs->at(i);
-//     Eigen::Vector2i pixel;
-//     cam->uv2pixelCoords(uv,pixel,candidate->level_);
-//
-//     pixelIntensity intensity_m;
-//     float magnitude_m;
-//     float phase_m;
-//
-//
-//     if(!cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, intensity_m))
-//       continue;
-//
-//     cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m);
-//     cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixel(pixel, phase_m);
-//
-//
-//     // hard thresholding on magnitude
-//     bool magnitude_under_threshold=abs(magnitude_m-magnitude_r)>parameters->cost_grad_threshold;
-//
-//     if(magnitude_under_threshold){
-//       // check if previous cost is a local minimum
-//       // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold )){
-//       // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_) )){
-//       if(sign && prev_cost<(parameters->cost_threshold )){
-//         // add previous cost inside minimums
-//         uv_idxs_mins->push_back(i-1);
-//       }
-//       // restart search
-//       sign=false;
-//       prev_cost = FLT_MAX;
-//       continue;
-//     }
-//
-//
-//     // get cost
-//
-//     // float cost = getCostNew(dh_r,dh_m, dv_r, dv_m, intensity_r,intensity_m );
-//     float cost = getCostMagn(intensity_r, intensity_m, magnitude_r, magnitude_m);
-//     // float cost = getCostMagn2(intensity_r, intensity_m, magnitude_r, magnitude_m, phase_r, phase_m);
-//     if (cost<prev_cost){
-//       sign=true;
-//     }
-//     else{
-//       // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold*pow(2,candidate->level_))){
-//       // if(sign && prev_cost<(magnitude_r*parameters->cost_threshold)){
-//       if(sign && prev_cost<(parameters->cost_threshold)){
-//         uv_idxs_mins->push_back(i-1);
-//       }
-//       sign=false;
-//     }
-//     prev_cost = cost;
-//
-//   }
-//   // std::cout << prev_cost << std::endl;
-//   if(uv_idxs_mins->empty())
-//     return 0;
-//   return 1;
-//
-// }
-
-
 
 
 
@@ -575,8 +432,8 @@ Image<colorRGB>* EpipolarLine::createEpipolarImg(const std::string& name, int le
     if (level==-1)
       image_intensity_new = cam->image_intensity_->returnColoredImgFromIntensityImg("epipolar") ;
     else{
-      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->phase_cd->returnColoredImgFromIntensityImg("epipolar") ;
-      image_intensity_new->image_/=2*PI;
+      image_intensity_new =cam->wavelet_dec_->vector_wavelets->at(level)->magn_cd->returnColoredImgFromIntensityImg("epipolar") ;
+      // image_intensity_new->image_/=2*PI;
     }
 
     drawEpipolar(image_intensity_new, green, level);

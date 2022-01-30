@@ -15,10 +15,10 @@ static int coarsest_level_= 3; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // static int coarsest_level_= 0; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // levels for regions
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
-static float grad_threshold_=0.02;
-// static float grad_threshold_=0.1;
+// static float grad_threshold_=0.02;
+static float grad_threshold_=0.03;
 // static float cost_threshold_=0.7;
-static float cost_threshold_=0.03;
+static float cost_threshold_=0.05;
 static float cost_grad_threshold_=0.1;
 static float cost_grad_threshold_DSO_=0.01; // for DSO
 static int num_candidates_=4000;

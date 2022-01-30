@@ -12,8 +12,8 @@ void BundleAdj::projectAndMarginalizeActivePoints(){
 
 void BundleAdj::activateNewPoints(){
 
-  frame_current_ba = dtam_->keyframe_vector_->back();
-  // sharedCoutDebug("   - activating point in frame "+std::to_string(frame_current_ba));
+  frame_current_ba = dtam_->frame_current_;
+  sharedCoutDebug("   - activating point in frame "+std::to_string(frame_current_ba));
 
   double t_start=getTime();
 
@@ -49,10 +49,10 @@ void BundleAdj::activateCandidate(CandidateProjected* cand_proj){
 int BundleAdj::selectNewActivePoints(){
 
   // num of points to be activated
-  int num_to_be_activated=parameters_->max_num_active_points- num_active_points_;
+  int num_to_be_activated=parameters_->max_num_active_points- num_active_points_+num_points_to_marginalize_;
   int num_activated = 0;
 
-  CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  CameraForMapping* last_keyframe=dtam_->getLastKeyframe();
   // RegionsWithProjCandidates* regions = last_keyframe->regions_projected_cands_;
   std::vector<RegionWithProjCandidates*>* reg_vec= last_keyframe->regions_projected_cands_->region_vec_;
 

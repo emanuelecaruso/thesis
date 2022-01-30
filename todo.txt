@@ -32,3 +32,58 @@
 - regions projected candidates -> vector projected candidates ?
 
 - warp function for tracking can be optimized (tracking may be faster)
+
+- start working on bundle adjustment
+
+SYNC!!
+
+"keyframe added" --> keyframe marginalized
+
+PARALLEL
+-- tracking new frames                            -- bundle adjustment
+1) project all active points                      1) if SIGNAL update structure by adding new points
+(NO THE ONES THAT ARE GOING TO BE MARGINALIZED)   2) optimize with new points and marginalize old
+2) track                                             points with schur complement (few iterations)
+3) if keyframe is added SIGNAL, select active
+points to be marginalized, and so new points
+to add to reach the given quantity
+4) collect coarse active points
+5) return to 1
+
+TODO
+in tracker
+mark active points which are no more observed during tracking
+NEW MEMBER OF ACTIVE POINT: bool point not observed in last frame
+
+in keyframe handler
+if keyframe is added:
+  margnalize keyframe: add flag to keyframe
+  NEW MEMBER OF CAMERA -> bool camera has to be marginalized
+  marginalize all points of that camera
+  NEW MEMBER OF ACTIVE POINT: bool to be marginalized,
+  increase counter of number of marginalized points
+
+  check not observed marks -> set counter
+  NEW MEMBER OF ACTIVE POINT: int number of consecutive keyframes for which the point is not observed
+  if the counter == 2,
+  increase counter of number of marginalized points and mark the active point
+
+
+IN ORDER
+-think way for activating points in a sparse way
+  brute force???
+    for each projected candidate, compute distance wrt all projected active points
+    get closest active point, sort that candidate in a vec with
+  distance map???
+    for each pixel where there is a projected candidate
+
+-select candidates with rounds and not with max numb of selected candidates
+
+in bundle adj
+after SIGNAL (after tracked candidates)..
+1) activate new candidates: consider the number of marginalized points
+2) START BUNDLE ADJUSTMENT! by considering active points and cameras with marginalize flag
+
+
+
+- good json for blender

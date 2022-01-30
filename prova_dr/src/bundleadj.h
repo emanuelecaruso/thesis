@@ -13,6 +13,7 @@ class BundleAdj{
     dtam_(dtam),
     parameters_(parameters),
     num_active_points_(0),
+    num_points_to_marginalize_(0),
     frame_current_ba(-1){};
 
     void projectAndMarginalizeActivePoints();
@@ -27,6 +28,7 @@ class BundleAdj{
     Dtam* const dtam_;
     Params* const parameters_;
     int num_active_points_;
+    int num_points_to_marginalize_;
 
     void projectActivePoints(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
     void activateCandidate(CandidateProjected* cand_proj);

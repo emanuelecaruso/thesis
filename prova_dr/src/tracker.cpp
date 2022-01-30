@@ -166,8 +166,10 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
 
 
   float normalizer = img_jacobian*jacobian_to_mul_normalizer;
-  normalizer *= coeff*invdepth_var;
-  normalizer+=0.7;
+  normalizer*=coeff; // get d r/d invdepth
+  normalizer*=normalizer; // square it
+  normalizer *= invdepth_var; // multiply with variance
+  normalizer+=0.5; // add variance on img
 
 
   // float normalizer = invdepth_var+0.5;
@@ -361,33 +363,11 @@ void Tracker::filterOutOcclusionsGT(){
 
 }
 
+void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug_tracking, CameraForMapping* frame_new){
 
-Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates, bool debug_tracking){
+}
 
-  // get new frame
-  CameraForMapping* frame_new = dtam_->getCurrentCamera();
-
-  // collect coarse candidates
-  collectCandidatesInCoarseRegions();
-
-  // filterOutOcclusionsGT();
-  for(int keyframe_idx : *(dtam_->keyframe_vector_)){
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
-    collectCoarseCandidates(keyframe);
-    // for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
-    //   // keyframe->showCoarseCandidates(i,2);
-    // }
-    // showProjectCandsWithCurrGuess(initial_guess, 0);
-    // filterOutOcclusionsGT();
-    // showProjectCandsWithCurrGuess(initial_guess, 0);
-    // keyframe->showCandidates(2);
-    // cv::waitKey(0);
-  }
-
-
-  Eigen::Isometry3f current_guess = initial_guess;
-
-  if(track_candidates){
+void Tracker::trackWithCandidates(Eigen::Isometry3f& current_guess, bool debug_tracking, CameraForMapping* frame_new){
 
     Matrix6f H;
     Vector6f b;
@@ -466,6 +446,33 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
        // std::cout << "ao? " << std::endl;
     }
 
+}
+
+Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_candidates, bool debug_tracking){
+
+  // get new frame
+  CameraForMapping* frame_new = dtam_->getCurrentCamera();
+
+
+  // filterOutOcclusionsGT();
+  for(int keyframe_idx : *(dtam_->keyframe_vector_)){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
+    collectCoarseCandidates(keyframe);
+    // for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
+    //   // keyframe->showCoarseCandidates(i,2);
+    // }
+    // showProjectCandsWithCurrGuess(initial_guess, 0);
+    // filterOutOcclusionsGT();
+    // showProjectCandsWithCurrGuess(initial_guess, 0);
+    // keyframe->showCandidates(2);
+    // cv::waitKey(0);
+  }
+
+
+  Eigen::Isometry3f current_guess = initial_guess;
+
+  if(track_candidates){
+    trackWithCandidates(current_guess, debug_tracking, frame_new);
   }
 
   return current_guess;
