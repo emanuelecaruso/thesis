@@ -57,6 +57,8 @@ class EpipolarLine{
 
     void printMembers() const;
 
+    float slope2angle();
+
     // show
     void showEpipolar(int level=-1, float size=1);
     void showEpipolarWithMin(int level=-1, float size=1);
@@ -74,7 +76,7 @@ class EpipolarLine{
 
     float getCostMagn(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
                       const pixelIntensity magnitude_r, const pixelIntensity magnitude_m);
-                      
+
     float getCostPhase(Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple);
     bool checkPhaseInRange(Candidate* cand, Eigen::Vector2f& uv_m, float phase_m, CamCouple* cam_couple);
 

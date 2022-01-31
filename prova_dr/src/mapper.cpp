@@ -145,7 +145,95 @@ void Mapper::selectNewCandidates(){
   sharedCoutDebug("   - New candidates selected: ("+std::to_string(cam_r->n_candidates_)+")");
 }
 
+float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple, Eigen::Vector2f& uv_min, float pixel_width){
 
+  float standard_deviation;
+  Eigen::Vector2i pixel_m;
+  cam_couple->cam_m_->uv2pixelCoords(uv_min, pixel_m, candidate->level_);
+
+  // GEOMETRIC DISPARITY ERROR
+  float g_dot_l; // squared scalar product between direction of gradient and ep_line -> |g| |l| cos(a)
+                 // since |g|, |l| =1 -> cos(angle between g and l)
+  float angle_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixel(pixel_m);
+  float angle_l =ep_line->slope2angle();
+  float a = radiansSub(angle_g,angle_l);
+  float c_a = cos(a);
+  g_dot_l=abs(c_a);
+
+  // standard deviation epipolar line (fixed)
+  // float sd_epline_geo = parameters_->sd_epline_geo;
+  float sd_epline_geo = pixel_width/2;
+
+  // standard deviation disparity
+  float sd_disparity_geo = sd_epline_geo/(g_dot_l+0.05);
+  // std::cout << "sd: " << sd_disparity_geo << ", ca: " << c_a << ", a: " << a << ", angle g: " << angle_g << ", angle l: " << angle_l << std::endl;
+
+
+  // PHOTOMETRIC ERROR
+  // gradient on epline direction
+  float magn_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel_m);
+  float g_p = g_dot_l*magn_g;
+
+  // standard deviation img noise
+  // float sd_img_noise = parameters_->sd_img_noise;
+  float sd_img_noise = pixel_width/100;
+
+  // standard deviation photometric
+  float sd_disparity_photometric = abs(sd_img_noise/(g_p+0.01));
+
+  // SAMPLING ERROR
+  // float sd_epline_sampling = pixel_width/2;
+
+
+  // standard_deviation = sd_disparity_geo+sd_disparity_photometric+sd_epline_sampling;
+  // standard_deviation = sd_disparity_geo+sd_disparity_photometric+sd_epline_sampling;
+  // standard_deviation = (sd_disparity_photometric+sd_epline_sampling);
+  // standard_deviation = (sd_disparity_geo+sd_disparity_photometric);
+  // standard_deviation = (sd_disparity_photometric);
+  standard_deviation = (sd_disparity_geo);
+  // std::cout << "sd " << (sd_disparity_photometric+sd_epline_sampling) << ", sd photo: " << sd_disparity_photometric << std::endl;
+
+  return standard_deviation;
+
+}
+
+void Mapper::updateBoundsAndGetSD(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple, float& standard_deviation){
+  int num_mins = ep_line->uv_idxs_mins->size();
+  float bound_min;
+  float bound_max;
+  float d2;
+  float coord;
+  int sign = pow(-1,(ep_line->start>ep_line->end));
+  float pixel_width = ep_line->cam->getPixelWidth(candidate->level_);  // GET PIXEL WIDTH
+
+  // iterate through mins
+  for (int i=0; i<num_mins; i++){
+    // uv min
+    Eigen::Vector2f uv_curr=ep_line->uvs->at(ep_line->uv_idxs_mins->at(i));
+
+    standard_deviation = computeStandardDeviation(candidate, ep_line, cam_couple, uv_curr, pixel_width);
+
+    // DISPARITY -> INVDEPTH CONVERSION: ENGEL
+    // TODO
+
+    // DISPARITY -> INVDEPTH CONVERSION: FULL METHOD
+    if(ep_line->u_or_v)
+      coord=uv_curr.x();
+    else
+      coord=uv_curr.y();
+    // from uv to bound
+    float coord_min = coord-sign*standard_deviation;
+    float coord_max = coord+sign*standard_deviation;
+    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
+    cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
+
+    bound bound_{bound_min,bound_max};
+
+    // push back new bound
+    candidate->bounds_->push_back(bound_);
+
+  }
+}
 
 void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple){
 
@@ -168,8 +256,8 @@ void Mapper::updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple
       coord=uv_curr.y();
 
     // from uv to bound
-    float coord_min = coord-sign*pixel_width*0.5;
-    float coord_max = coord+sign*pixel_width*0.5;
+    float coord_min = coord-sign*pixel_width*0.75;
+    float coord_max = coord+sign*pixel_width*0.75;
 
     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_min, coord_min, ep_line->u_or_v);
     cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), bound_max, coord_max, ep_line->u_or_v);
@@ -208,7 +296,7 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
 
 
 
-CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line , Eigen::Vector2f uv_curr){
+CandidateProjected* Mapper::projectCandidateAndUpdateCandInvdepth(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line , Eigen::Vector2f uv_curr){
 
   Eigen::Vector2i pixel_curr;
   cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
@@ -256,7 +344,7 @@ void Mapper::trackExistingCandidatesGT(){
     for(int k=keyframe->candidates_->size()-1; k>=0; k--){
 
       Candidate* cand = keyframe->candidates_->at(k);
-      cand->invdepth_var_=0.00001;
+      cand->invdepth_var_=0.0001;
       cand->setInvdepthGroundtruth();
       cand->one_min_=true;
       cand->cam_->pointAtDepth(cand->uv_, 1.0/cand->invdepth_, *(cand->p_), *(cand->p_incamframe_));
@@ -279,6 +367,8 @@ void Mapper::trackExistingCandidates(bool take_gt_points, bool debug_mapping){
     trackExistingCandidates_(  debug_mapping);
 }
 
+
+
 void Mapper::trackExistingCandidates_(bool debug_mapping){
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
@@ -287,6 +377,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
   std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
 
   float total_error=0;
+
+  std::vector<Image<colorRGB>*> imgs_to_destroy;
 
   //iterate through active keyframes
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
@@ -321,6 +413,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
       int num_mins=0;
       int bounds_size =cand->bounds_->size();
 
+      float standard_deviation;
+
       // iterate along all bounds
       for(int j=0; j<bounds_size; j++){
 
@@ -334,26 +428,33 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         }
 
         // if uvs<=3, epipolar segment is too short to update bounds
-        if(ep_segment->uvs->size()<=3){
-
-          // push the same bounds
-          cand->bounds_->push_back(cand->bounds_->at(j));
-
-          keep_cand=true;
-          n_cand_not_updated++;
-
-          // if there are no mins till now
-          if(!num_mins ){
-            // save projected cand in case is going to be pushed
-            // projected_cand=projectCandidate( cand, cam_couple );
-            projected_cand=projectCandidate( cand, cam_couple, ep_segment , ep_segment->uvs->at(1));
-            projected_cand_created=true;
-          }
-
-          num_mins++;
-
-          continue;
-        }
+        // if(ep_segment->uvs->size()<=3){
+        //
+        //   // if(cam_couple->cam_m_->name_=="Camera0011" && cam_couple->cam_r_->name_=="Camera0010"){
+        //     ep_segment->showEpipolarWithMin(cand->level_);
+        //     Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
+        //     magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
+        //     cv::waitKey(0);
+        //   // }
+        //
+        //   // push the same bounds
+        //   cand->bounds_->push_back(cand->bounds_->at(j));
+        //
+        //   keep_cand=true;
+        //   n_cand_not_updated++;
+        //
+        //   // if there are no mins till now
+        //   if(!num_mins ){
+        //     // save projected cand in case is going to be pushed
+        //     // projected_cand=projectCandidate( cand, cam_couple );
+        //     projected_cand=projectCandidate( cand, cam_couple, ep_segment , ep_segment->uvs->at(1));
+        //     projected_cand_created=true;
+        //   }
+        //
+        //   num_mins++;
+        //
+        //   continue;
+        // }
 
         // if no mins are found
         // else if (!ep_segment->searchMin(cand, parameters_)){
@@ -370,8 +471,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           // discard candidate
 
           // //DEBUG
-          // // if(true){
-          // if(keyframe->name_=="Camera0008"){
+          // if(true){
+          // if(cam_couple->cam_m_->name_=="Camera0011" && cam_couple->cam_r_->name_=="Camera0010"){
           //   ep_segment->showEpipolarWithMin(cand->level_);
           //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
           //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
@@ -384,7 +485,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
 
           //DEBUG
           // if(true){
-          // if(cam_couple->cam_m_->name_=="Camera0010" && cam_couple->cam_r_->name_=="Camera0009"){
+          // if(cam_couple->cam_m_->name_=="Camera0002"){
+          // // if(cam_couple->cam_m_->name_=="Camera0002" && cam_couple->cam_r_->name_=="Camera0000"){
           //   ep_segment->showEpipolarWithMin(cand->level_);
           //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
           //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
@@ -396,14 +498,15 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           // if there are no mins till now, and only 1 min has been found
           if(!num_mins && ep_segment->uv_idxs_mins->size()==1 ){
             // save projected cand in case is going to be pushed
-            projected_cand=projectCandidate( cand, cam_couple, ep_segment , ep_segment->uvs->at(ep_segment->uv_idxs_mins->at(0)) );
+            projected_cand=projectCandidateAndUpdateCandInvdepth( cand, cam_couple, ep_segment , ep_segment->uvs->at(ep_segment->uv_idxs_mins->at(0)) );
             projected_cand_created=true;
           }
 
 
           keep_cand=true;
 
-          updateBounds(cand,ep_segment,cam_couple);
+          updateBoundsAndGetSD( cand, ep_segment, cam_couple, standard_deviation);
+          // updateBounds(cand,ep_segment,cam_couple);
 
           num_mins+=ep_segment->uv_idxs_mins->size();
 
@@ -451,19 +554,19 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
     // sharedCoutDebug("         - # candidates tracked: "+std::to_string(n_cand_tracked)+ " out of "+std::to_string(n_cand_to_track));
     sharedCoutDebug("         - tracked: "+std::to_string(n_cand_tracked)+ " ("+std::to_string(n_cand_updated)+" bounds updated, "+std::to_string(n_cand_not_updated)+" bounds not updated) out of "+std::to_string(n_cand_to_track));
     sharedCoutDebug("         - not tracked: "+std::to_string(n_cand_to_track-n_cand_tracked)+ " ("+std::to_string(n_cand_without_mins)+" bounds with no mins, "+std::to_string(n_cand_repetitive)+" bounds repetitive, "+std::to_string(n_cand_not_in_newframe)+" bounds outdide frustum ) out of "+std::to_string(n_cand_to_track));
+
     //DEBUG
     if(debug_mapping){
-      keyframe->showCandidates(2);
+      keyframe->showCandidates(1);
     }
   }
   if(debug_mapping)
   {
-    last_keyframe->showProjCandidates(2);
+    last_keyframe->showProjCandidates(1);
     sharedCoutDebug("         - DEBUG: total error: "+std::to_string(total_error));
     cv::waitKey(0);
-    cv::destroyAllWindows();
+    // cv::destroyAllWindows();
   }
-  // cv::destroyAllWindows();
 
 }
 

@@ -229,6 +229,7 @@ namespace pr {
   // }
 
   #define PI 3.14159265
+  #define EPS 0.00000000001
 
   struct CamParameters{
     const int resolution_x;
@@ -317,10 +318,17 @@ namespace pr {
 
   inline float radiansSub(float rad1, float rad2){
     float sub = rad1-rad2;
-    if (sub<-PI){
-      sub+=2*PI;
-    }else if(sub>PI){
-      sub-=2*PI;
+    int i=0;
+    while(true){
+      if (sub<-PI-EPS){
+        sub+=2*PI;
+      }else if(sub>PI+EPS){
+        sub-=2*PI;
+      }else break;
+      i++;
+      if(i>1)
+        std::cout << "WHYYYYYYY " << sub << " " << rad1 << " " << rad2 << std::endl;
+
     }
     return sub;
   }

@@ -169,10 +169,9 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   normalizer*=coeff; // get d r/d invdepth
   normalizer*=normalizer; // square it
   normalizer *= invdepth_var; // multiply with variance
-  normalizer+=0.5; // add variance on img
+  normalizer+=0.05; // add variance on img
 
-
-  // float normalizer = invdepth_var+0.5;
+  // float normalizer = 1;
 
   // error
   float error = (z_hat-z)/normalizer;
@@ -185,7 +184,8 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
   Eigen::Matrix<float, 6, 1> Jtransp; // 1 row, 6 cols
 
-  J=coeff*(img_jacobian*jacobian_to_mul);
+  J=coeff*(img_jacobian*jacobian_to_mul)/normalizer;
+  // J=coeff*(img_jacobian*jacobian_to_mul);
   Jtransp = J.transpose();
   // update
   H+=Jtransp*weight*J;

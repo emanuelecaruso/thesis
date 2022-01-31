@@ -4,19 +4,19 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/bundleadj.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/camera.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/camera.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/dtam.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/environment.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/epline.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/image.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/image.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/initializer.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/keyframe.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/mapper.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/tracker.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/utils.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/src/wavelet.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o"
-  "/home/emanuele/Scrivania/thesis/prova_dr/executables/test_dso.cpp" "/home/emanuele/Scrivania/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/test_dso.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/bundleadj.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/camera.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/camera.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/dtam.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/environment.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/epline.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/image.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/image.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/initializer.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/keyframe.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/mapper.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/tracker.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/utils.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/src/wavelet.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o"
+  "/home/manu/Desktop/thesis/prova_dr/executables/test_dso.cpp" "/home/manu/Desktop/thesis/prova_dr/build/executables/CMakeFiles/test_dso.dir/test_dso.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

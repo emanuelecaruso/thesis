@@ -371,7 +371,7 @@ void Dtam::test_tracking(){
 void Dtam::test_dso(){
 
   bool debug_initialization=false;
-  bool debug_mapping=true;
+  bool debug_mapping=false;
   bool debug_tracking=true;
 
   bool initialization_loop=false;
@@ -379,6 +379,7 @@ void Dtam::test_dso(){
   bool take_gt_points=false;
 
   bool track_candidates=true;
+  // int guess_type=POSE_CONSTANT;
   int guess_type=VELOCITY_CONSTANT;
 
   bool all_keyframes=true;
@@ -398,7 +399,7 @@ void Dtam::test_dso(){
   update_cameras_thread_.join();
   frontend_thread_.join();
 
-  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(10));
+  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
 
 

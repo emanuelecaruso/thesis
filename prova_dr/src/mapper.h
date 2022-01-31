@@ -83,9 +83,11 @@ class Mapper{
     bool initializeCandidates(const CameraForMapping* cam_r,
                             const CameraForMapping* cam_m, int& current_r_idx);
 
+    float computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple, Eigen::Vector2f& uv_min, float pixel_width);
+    void updateBoundsAndGetSD(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple, float& standard_deviation);
     void updateBounds(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple);
 
-    CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line , Eigen::Vector2f uv_curr );
+    CandidateProjected* projectCandidateAndUpdateCandInvdepth(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line , Eigen::Vector2f uv_curr );
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple );
     CandidateProjected* projectCandidate(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line );
     void trackExistingCandidates_( bool debug_mapping);

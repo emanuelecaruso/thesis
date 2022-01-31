@@ -70,6 +70,9 @@ if keyframe is added:
 
 
 IN ORDER
+-propagate uncertainty in the right way!!
+-ssd?
+- think about down-weight high gradient pixels
 -think way for activating points in a sparse way
   brute force???
     for each projected candidate, compute distance wrt all projected active points
@@ -77,7 +80,6 @@ IN ORDER
   distance map???
     for each pixel where there is a projected candidate
 
--select candidates with rounds and not with max numb of selected candidates
 
 in bundle adj
 after SIGNAL (after tracked candidates)..

@@ -412,8 +412,8 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
   while(n_candidates_<max_num_candidates){
     if(!region_vec->empty()){
       for(int i=0; i<region_vec->size(); i++){
-        if (n_candidates_>=max_num_candidates)
-          break;
+        // if (n_candidates_>=max_num_candidates)
+        //   break;
 
         RegionWithCandidates* region= region_vec->at(i);
         std::vector<Candidate*>* cands_vec = region->cands_vec_;

@@ -26,6 +26,13 @@ Image<float>* Wvlt_lvl::getPhase(Image<pixelIntensity>* dx, Image<pixelIntensity
 
   cv::phase(dx->image_, dy->image_, phase->image_);
 
+  // dx->show(1);
+  // dy->show(1);
+  // phase->image_/=6.28;
+  // phase->show(1);
+  //
+  // cv::waitKey(0);
+
   return phase;
 }
 
@@ -34,8 +41,6 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
   c=new Image<pixelIntensity>("c"+img->name_);
   c_dx=new Image<pixelIntensity>("c_dx"+img->name_);
   c_dy=new Image<pixelIntensity>("c_dy"+img->name_);
-  c_d2x=new Image<pixelIntensity>("c_d2x"+img->name_);
-  c_d2y=new Image<pixelIntensity>("c_d2y"+img->name_);
   magn_cd=new Image<float>("magn_cd"+img->name_);
   magn_cd_dx=new Image<pixelIntensity>("magn_cd_dx"+img->name_);
   magn_cd_dy=new Image<pixelIntensity>("magn_cd_dy"+img->name_);
@@ -50,8 +55,6 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
   magn_cd->initImage(height/2, width/2);
   c_dx->initImage(height/2, width/2);
   c_dy->initImage(height/2, width/2);
-  c_d2x->initImage(height/2, width/2);
-  c_d2y->initImage(height/2, width/2);
   magn_cd_dx->initImage(height/2, width/2);
   magn_cd_dy->initImage(height/2, width/2);
   phase_cd->initImage(height/2, width/2);
@@ -71,8 +74,6 @@ void Wvlt_lvl::WaveletDecHaar(const Image<pixelIntensity>* img){
 
   c_dx=c->compute_sobel_x();
   c_dy=c->compute_sobel_y();
-  c_d2x=c->compute_sobel_2nd_x();
-  c_d2y=c->compute_sobel_2nd_y();
 
   magn_cd=getMagnitude(c_dx,c_dy);
   magn_cd_dx=magn_cd->compute_sobel_x();

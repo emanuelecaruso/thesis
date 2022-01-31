@@ -66,9 +66,9 @@ void EpipolarLine::lineTraverse(int level)
 float EpipolarLine::getCostMagn(const pixelIntensity intensity_r, const pixelIntensity intensity_m,
                                 const pixelIntensity magnitude_r, const pixelIntensity magnitude_m) {
   float cost_magn = abs(magnitude_r-magnitude_m);
-  float cost_col = abs(intensity_r-intensity_m);
+  float cost_intensity = abs(intensity_r-intensity_m);
   // return cost_magn;
-  return 2*cost_magn+cost_col;
+  return cost_magn+cost_intensity;
 }
 
 
@@ -188,7 +188,7 @@ float EpipolarLine::getCostPhase( Candidate* cand, Eigen::Vector2f& uv_m, float 
     phase_m_+=2*PI;
 
   // if( (phase_far < phase_m && phase_m < phase_close) || (phase_far > phase_m && phase_m > phase_close) ){
-  return abs(radiansSub(phase_m_,phase_m)/PI);
+  return abs(radiansSub(phase_m_,phase_m)/(2*PI));
 
 }
 
@@ -347,6 +347,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
     cost += cost_phase;
     // bool phase_in_range = true;
 
+
     if (cost<prev_cost){
       sign=true;
       prev_cost = cost;
@@ -362,6 +363,11 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
     }
 
   }
+  if(sign && prev_cost<(parameters->cost_threshold)){
+    // add previous cost inside minimums
+    uv_idxs_mins->push_back(uvs->size()-1);
+  }
+
   // std::cout << prev_cost << std::endl;
   if(uv_idxs_mins->empty())
     return 0;
@@ -369,7 +375,9 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
 
 }
 
-
+float EpipolarLine::slope2angle(){
+  return std::atan2(slope,1);
+}
 
 // show
 void EpipolarLine::showEpipolar(int level,float size){

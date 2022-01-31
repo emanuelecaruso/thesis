@@ -168,12 +168,32 @@ class Image{
     inline Image< pixelIntensity>* compute_sobel_x(const std::string& name) const{
       Image<  pixelIntensity >* img_sobel_x=new Image< pixelIntensity >(name);
 
-      cv::Mat_<float> kernel(3,3);
-      kernel <<  -1,  0, 1,
-                 -2,  0, 2,
-                 -1,  0, 1;
-       // normalize
-       kernel/=8;
+      // cv::Mat_<float> kernel(3,3);
+      // kernel <<  -1,  0, 1,
+      //            -2,  0, 2,
+      //            -1,  0, 1;
+      // // normalize
+      // kernel/=4;
+
+      cv::Mat_<float> kernel(5,5);
+      kernel <<  -2, -1,  0, 1, 2,
+                 -2, -1,  0, 1, 2,
+                 -4, -2,  0, 2, 4,
+                 -2, -1,  0, 1; 2,
+                 -2, -1,  0, 1, 2;
+
+      // normalize
+      kernel/=18;
+
+      // kernel <<  -1,  0, 1,
+      //            -1,  0, 1,
+      //            -1,  0, 1;
+      // // normalize
+      // kernel/=3;
+
+      // kernel <<   0,  0, 0,
+      //            -1,  0, 1,
+      //             0,  0, 0;
 
       filter2D(image_, img_sobel_x->image_, pixelIntensity_CODE, kernel);
 
@@ -183,12 +203,31 @@ class Image{
     inline Image<pixelIntensity>* compute_sobel_y(const std::string& name) const{
       Image< pixelIntensity >* img_sobel_y =new Image< pixelIntensity >(name);
 
-      cv::Mat_<float> kernel(3,3);
-      kernel <<  -1, -2, -1,
-                  0,  0,  0,
-                  1,  2,  1;
+      // cv::Mat_<float> kernel(3,3);
+      // kernel <<  -1, -2, -1,
+      //             0,  0,  0,
+      //             1,  2,  1;
+      // // normalize
+      // kernel/=4;
+
+      cv::Mat_<float> kernel(5,5);
+      kernel <<  -2, -2, -4, -2, -2,
+                 -1, -1, -2, -1, -1,
+                  0,  0,  0,  0,  0,
+                  1,  1,  2,  1,  1,
+                  2,  2,  4,  2,  2;
       // normalize
-      kernel/=8;
+      kernel/=18;
+
+      // kernel <<  -1, -1, -1,
+      //             0,  0,  0,
+      //             1,  1,  1;
+      // // normalize
+      // kernel/=3;
+
+      // kernel <<   0, -1,  0,
+      //             0,  0,  0,
+      //             0,  1,  0;
 
       filter2D(image_, img_sobel_y->image_, pixelIntensity_CODE, kernel);
 
@@ -201,40 +240,6 @@ class Image{
 
     inline Image<pixelIntensity>* compute_sobel_y() const{
       return compute_sobel_y("fy_"+name_);
-    }
-
-    inline Image< pixelIntensity>* compute_sobel_2nd_x(const std::string& name) const{
-      Image<  pixelIntensity >* img_graddiff_x=new Image< pixelIntensity >(name);
-
-      cv::Mat_<float> kernel(3,3);
-      kernel <<  1,  -2,  1,
-                 2,  -4,  2,
-                 1,  -2,  1;
-
-      filter2D(image_, img_graddiff_x->image_, pixelIntensity_CODE, kernel);
-
-      return img_graddiff_x;
-    }
-
-    inline Image<pixelIntensity>* compute_sobel_2nd_y(const std::string& name) const{
-      Image< pixelIntensity >* img_graddiff_y =new Image< pixelIntensity >(name);
-
-      cv::Mat_<float> kernel(3,3);
-      kernel <<    1,  2,  1,
-                  -2, -4, -2,
-                   1,  2,  1;
-
-      filter2D(image_, img_graddiff_y->image_, pixelIntensity_CODE, kernel);
-
-      return img_graddiff_y;
-    }
-
-    inline Image< pixelIntensity>* compute_sobel_2nd_x() const{
-      return compute_sobel_2nd_x("sobel_2nd_x_"+name_);
-    }
-
-    inline Image<pixelIntensity>* compute_sobel_2nd_y() const{
-      return compute_sobel_2nd_y("sobel_2nd_y_"+name_);
     }
 
     inline Image<pixelIntensity>* squared() const{
@@ -284,5 +289,9 @@ class Image{
       // show_image->setPixel( pixel, red);
       show_image->drawCircle(red, pixel, radius, thickness);
       show_image->show(size, name);
+    }
+
+    inline void destroyWindow() const{
+      cv::destroyWindow(name_);
     }
 };
