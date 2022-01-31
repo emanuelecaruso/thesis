@@ -259,7 +259,8 @@ class Candidate : public CandidateBase{
       float d2 = bounds_->at(0).second;
       float d1 = bounds_->at(0).first;
       // return real variance TODO
-      return pow(((1.0/d1)-(1.0/d2))/2,2);
+      return ((1.0/d1)-(1.0/d2))/2;
+      // return pow(((1.0/d1)-(1.0/d2))/2,2);
     }
 
     void marginalize() const;

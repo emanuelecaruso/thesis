@@ -70,9 +70,7 @@ if keyframe is added:
 
 
 IN ORDER
--propagate uncertainty in the right way!!
--ssd?
-- think about down-weight high gradient pixels
+-propagate uncertainty in the right way!! (seems done)
 -think way for activating points in a sparse way
   brute force???
     for each projected candidate, compute distance wrt all projected active points

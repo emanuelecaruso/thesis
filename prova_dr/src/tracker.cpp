@@ -167,14 +167,16 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
 
   float normalizer = img_jacobian*jacobian_to_mul_normalizer;
   normalizer*=coeff; // get d r/d invdepth
-  normalizer*=normalizer; // square it
+  normalizer=abs(normalizer);
   normalizer *= invdepth_var; // multiply with variance
-  normalizer+=0.05; // add variance on img
+  // normalizer+=0.05; // add variance on img
+  normalizer+=0.02; // add variance on img
 
   // float normalizer = 1;
 
   // error
   float error = (z_hat-z)/normalizer;
+  // float error = (z_hat-z);
 
   // weight
   float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
@@ -184,7 +186,8 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
   Eigen::Matrix<float, 6, 1> Jtransp; // 1 row, 6 cols
 
-  J=coeff*(img_jacobian*jacobian_to_mul)/normalizer;
+  J=(coeff*(img_jacobian*jacobian_to_mul))/normalizer;
+  // J=coeff*(img_jacobian*jacobian_to_mul);
   // J=coeff*(img_jacobian*jacobian_to_mul);
   Jtransp = J.transpose();
   // update
@@ -261,7 +264,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand,
   // z = cand->grad_magnitude_;
   // z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd->evalPixel(pixel_newframe);
   // img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dy->evalPixel(pixel_newframe);
-  // updateLS( H, b, chi, jacobian_to_mul, z, z_hat, img_jacobian, ni, variance, coeff );
+  // updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
 
 
 
@@ -421,7 +424,8 @@ void Tracker::trackWithCandidates(Eigen::Isometry3f& current_guess, bool debug_t
 
         }
         Vector6f dx=-H.inverse()*b;
-        current_guess=v2t(dx)*current_guess;
+        Eigen::Isometry3f new_guess;
+        new_guess=v2t(dx)*current_guess;
         chi_vec.push_back(chi);
 
         // DEBUG
@@ -430,12 +434,20 @@ void Tracker::trackWithCandidates(Eigen::Isometry3f& current_guess, bool debug_t
         }
 
 
-        if (chi_vec.size()==2)
-          first_chi_der=chi_vec.at(0)-chi_vec.at(1);
-        if(chi_vec.size()>2)
-          if( ((chi_vec.at(chi_vec.size()-2)-chi)/first_chi_der)<dtam_->parameters_->ratio_for_convergence  ){
+        if (chi_vec.size()<=2){
+          // first_chi_der=chi_vec.at(0)-chi_vec.at(1);
+          current_guess=new_guess;
+        }
+        // if (iterations<dtam_->parameters_->max_iterations_ls/2){
+        //   current_guess=new_guess;
+        // }
+        else {
+          if( (chi_vec.at(chi_vec.size()-2)-chi)<0  ){
             break;
           }
+          current_guess=new_guess;
+        }
+
         iterations++;
 
 

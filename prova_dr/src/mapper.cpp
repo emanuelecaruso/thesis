@@ -150,22 +150,26 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
   float standard_deviation;
   Eigen::Vector2i pixel_m;
   cam_couple->cam_m_->uv2pixelCoords(uv_min, pixel_m, candidate->level_);
-
+  if (!cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->pixelInRange(pixel_m))
+    return -1;
   // GEOMETRIC DISPARITY ERROR
   float g_dot_l; // squared scalar product between direction of gradient and ep_line -> |g| |l| cos(a)
                  // since |g|, |l| =1 -> cos(angle between g and l)
   float angle_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixel(pixel_m);
   float angle_l =ep_line->slope2angle();
+
   float a = radiansSub(angle_g,angle_l);
+
+
   float c_a = cos(a);
   g_dot_l=abs(c_a);
 
   // standard deviation epipolar line (fixed)
   // float sd_epline_geo = parameters_->sd_epline_geo;
-  float sd_epline_geo = pixel_width/2;
+  float sd_epline_geo = pixel_width/4;
 
   // standard deviation disparity
-  float sd_disparity_geo = sd_epline_geo/(g_dot_l+0.05);
+  float sd_disparity_geo = sd_epline_geo/(g_dot_l+0.1);
   // std::cout << "sd: " << sd_disparity_geo << ", ca: " << c_a << ", a: " << a << ", angle g: " << angle_g << ", angle l: " << angle_l << std::endl;
 
 
@@ -176,21 +180,19 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
 
   // standard deviation img noise
   // float sd_img_noise = parameters_->sd_img_noise;
-  float sd_img_noise = pixel_width/100;
+  float sd_img_noise = pixel_width/400;
 
   // standard deviation photometric
   float sd_disparity_photometric = abs(sd_img_noise/(g_p+0.01));
 
   // SAMPLING ERROR
-  // float sd_epline_sampling = pixel_width/2;
+  // float sd_epline_sampling = pixel_width/8;
 
 
-  // standard_deviation = sd_disparity_geo+sd_disparity_photometric+sd_epline_sampling;
-  // standard_deviation = sd_disparity_geo+sd_disparity_photometric+sd_epline_sampling;
-  // standard_deviation = (sd_disparity_photometric+sd_epline_sampling);
-  // standard_deviation = (sd_disparity_geo+sd_disparity_photometric);
-  // standard_deviation = (sd_disparity_photometric);
-  standard_deviation = (sd_disparity_geo);
+  // standard_deviation = 2*(sd_disparity_geo+sd_disparity_photometric+sd_epline_sampling);
+  standard_deviation = 2*(sd_disparity_geo+sd_disparity_photometric);
+  // standard_deviation = 2*(sd_disparity_photometric);
+  // standard_deviation = 2*(sd_disparity_geo);
   // std::cout << "sd " << (sd_disparity_photometric+sd_epline_sampling) << ", sd photo: " << sd_disparity_photometric << std::endl;
 
   return standard_deviation;
@@ -212,6 +214,9 @@ void Mapper::updateBoundsAndGetSD(Candidate* candidate, EpipolarLine* ep_line, C
     Eigen::Vector2f uv_curr=ep_line->uvs->at(ep_line->uv_idxs_mins->at(i));
 
     standard_deviation = computeStandardDeviation(candidate, ep_line, cam_couple, uv_curr, pixel_width);
+
+    if (standard_deviation==-1)
+      continue;
 
     // DISPARITY -> INVDEPTH CONVERSION: ENGEL
     // TODO
@@ -486,7 +491,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           //DEBUG
           // if(true){
           // if(cam_couple->cam_m_->name_=="Camera0002"){
-          // // if(cam_couple->cam_m_->name_=="Camera0002" && cam_couple->cam_r_->name_=="Camera0000"){
+          // // if(cam_couple->cam_m_->name_=="Camera0010" && cam_couple->cam_r_->name_=="Camera0008"){
           //   ep_segment->showEpipolarWithMin(cand->level_);
           //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
           //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");

@@ -326,8 +326,11 @@ namespace pr {
         sub-=2*PI;
       }else break;
       i++;
-      if(i>1)
-        std::cout << "WHYYYYYYY " << sub << " " << rad1 << " " << rad2 << std::endl;
+      if(i>1){
+        std::cout << "WHYYYYYYYYYYYYYYYY " << rad1 <<  std::endl;
+        exit(1);
+        // break;
+      }
 
     }
     return sub;

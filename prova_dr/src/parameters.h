@@ -11,17 +11,17 @@
 #include <mutex>
 
 // coarsest level
-static int coarsest_level_= 3; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
+static int coarsest_level_= 4; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // static int coarsest_level_= 0; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // levels for regions
-static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
+static int reg_level_=3;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 // static float grad_threshold_=0.02;
 static float grad_threshold_=0.03;
 // static float cost_threshold_=0.1;
 static float cost_threshold_=0.07;
 static float cost_grad_threshold_=0.1;
 static float cost_grad_threshold_DSO_=0.01; // for DSO
-static int num_candidates_=5000;
+static int num_candidates_=4000;
 // static int num_candidates_=100;
 static int max_num_active_points_=num_candidates_;
 static int num_active_keyframes_=5;
@@ -33,8 +33,8 @@ static int fps_=30;
 static int max_iterations_ls_=20;
 static float variance_ = 0.1;
 static int robustifier_dofs_=2;
-static float ratio_for_convergence_ = 0.05;
-// static float ratio_for_convergence_ = 0.001;
+// static float ratio_for_convergence_ = 0.05;
+static float ratio_for_convergence_ = 0.001;
 // initializer parameters
 static int n_corners_ = 1000;
 static float quality_level_ = 0.01;
