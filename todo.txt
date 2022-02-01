@@ -71,12 +71,10 @@ if keyframe is added:
 
 IN ORDER
 -propagate uncertainty in the right way!! (seems done)
--think way for activating points in a sparse way
-  brute force???
-    for each projected candidate, compute distance wrt all projected active points
-    get closest active point, sort that candidate in a vec with
-  distance map???
-    for each pixel where there is a projected candidate
+-think way for activating points in a sparse way (seems done)
+- tracking with active points
+
+bundleadj.cpp
 
 
 in bundle adj

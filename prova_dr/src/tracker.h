@@ -26,6 +26,8 @@ class Tracker{
     void trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug_tracking, CameraForMapping* frame_new);
 
     void collectCoarseCandidates(CameraForMapping* keyframe);
+    void collectCoarseActivePoints(CameraForMapping* keyframe);
+    
     void showProjectCandsWithCurrGuess( Eigen::Isometry3f& current_guess, int level);
     bool iterationLS(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess );
     bool updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float, 2,6>& jacobian_to_mul, Eigen::Matrix<float, 2,1>& jacobian_to_mul_normalizer, pixelIntensity z, pixelIntensity z_hat, Eigen::Matrix<float, 1,2>& img_jacobian, float ni, float variance, float coeff, float invdepth_var );

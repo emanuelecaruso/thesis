@@ -112,8 +112,8 @@ class Camera{
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv, float& p_cam_z ) const;
     bool projectPoint(const Eigen::Vector3f& p, Eigen::Vector2f& uv) const;
     bool projectPointInCamFrame(const Eigen::Vector3f& p, Eigen::Vector2f& uv) const;
-    bool projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv) const;
-    bool projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv, float& p_cam_z) const;
+    bool projectCam(Camera* cam_to_be_projected, Eigen::Vector2f& uv) const;
+    bool projectCam(Camera* cam_to_be_projected, Eigen::Vector2f& uv, float& p_cam_z) const;
 
     // functions for images
     void clearImgs();
@@ -177,9 +177,8 @@ class RegionWithCandidates : public RegionWithCandidatesBase{
 
     RegionWithCandidates(int x, int y, Params* parameters, CameraForMapping* cam):
     RegionWithCandidatesBase( x, y, parameters, cam),
-    cands_vec_(new std::vector<Candidate*>){
-      // collectCandidates();
-    };
+    cands_vec_(new std::vector<Candidate*>)
+    { };
     bool collectCandidates(int wavelet_levels);
 
 };
@@ -242,7 +241,7 @@ class Candidate : public CandidateBase{
       delete bounds_;
     };
 
-    const CameraForMapping* cam_;
+    CameraForMapping* cam_;
     std::vector<bound>* bounds_;
     bool one_min_;
     float invdepth_;
@@ -273,12 +272,14 @@ class Candidate : public CandidateBase{
 class CandidateProjected : public CandidateBase{
   public:
     const float invdepth_;
-    const Candidate* cand_;
+    Candidate* cand_;
+    CameraForMapping* cam_;
 
-    CandidateProjected(Candidate* cand, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth):
+    CandidateProjected(Candidate* cand, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth, CameraForMapping* cam):
     CandidateBase(cand->level_, pixel, uv),
     invdepth_(invdepth),
-    cand_(cand)
+    cand_(cand),
+    cam_(cam)
     {};
 
 
@@ -286,16 +287,43 @@ class CandidateProjected : public CandidateBase{
 
 class ActivePoint : public CandidateBase{
   public:
-    const float invdepth_;
-    const float invdepth_var_;
+    float invdepth_;
+    float invdepth_var_;
+    CameraForMapping* cam_;
 
-    ActivePoint(CandidateProjected* cand_proj):
-    CandidateBase( cand_proj->cand_->level_, cand_proj->cand_->pixel_, cand_proj->cand_->uv_),
-    invdepth_(cand_proj->invdepth_),
-    invdepth_var_( cand_proj->cand_->getInvdepthVar() )
+    ActivePoint(Candidate* cand):
+    CandidateBase( cand->level_, cand->pixel_, cand->uv_),
+    invdepth_(cand->invdepth_),
+    invdepth_var_( cand->getInvdepthVar() ),
+    cam_(cand->cam_)
     {}
+};
 
+class RegionWithActivePoints : public RegionWithCandidatesBase{
+  public:
 
+    std::vector<ActivePoint*>* active_pts_vec_;
+
+    RegionWithActivePoints(int x, int y, Params* parameters, CameraForMapping* cam):
+    RegionWithCandidatesBase( x, y, parameters, cam),
+    active_pts_vec_(new std::vector<ActivePoint*>)
+    { };
+
+};
+
+class ActivePointProjected : public CandidateBase{
+  public:
+    ActivePoint* active_point_;
+    float invdepth_;
+    CameraForMapping* cam_;
+
+    ActivePointProjected(CandidateProjected* cand_proj, ActivePoint* active_point):
+    CandidateBase( cand_proj->level_, cand_proj->pixel_, cand_proj->uv_),
+    invdepth_(cand_proj->invdepth_),
+    active_point_(active_point),
+    cam_(cand_proj->cam_)
+
+    {}
 
 };
 
@@ -308,7 +336,7 @@ class RegionsWithCandidatesBase{
     num_of_regions_x(getNRegionsX(cam,level)),
     num_of_regions_y(getNRegionsY(cam,level))
     {  };
-    const CameraForMapping* cam_;
+    CameraForMapping* cam_;
     const Params* parameters_;
     const int num_of_regions_x;
     const int num_of_regions_y;
@@ -353,12 +381,25 @@ class RegionsWithCandidates : public RegionsWithCandidatesBase{
 class RegionWithProjCandidates : public RegionWithCandidatesBase{
   public:
 
-    std::vector<CandidateProjected*>* cands_vec_;
+    std::vector<CandidateProjected*>* cands_proj_vec_;
 
     RegionWithProjCandidates(int x, int y, Params* parameters, CameraForMapping* cam):
     RegionWithCandidatesBase( x, y, parameters, cam),
-    cands_vec_(new std::vector<CandidateProjected*>){
+    cands_proj_vec_(new std::vector<CandidateProjected*>){
     };
+
+};
+
+
+class RegionWithProjActivePoints : public RegionWithCandidatesBase{
+  public:
+
+    std::vector<ActivePointProjected*>* active_pts_proj_vec_;
+
+    RegionWithProjActivePoints(int x, int y, Params* parameters, CameraForMapping* cam):
+    RegionWithCandidatesBase( x, y, parameters, cam),
+    active_pts_proj_vec_(new std::vector<ActivePointProjected*>)
+    { };
 
 };
 
@@ -378,7 +419,7 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
     };
     std::vector<RegionWithProjCandidates*>* region_vec_;
 
-    inline void pushCandidate(CandidateProjected* projected_cand){
+    inline void pushProjCandidate(CandidateProjected* projected_cand){
 
 
       // get associated region
@@ -389,7 +430,7 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
       int idx = xyToIdx( reg_x, reg_y);
 
       // push the projected candidate inside the region (sorted by invdepth var)
-      std::vector<CandidateProjected*>* cands_vec_ = region_vec_->at(idx)->cands_vec_;
+      std::vector<CandidateProjected*>* cands_vec_ = region_vec_->at(idx)->cands_proj_vec_;
 
       auto lb_cmp = [](CandidateProjected* const & x, float d) -> bool
         { return x->cand_->getInvdepthVar() < d; };
@@ -398,6 +439,46 @@ class RegionsWithProjCandidates : public RegionsWithCandidatesBase{
       cands_vec_->insert ( it , projected_cand );
 
 
+    }
+};
+
+
+class RegionsWithProjActivePoints : public RegionsWithCandidatesBase{
+// class RegionsWithProjActivePoints{
+  public:
+
+    RegionsWithProjActivePoints(Params* parameters, CameraForMapping* cam, int level):
+    RegionsWithCandidatesBase( parameters, cam, level),
+    region_vec_(new std::vector<RegionWithProjActivePoints*>(num_of_regions_x*num_of_regions_y) )
+    {
+      for(int x=0; x<num_of_regions_x; x++){
+        for(int y=0; y<num_of_regions_y; y++){
+          int idx=xyToIdx(x,y);
+          region_vec_->at(idx)=new RegionWithProjActivePoints(x, y, parameters, cam);
+        }
+      }
+    };
+    std::vector<RegionWithProjActivePoints*>* region_vec_;
+
+    inline void pushProjActivePoint(ActivePointProjected* proj_active_pt){
+
+      // get associated region
+      int scale_offs = pow(2,parameters_->reg_level);
+      // int scale_offs = 1;
+      int reg_x = proj_active_pt->pixel_.x()/scale_offs;
+      int reg_y = proj_active_pt->pixel_.y()/scale_offs;
+      int idx = xyToIdx( reg_x, reg_y);
+
+      // push the projected candidate inside the region (sorted by invdepth var)
+      std::vector<ActivePointProjected*>* active_pt_vec_ = region_vec_->at(idx)->active_pts_proj_vec_;
+      active_pt_vec_->push_back(proj_active_pt);
+
+    }
+
+    inline int getNumOfActivePointsInReg(RegionWithProjCandidates* reg){
+      int idx = xyToIdx( reg->x_, reg->y_);
+      int num_proj_active_points = region_vec_->at(idx)->active_pts_proj_vec_->size();
+      return num_proj_active_points;
     }
 };
 
@@ -412,8 +493,10 @@ class CameraForMapping: public Camera{
     std::vector<ActivePoint*>* marginalized_points_;
     RegionsWithCandidates* regions_sampling_;
     RegionsWithProjCandidates* regions_projected_cands_;
+    RegionsWithProjActivePoints* regions_projected_active_points_;
     std::vector<RegionsWithCandidates*>* regions_coarse_vec_;
     std::vector<std::vector<Candidate*>*>* candidates_coarse_;
+    std::vector<std::vector<ActivePoint*>*>* active_points_coarse_;
 
     int n_candidates_;
     friend class Mapper;
@@ -431,8 +514,10 @@ class CameraForMapping: public Camera{
            marginalized_points_(new std::vector<ActivePoint*>),
            regions_sampling_(new RegionsWithCandidates(parameters, this, parameters->reg_level+1)),
            regions_projected_cands_(new RegionsWithProjCandidates(parameters, this, parameters->reg_level+1)),
+           regions_projected_active_points_(new RegionsWithProjActivePoints(parameters, this, parameters->reg_level+1)),
            regions_coarse_vec_(new std::vector<RegionsWithCandidates*>),
            candidates_coarse_(new std::vector<std::vector<Candidate*>*>),
+           active_points_coarse_(new std::vector<std::vector<ActivePoint*>*>),
            n_candidates_(0)
            {
              // iterate along all coarser levels
@@ -442,6 +527,7 @@ class CameraForMapping: public Camera{
                regions_coarse_vec_->push_back(coarse_regions);
 
                candidates_coarse_->push_back(new std::vector<Candidate*>);
+               active_points_coarse_->push_back(new std::vector<ActivePoint*>);
              }
 
 
@@ -466,11 +552,10 @@ class CameraForMapping: public Camera{
     void showCoarseCandidates(int level, float size=1);
     void showProjCandidates(float size);
     void showActivePoints(float size);
+    void showProjActivePoints(float size);
 
   private:
     // void collectRegions(float grad_threshold);
     void selectNewCandidates(int max_num_candidates);
-    void marginalizeActivePoint();
-    void selectActivePoints(int max_num_active_points);
 
 };

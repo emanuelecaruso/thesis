@@ -178,7 +178,7 @@ bool Camera::projectPointInCamFrame(const Eigen::Vector3f& p_incamframe, Eigen::
   return true;
 }
 
-bool Camera::projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv ) const {
+bool Camera::projectCam(Camera* cam_to_be_projected, Eigen::Vector2f& uv ) const {
 
   Eigen::Vector3f p = cam_to_be_projected->frame_camera_wrt_world_->translation();
 
@@ -187,7 +187,7 @@ bool Camera::projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv )
 
 }
 
-bool Camera::projectCam(const Camera* cam_to_be_projected, Eigen::Vector2f& uv, float& p_cam_z  ) const {
+bool Camera::projectCam(Camera* cam_to_be_projected, Eigen::Vector2f& uv, float& p_cam_z  ) const {
 
   Eigen::Vector3f p = cam_to_be_projected->frame_camera_wrt_world_->translation();
 
@@ -480,9 +480,7 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
 }
 
 
-void CameraForMapping::selectActivePoints(int max_num_active_points){
 
-}
 
 colorRGB CameraForMapping::invdepthToRgb(float invdepth){
 
@@ -609,7 +607,7 @@ void CameraForMapping::showProjCandidates(float size){
 
   for (RegionWithProjCandidates* reg : *(regions_projected_cands_->region_vec_)){
 
-    for (CandidateProjected* cand_proj : *(reg->cands_vec_)){
+    for (CandidateProjected* cand_proj : *(reg->cands_proj_vec_)){
       n_proj_cands++;
 
       // get level
@@ -637,8 +635,69 @@ void CameraForMapping::showProjCandidates(float size){
 }
 
 void CameraForMapping::showActivePoints(float size){
-  double alpha = 0.5;
+  double alpha = 1;
 
-  int n_proj_cands=0;
-  Image<pixelIntensity>* show_img = new Image<pixelIntensity>(image_intensity_);
+  int n_proj_active_pt=0;
+
+  Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg("proj active point temp");
+
+  for(ActivePoint* active_pt : *active_points_){
+    n_proj_active_pt++;
+    // get level
+    int level = active_pt->level_;
+
+    Eigen::Vector2i pixel= active_pt->pixel_;
+    pixel*=pow(2,level+1);
+    std::string name = "" ;
+
+    if (pixel.y()>=0 && pixel.y()<image_intensity_->image_.rows && pixel.x()>=0 && pixel.x()<image_intensity_->image_.cols)
+    {
+      // compute corners
+      cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
+
+      colorRGB color = invdepthToRgb(active_pt->invdepth_);
+
+      show_img->drawRectangle(r, color, cv::FILLED, alpha);
+      // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+    }
+  }
+  show_img->show(size, name_+", n projected active points: "+std::to_string(n_proj_active_pt));
+
+}
+
+
+void CameraForMapping::showProjActivePoints(float size){
+  double alpha = 1;
+
+  int n_proj_active_pt=0;
+
+  Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg("proj active point temp");
+
+  for (RegionWithProjActivePoints* reg : *(regions_projected_active_points_->region_vec_)){
+
+    for (ActivePointProjected* active_pt_proj : *(reg->active_pts_proj_vec_)){
+      n_proj_active_pt++;
+      // get level
+      int level = active_pt_proj->level_;
+
+      Eigen::Vector2i pixel= active_pt_proj->pixel_;
+      pixel*=pow(2,level+1);
+      std::string name = "" ;
+
+      if (pixel.y()>=0 && pixel.y()<image_intensity_->image_.rows && pixel.x()>=0 && pixel.x()<image_intensity_->image_.cols)
+      {
+        // compute corners
+        cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
+
+        colorRGB color = invdepthToRgb(active_pt_proj->invdepth_);
+
+        show_img->drawRectangle(r, color, cv::FILLED, alpha);
+        // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+      }
+    }
+  }
+
+
+  show_img->show(size, name_+", n projected active points: "+std::to_string(n_proj_active_pt));
+
 }

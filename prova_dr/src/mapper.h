@@ -6,15 +6,15 @@ class Dtam; //forward declaration
 
 class CamCouple{
   public:
-    const CameraForMapping* cam_r_; // cam to be projected
-    const CameraForMapping* cam_m_; // cam on which project
+    CameraForMapping* cam_r_; // cam to be projected
+    CameraForMapping* cam_m_; // cam on which project
     Eigen::Isometry3f T; //cam_r expressed in cam_m
     Eigen::Matrix3f r;
     Eigen::Vector3f t;
     float f, f2, w, h, w2, h2;
     Eigen::Vector2f cam_r_projected_in_cam_m;
 
-    CamCouple(const CameraForMapping* cam_r, const CameraForMapping* cam_m):
+    CamCouple(CameraForMapping* cam_r, CameraForMapping* cam_m):
     cam_r_(cam_r),
     cam_m_(cam_m),
     T((*(cam_m->frame_world_wrt_camera_))*(*(cam_r->frame_camera_wrt_world_))),
@@ -80,8 +80,8 @@ class Mapper{
     Params* const parameters_;
 
 
-    bool initializeCandidates(const CameraForMapping* cam_r,
-                            const CameraForMapping* cam_m, int& current_r_idx);
+    bool initializeCandidates(CameraForMapping* cam_r,
+                            CameraForMapping* cam_m, int& current_r_idx);
 
     float computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple, Eigen::Vector2f& uv_min, float pixel_width);
     void updateBoundsAndGetSD(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple, float& standard_deviation);

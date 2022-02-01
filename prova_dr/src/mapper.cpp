@@ -292,7 +292,7 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
 
   if (candidate->cam_->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->pixelInRange(pixel_coords)){
-    CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_coords, uv, 1.0/depth_m );
+    CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_coords, uv, 1.0/depth_m, cam_couple->cam_m_ );
     return projected_cand;
   }
   return nullptr;
@@ -320,7 +320,7 @@ CandidateProjected* Mapper::projectCandidateAndUpdateCandInvdepth(Candidate* can
   cam_couple->cam_r_->pointAtDepth(candidate->uv_, d1, *(candidate->p_), *(candidate->p_incamframe_));
 
   if (candidate->cam_->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->pixelInRange(pixel_curr)){
-    CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2 );
+    CandidateProjected* projected_cand = new CandidateProjected(candidate, pixel_curr, uv_curr, 1.0/d2, cam_couple->cam_m_ );
     return projected_cand;
   }
   return nullptr;
@@ -355,7 +355,7 @@ void Mapper::trackExistingCandidatesGT(){
       cand->cam_->pointAtDepth(cand->uv_, 1.0/cand->invdepth_, *(cand->p_), *(cand->p_incamframe_));
       CandidateProjected* projected_cand=projectCandidate( cand, cam_couple);
       if (projected_cand != nullptr)
-        cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+        cam_couple->cam_m_->regions_projected_cands_->pushProjCandidate(projected_cand);
     }
 
 
@@ -527,7 +527,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
 
         if( num_mins==1 && projected_cand!=nullptr ){
           // push inside "candidates projected vec" in new keyframe
-          cam_couple->cam_m_->regions_projected_cands_->pushCandidate(projected_cand);
+          cam_couple->cam_m_->regions_projected_cands_->pushProjCandidate(projected_cand);
           cand->invdepth_var_=cand->getInvdepthVar();
           cand->one_min_=true;
 
@@ -575,8 +575,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
 
 }
 
-bool Mapper::initializeCandidates(const CameraForMapping* cam_r,
-            const CameraForMapping* cam_m, int& current_r_idx){
+bool Mapper::initializeCandidates(CameraForMapping* cam_r,
+            CameraForMapping* cam_m, int& current_r_idx){
 
    CamCouple* cam_couple = new CamCouple(cam_r, cam_m);
 

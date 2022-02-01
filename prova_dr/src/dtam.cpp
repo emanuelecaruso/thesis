@@ -73,6 +73,18 @@ void Dtam::waitForInitialization(){
   locker.unlock();
 }
 
+void Dtam::waitForPointActivation(){
+  std::unique_lock<std::mutex> locker(mu_point_activation_);
+  points_activated_.wait(locker);
+  locker.unlock();
+}
+
+void Dtam::waitForOptimization(){
+  std::unique_lock<std::mutex> locker(mu_optimization_);
+  optimization_done_.wait(locker);
+  locker.unlock();
+}
+
 void Dtam::doInitialization(bool initialization_loop, bool debug_initialization, bool debug_mapping, bool track_candidates){
   bool initialization_done = false;
 
@@ -95,7 +107,6 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
     if(frame_current_==0){
       tracker_->trackCam(true);
       keyframe_handler_->addKeyframe(true);
-      initializer_->compute_cv_K();
       initializer_->extractCorners();
       if(debug_initialization)
         initializer_->showCornersTrackCurr();
@@ -118,7 +129,7 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
           // start initializing the model
           mapper_->trackExistingCandidates(false,debug_mapping);
-          cand_tracked_.notify_all();
+          cand_tracked_.notify_all(); // after candidates are tracked notify for ba
 
 
           mapper_->selectNewCandidates();
@@ -160,6 +171,10 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       break;
     }
 
+    if (!track_candidates){
+      waitForOptimization();
+    }
+
     double t_start=getTime();
 
     frame_current_++;
@@ -167,16 +182,15 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     int frame_delay = camera_vector_->size()-frame_current_-1;
     sharedCoutDebug("\nFRONT END for Frame "+std::to_string(frame_current_)+" ("+camera_vector_->at(frame_current_)->name_+") , frame delay: "+std::to_string(frame_delay));
 
-
-
     if(frame_current_<=1){
+
 
       tracker_->trackCam(true);
       keyframe_handler_->addKeyframe(true);
       if(frame_current_==1){
         mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
         // mapper_->trackExistingCandidates(true,debug_mapping);
-        cand_tracked_.notify_all();
+        cand_tracked_.notify_all(); // after candidates are tracked notify for ba
       }
       mapper_->selectNewCandidates();
 
@@ -186,6 +200,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       continue;
     }
 
+    frame_current_++;
 
     tracker_->trackCam(take_gt_poses,track_candidates,guess_type,debug_tracking);
     if(keyframe_handler_->addKeyframe(all_keyframes)){
@@ -193,13 +208,11 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       // bundle_adj_->projectAndMarginalizeActivePoints();
       mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
       // mapper_->trackExistingCandidates(true,debug_mapping);
-      cand_tracked_.notify_all();
+      cand_tracked_.notify_all(); // after candidates are tracked notify for ba
       mapper_->selectNewCandidates();
       if (track_candidates)
         tracker_->collectCandidatesInCoarseRegions();
 
-      // bundle_adj_->activateNewPoints(); in other thread
-      // bundle_adj_->optimize(); in other thread
     }
     double t_end=getTime();
     int deltaTime=(t_end-t_start);
@@ -209,18 +222,30 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
 }
 
-void Dtam::doOptimization(bool active_all_candidates){
+void Dtam::setOptimizationFlags( bool debug_optimization){
+  bundle_adj_->debug_optimization_=debug_optimization;
+}
+
+void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
+
+  setOptimizationFlags(debug_optimization);
+
   waitForInitialization();
+
   while( true ){
 
     // if current frame of bundle adjustment is still latest keyframe
-    if(bundle_adj_->getFrameCurrentBA()==frame_current_){
+    if(bundle_adj_->getFrameCurrentIdxBA()==frame_current_){
       //optimize
       waitForTrackedCandidates();
     }
 
     // activate new points
     bundle_adj_->activateNewPoints();
+    // optimize
+    // bundle_adj_->optimize();
+    // notify all threads that optimization has been done
+    optimization_done_.notify_all();
 
   }
 }
@@ -296,7 +321,8 @@ void Dtam::test_mapping(){
 
   bool take_gt_poses=true;
   bool take_gt_points=false;
-  bool track_candidates=false;
+  bool track_candidates=true;
+
   int guess_type=VELOCITY_CONSTANT;
 
   bool all_keyframes=true;
@@ -354,15 +380,11 @@ void Dtam::test_tracking(){
 
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
-  // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
-
 
   // optimization_thread.join();
   frontend_thread_.join();
   update_cameras_thread_.join();
 
-  // camera_vector_->at(0)->invdepth_map_->show(2);
-  // camera_vector_->at(0)->invdepth_map_->show(2);
 
   cv::waitKey(0);
 
@@ -373,12 +395,13 @@ void Dtam::test_dso(){
   bool debug_initialization=false;
   bool debug_mapping=false;
   bool debug_tracking=false;
+  bool debug_optimization= true;
 
   bool initialization_loop=false;
   bool take_gt_poses=false;
   bool take_gt_points=false;
 
-  bool track_candidates=true;
+  bool track_candidates=false;
   // int guess_type=POSE_CONSTANT;
   int guess_type=VELOCITY_CONSTANT;
 
@@ -391,7 +414,7 @@ void Dtam::test_dso(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization);
     optimization_thread.join();
   }
 
@@ -438,9 +461,9 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
     for(RegionWithProjCandidates* reg_proj : *(camera->regions_projected_cands_->region_vec_) ){
 
 
-      for(int i=0; i<reg_proj->cands_vec_->size(); i++){
+      for(int i=0; i<reg_proj->cands_proj_vec_->size(); i++){
 
-        CandidateProjected* cand_proj = reg_proj->cands_vec_->at(i);
+        CandidateProjected* cand_proj = reg_proj->cands_proj_vec_->at(i);
 
         int level = cand_proj->level_;
         Eigen::Vector2f uv = cand_proj->uv_ ;

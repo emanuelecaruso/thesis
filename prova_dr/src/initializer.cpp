@@ -44,6 +44,8 @@ void Initializer::extractCorners(){
   errors_vec_->clear();
   status_vec_->clear();
   inliers_vec_->clear();
+  compute_cv_K();
+  
   ref_frame_idx_=dtam_->frame_current_;
   const Image<float>* img_r = getReferenceImage();
   corners_vec_->push_back(new std::vector<cv::Point2f>);

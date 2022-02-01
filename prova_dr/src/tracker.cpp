@@ -33,7 +33,6 @@ void Tracker::trackLS(bool track_candidates, int guess_type, bool debug_tracking
   // final guess = curr_T_last -> pose = w_T_last * last_T_curr
   Eigen::Isometry3f frame_camera_wrt_world_ = final_guess.inverse();
 
-
   curr_cam->assignPose(frame_camera_wrt_world_);
 
   double t_end=getTime();
@@ -75,6 +74,92 @@ void Tracker::collectCandidatesInCoarseRegions(){
       }
     }
   }
+
+}
+
+void Tracker::collectCoarseActivePoints(CameraForMapping* keyframe){
+
+    // clear coarse candidate vec
+    for(std::vector<ActivePoint*>* v : *(keyframe->active_points_coarse_)){
+      for (ActivePoint* active_point : *v)
+        delete active_point;
+      v->clear();
+    }
+    // create candidates at coarser levels
+
+    // iterate along all coarser levels
+    // for(int i=1; i<=dtam_->parameters_->coarsest_level; i++){
+    //
+    //   RegionsWithActivePoints* coarse_regions = keyframe->regions_coarse_vec_->at(i-1);
+    //
+    //   // iterate along all regions
+    //   for ( RegionWithActivePoints* reg : *(coarse_regions->region_vec_)){
+    //     // if region is not empty
+    //     if(!reg->cands_vec_->empty()){
+    //
+    //       Eigen::Vector2i pixel {reg->x_, reg->y_};
+    //       Eigen::Vector2f uv;
+    //       keyframe->pixelCoords2uv(pixel,uv, i);
+    //
+    //       pixelIntensity c = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel);
+    //       // pixelIntensity c_dx = keyframe->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(pixel);
+    //       // pixelIntensity c_dy = keyframe->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(pixel);
+    //       pixelIntensity magn_cd = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd->evalPixel(reg->y_,reg->x_);
+    //       // pixelIntensity magn_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dx->evalPixel(reg->y_,reg->x_);
+    //       // pixelIntensity magn_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dy->evalPixel(reg->y_,reg->x_);
+    //       pixelIntensity phase_cd = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd->evalPixel(reg->y_,reg->x_);
+    //       // pixelIntensity phase_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dx->evalPixel(reg->y_,reg->x_);
+    //       // pixelIntensity phase_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->phase_cd_dy->evalPixel(reg->y_,reg->x_);
+    //
+    //
+    //       // iterate along collected candidates
+    //       float invdepth, invdepth_var;
+    //       float d_over_v_sum = 0, inv_v_sum = 0;
+    //       int num_cands = 0;
+    //
+    //       for(ActivePoint* active_point : *(reg->cands_vec_)){
+    //         if(!active_point->one_min_){
+    //           continue;
+    //         }
+    //
+    //         num_cands++;
+    //         // update d_over_v_sum
+    //         d_over_v_sum+= active_point->invdepth_/active_point->invdepth_var_;
+    //         // update inv_v_sum
+    //         inv_v_sum+= 1./active_point->invdepth_var_;
+    //
+    //         // d_over_v_sum = active_point->invdepth_;
+    //         // inv_v_sum= 1;
+    //         // num_cands=1;
+    //         // break;
+    //
+    //       }
+    //       if (num_cands){
+    //         // // compute invdepth as weighted average of invdepths with invdepth certainty as weight
+    //         // invdepth = d_over_v_sum/inv_v_sum;
+    //         // Eigen::Vector3f* p = new Eigen::Vector3f ;
+    //         // Eigen::Vector3f* p_incamframe = new Eigen::Vector3f ;
+    //         // keyframe->pointAtDepth(uv,1.0/invdepth,*p,*p_incamframe);
+    //         // // compute invdepth variance as average of variances
+    //         // invdepth_var = (float)num_cands/inv_v_sum;
+    //         //
+    //         // // create coarse candidate
+    //         // ActivePoint* candidate_coarse = new ActivePoint(i,pixel, uv, keyframe,
+    //         //                                             c,
+    //         //                                             magn_cd,
+    //         //                                             phase_cd,
+    //         //                                             // c_dx, c_dy,
+    //         //                                             // magn_cd_dx, magn_cd_dy,
+    //         //                                             // phase_cd_dx, phase_cd_dy,
+    //         //                                             invdepth,invdepth_var,
+    //         //                                             p,p_incamframe);
+    //         // // push candidate inside coarse candidates
+    //         // keyframe->active_points_coarse_->at(i-1)->push_back(candidate_coarse);
+    //       }
+    //     }
+    //
+    //   }
+    // }
 
 }
 
@@ -169,8 +254,8 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   normalizer*=coeff; // get d r/d invdepth
   normalizer=abs(normalizer);
   normalizer *= invdepth_var; // multiply with variance
-  // normalizer+=0.05; // add variance on img
-  normalizer+=0.02; // add variance on img
+  normalizer+=0.1; // add variance on img
+  // normalizer+=0.02; // add variance on img
 
   // float normalizer = 1;
 
@@ -465,26 +550,27 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
   // get new frame
   CameraForMapping* frame_new = dtam_->getCurrentCamera();
 
-
-  // filterOutOcclusionsGT();
-  for(int keyframe_idx : *(dtam_->keyframe_vector_)){
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
-    collectCoarseCandidates(keyframe);
-    // for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
-    //   // keyframe->showCoarseCandidates(i,2);
-    // }
-    // showProjectCandsWithCurrGuess(initial_guess, 0);
-    // filterOutOcclusionsGT();
-    // showProjectCandsWithCurrGuess(initial_guess, 0);
-    // keyframe->showCandidates(2);
-    // cv::waitKey(0);
-  }
-
-
   Eigen::Isometry3f current_guess = initial_guess;
 
+
   if(track_candidates){
+
+    // filterOutOcclusionsGT();
+    for(int keyframe_idx : *(dtam_->keyframe_vector_)){
+      CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
+      collectCoarseCandidates(keyframe);
+    }
+
     trackWithCandidates(current_guess, debug_tracking, frame_new);
+  }
+  else{
+    // filterOutOcclusionsGT();
+    for(int keyframe_idx : *(dtam_->keyframe_vector_)){
+      CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
+      collectCoarseActivePoints(keyframe);
+    }
+
+    trackWithActivePoints(current_guess, debug_tracking, frame_new);
   }
 
   return current_guess;
