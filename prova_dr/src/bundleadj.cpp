@@ -200,7 +200,7 @@ int BundleAdj::selectNewActivePoints(){
   }
 
   // num of points to be activated
-  int num_to_be_activated=parameters_->max_num_active_points- num_active_points_+num_points_to_marginalize_;
+  int num_to_be_activated=parameters_->max_num_active_points- num_active_points_;
   std::cout << "NUM TO BE ACTIVATED " << num_to_be_activated << " num active " << num_active_points_ << std::endl;
   int num_activated = 0;
 
@@ -259,26 +259,76 @@ void BundleAdj::optimize(){
 
 }
 
+ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple){
+
+
+    Eigen::Vector3f p;
+    Eigen::Vector2f uv;
+    Eigen::Vector2i pixel_coords;
+    float depth_m;
+
+    cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_, depth_m );
+    cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_, uv.x(), uv.y() );
+
+    cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, active_pt->level_);
+
+    if (active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c->pixelInRange(pixel_coords)){
+      ActivePointProjected* active_point_proj = new ActivePointProjected(active_pt, pixel_coords, uv, 1.0/depth_m, cam_couple->cam_m_ );
+      return active_point_proj;
+    }
+    return nullptr;
+
+
+}
 
 void BundleAdj::projectActivePoints(){
+
+  CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+
   // iterate through all keyframe candidates (except the last)
   for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
+
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
 
+    if (keyframe->to_be_marginalized_ba_){
+      if(!keyframe->active_points_removed_ ){
+        num_active_points_-=(keyframe->active_points_->size()-keyframe->num_marginalized_active_points_);
+        keyframe->active_points_removed_=true;
+      }
+      continue;
+    }
+
+    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
     // iterate along all active points
-    for (ActivePoint* active_pt : keyframe->active_points_){
+    for (ActivePoint* active_pt : *keyframe->active_points_){
+
+      if(active_pt->to_marginalize_){
+        continue;
+      }
+
       // project active point in new keyframe
-      // ActivePointProjected* active_point_proj = projectActivePoint(active_pt);
-      // // if active point is in frustum
-      // if (active_point_proj!=nullptr){
-      //  // push inside projected active points
-      //  pushProjActivePoint(active_point_proj);
-      // }
-      // // otherwise
-      // else{
-      //  // mark as not seen
-      //  active_pt->not_seen_in_last_keyframe = true;
-      // }
+      ActivePointProjected* active_point_proj = projectActivePoint(active_pt, cam_couple);
+      // if active point is in frustum
+      if (active_point_proj!=nullptr){
+       // push active point projected
+       active_point_proj->cam_->regions_projected_active_points_->pushProjActivePoint(active_point_proj);
+      }
+      // otherwise
+      else{
+        // if already not seen in last keyframe, it has to be marginalized
+        if(active_pt->not_seen_in_last_keyframe_){
+          if(!active_pt->active_point_removed_){
+            active_pt->to_marginalize_=true;
+            active_pt->active_point_removed_=true;
+            keyframe->num_marginalized_active_points_++;
+            num_active_points_--;
+          }
+          continue;
+        }
+        // else mark as not seen
+        else
+          active_pt->not_seen_in_last_keyframe_=true;
+      }
 
 
       // put it in the relative region

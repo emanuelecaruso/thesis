@@ -238,16 +238,10 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
     waitForTrackedCandidates();
 
-    if(bundle_adj_->frame_current_ba==frame_current_){
-    }
-
     bundle_adj_->frame_current_ba=frame_current_;
 
-    // project active points
+    // project active points (and marginalize points 2 times outside the frustum)
     bundle_adj_->projectActivePoints();
-
-    // marginalize active points
-    bundle_adj_->marginalizeActivePoints();
 
     // activate new points
     bundle_adj_->activateNewPointsAndGetCoarseActivePoints();
@@ -274,6 +268,9 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
     }
     // optimize
     // bundle_adj_->optimize();
+
+    // after optimization
+
     // notify all threads that optimization has been done
     optimization_done_.notify_all();
 

@@ -296,7 +296,10 @@ class ActivePoint : public CandidateBase{
     regions_coarse_(new std::vector<RegionWithActivePoints*>),
     intensity_(cand->intensity_),
     grad_magnitude_(cand->grad_magnitude_),
-    grad_phase_(cand->grad_phase_)
+    grad_phase_(cand->grad_phase_),
+    not_seen_in_last_keyframe_(false),
+    to_marginalize_(false),
+    active_point_removed_(false)
     {}
 
     // coarse active point
@@ -319,7 +322,12 @@ class ActivePoint : public CandidateBase{
     regions_coarse_(nullptr),
     intensity_(intensity),
     grad_magnitude_(grad_magnitude),
-    grad_phase_(grad_phase)
+    grad_phase_(grad_phase),
+    not_seen_in_last_keyframe_(false),
+    to_marginalize_(false),
+    active_point_removed_(false)
+
+
     { }
 
 
@@ -332,6 +340,9 @@ class ActivePoint : public CandidateBase{
     const pixelIntensity intensity_;
     const float grad_magnitude_;
     const float grad_phase_;
+    bool not_seen_in_last_keyframe_;
+    bool to_marginalize_;
+    bool active_point_removed_;
 
 };
 
@@ -355,13 +366,21 @@ class ActivePointProjected : public CandidateBase{
     float invdepth_;
     CameraForMapping* cam_;
 
+    // activate projected cand
     ActivePointProjected(CandidateProjected* cand_proj, ActivePoint* active_point):
     CandidateBase( cand_proj->level_, cand_proj->pixel_, cand_proj->uv_),
     invdepth_(cand_proj->invdepth_),
     active_point_(active_point),
     cam_(cand_proj->cam_)
-
     {}
+
+    // project active point
+    ActivePointProjected(ActivePoint* active_point, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth, CameraForMapping* cam):
+    CandidateBase(active_point->level_, pixel, uv),
+    invdepth_(invdepth),
+    active_point_(active_point),
+    cam_(cam)
+    {};
 
 };
 
@@ -554,7 +573,9 @@ class CameraForMapping: public Camera{
     std::vector<std::vector<Candidate*>*>* candidates_coarse_;
     std::vector<RegionsWithActivePoints*>* regions_coarse_active_pts_vec_;
     std::vector<std::vector<ActivePoint*>*>* active_points_coarse_;
+    int num_marginalized_active_points_;
     bool to_be_marginalized_ba_;
+    bool active_points_removed_;
     bool added_ba_;
 
     int n_candidates_;
@@ -578,7 +599,9 @@ class CameraForMapping: public Camera{
            candidates_coarse_(new std::vector<std::vector<Candidate*>*>),
            regions_coarse_active_pts_vec_(new std::vector<RegionsWithActivePoints*>),
            active_points_coarse_(new std::vector<std::vector<ActivePoint*>*>),
+           num_marginalized_active_points_(0),
            to_be_marginalized_ba_(false),
+           active_points_removed_(false),
            added_ba_(false),
            n_candidates_(0)
            {

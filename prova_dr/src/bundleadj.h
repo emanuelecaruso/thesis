@@ -16,12 +16,12 @@ class BundleAdj{
     keyframe_vector_ba_(new std::vector<int>),
     frame_current_ba(-1),
     num_active_points_(0),
-    num_points_to_marginalize_(0),
     min_num_of_active_pts_per_region_(INT_MAX)
     {};
 
 
     void projectActivePoints();
+    ActivePointProjected* projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple);
     void marginalizeActivePoints();
     void activateNewPointsAndGetCoarseActivePoints();
     void collectCoarseActivePoints();
@@ -47,7 +47,6 @@ class BundleAdj{
     Dtam* const dtam_;
     Params* const parameters_;
     int num_active_points_;
-    int num_points_to_marginalize_;
     int min_num_of_active_pts_per_region_;
 
 
