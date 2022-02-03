@@ -20,7 +20,9 @@ bool KeyframeHandler::addKeyframe(bool all_keyframes){
 }
 
 bool KeyframeHandler::addKeyframe_all(){
-  push_keyframe();
+  pushKeyframeFrontend();
+  pushKeyframeBundleadj();
+  sharedCoutDebug("   - Keyframe added (frame "+ std::to_string(dtam_->frame_current_) +")");
   return true;
 }
 
@@ -34,28 +36,47 @@ bool KeyframeHandler::marginalize_keyframe(bool all_keyframes){
   if(dtam_->keyframe_vector_->size()>num_active_keyframes_){
     marginalize=true;
     if (all_keyframes){
-      marginalize_keyframe_all();
+      marginalizeKeyframeAll();
     }else{
-      marginalize_keyframe_select();
+      marginalizeKeyframeSelect();
     }
 
   }
   return marginalize;
 }
 
-void KeyframeHandler::marginalize_keyframe_all(){
-  sharedCoutDebug("   - Keyframe marginalized (frame "+ std::to_string(dtam_->keyframe_vector_->at(0)) +")");
-  dtam_->keyframe_vector_->erase(dtam_->keyframe_vector_->begin());
+void KeyframeHandler::marginalizeKeyframeFrontend(int idx){
+  std::vector<int>* v = dtam_->keyframe_vector_;
+  v->erase(std::remove(v->begin(), v->end(), idx), v->end());
+}
+
+void KeyframeHandler::marginalizeKeyframeBundleadj(int idx){
+  dtam_->camera_vector_->at(idx)->to_be_marginalized_ba_=true;
 
 }
 
-void KeyframeHandler::marginalize_keyframe_select(){
+
+void KeyframeHandler::marginalizeKeyframeAll(){
+  int idx = dtam_->keyframe_vector_->at(0);
+  marginalizeKeyframeFrontend(idx);
+  marginalizeKeyframeBundleadj(idx);
+
+  sharedCoutDebug("   - Keyframe marginalized (frame "+ std::to_string(dtam_->keyframe_vector_->at(0)) +")");
+
+}
+
+void KeyframeHandler::marginalizeKeyframeSelect(){
   // select keyframe TODO
 }
 
 
 
-void KeyframeHandler::push_keyframe(){
+void KeyframeHandler::pushKeyframeFrontend(){
   dtam_->keyframe_vector_->push_back(dtam_->frame_current_);
-  sharedCoutDebug("   - Keyframe added (frame "+ std::to_string(dtam_->frame_current_) +")");
+}
+
+void KeyframeHandler::pushKeyframeBundleadj(){
+  dtam_->bundle_adj_->addKeyframe(dtam_->frame_current_);
+  dtam_->camera_vector_->at(dtam_->frame_current_)->added_ba_=true;
+
 }

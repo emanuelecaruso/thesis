@@ -19,13 +19,15 @@ class KeyframeHandler{
     bool marginalize_keyframe(bool all_keyframes=false);
 
   private:
-    void push_keyframe();
-
+    void pushKeyframeFrontend();
+    void pushKeyframeBundleadj();
     bool addKeyframe_all();
-    void marginalize_keyframe_all();
+
+    void marginalizeKeyframeFrontend(int idx);
+    void marginalizeKeyframeBundleadj(int idx);
+    void marginalizeKeyframeAll();
 
     bool addKeyframe_select();
-    void marginalize_keyframe_select();
+    void marginalizeKeyframeSelect();
 
-    void notify_if_2_frames_are_available();
 };

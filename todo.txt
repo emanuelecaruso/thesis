@@ -23,8 +23,6 @@
 
 - implement tracking as dso, but try to choose better coarser resolutions later
 
-- sample also wrt 2nd derivative
-
 - add magnitude of d_right - d_left
 
 - return real variance TODO (camera.h)
@@ -35,20 +33,6 @@
 
 - start working on bundle adjustment
 
-SYNC!!
-
-"keyframe added" --> keyframe marginalized
-
-PARALLEL
--- tracking new frames                            -- bundle adjustment
-1) project all active points                      1) if SIGNAL update structure by adding new points
-(NO THE ONES THAT ARE GOING TO BE MARGINALIZED)   2) optimize with new points and marginalize old
-2) track                                             points with schur complement (few iterations)
-3) if keyframe is added SIGNAL, select active
-points to be marginalized, and so new points
-to add to reach the given quantity
-4) collect coarse active points
-5) return to 1
 
 TODO
 in tracker

@@ -46,6 +46,8 @@ class Dtam{
     void waitForPointActivation();
     void waitForOptimization();
 
+    int getLastKeyframeIdx();
+    int getSecondLastKeyframeIdx();
     CameraForMapping* getCurrentCamera();
     CameraForMapping* getLastCamera();
     CameraForMapping* getSecondLastCamera();

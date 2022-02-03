@@ -597,6 +597,48 @@ void CameraForMapping::showCoarseCandidates(int level, float size){
 }
 
 
+void CameraForMapping::showCoarseActivePoints(int level, float size){
+
+  // std::vector<colorRGB> color_map{black,red,green,blue,magenta,cyan};
+
+  double alpha = 1;
+
+  int num_coarse_active_points=active_points_coarse_->at(level-1)->size();
+
+  std::string name = name_+" , "+std::to_string(num_coarse_active_points)+" coarse active points, level "+std::to_string(level);
+  Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg(name);
+  // Image<colorRGB>* show_img = new Image<colorRGB>(image_intensity_);
+
+  // for(std::vector<Candidate*>* v : *candidates_coarse_){
+  //   int i =0;
+
+  for(ActivePoint* active_point : *(active_points_coarse_->at(level-1))){
+
+    // get level
+    // int level = candidate->level_;
+
+    Eigen::Vector2i pixel= active_point->pixel_;
+    pixel*=pow(2,level+1);
+
+    // compute corners
+    cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
+
+    colorRGB color = black;
+
+    color = invdepthToRgb(active_point->invdepth_);
+
+    show_img->drawRectangle(r, color, cv::FILLED, alpha);
+    // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+
+  }
+  // }
+
+  show_img->show(size);
+  // selected->showWaveletDec(std::to_string(n_candidates_)+" candidates",size);
+
+}
+
+
 void CameraForMapping::showProjCandidates(float size){
 
   double alpha = 1;

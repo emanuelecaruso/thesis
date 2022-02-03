@@ -56,8 +56,7 @@ void Dtam::addCamera(int counter){
 
 void Dtam::waitForNewFrame(){
   std::unique_lock<std::mutex> locker(mu_frame_);
-  if(!end_flag_)
-    frame_updated_.wait(locker);
+  frame_updated_.wait(locker);
   locker.unlock();
 }
 
@@ -90,11 +89,13 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
   while( true ){
 
-    if(frame_current_==camera_vector_->size()-1)
+    if(frame_current_==int(camera_vector_->size())-1){
       waitForNewFrame();
+    }
+
 
     // if still frame current is last camera, new frame is the end signal
-    if(frame_current_==camera_vector_->size()-1)
+    if(frame_current_==int(camera_vector_->size())-1)
       break;
 
     double t_start=getTime();
@@ -111,8 +112,10 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
       if(debug_initialization)
         initializer_->showCornersTrackCurr();
       mapper_->selectNewCandidates();
+
       if(track_candidates)
         tracker_->collectCandidatesInCoarseRegions();
+
     }
     else{
       initializer_->trackCornersLK();
@@ -163,11 +166,11 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
   while( true ){
 
-    if(frame_current_==camera_vector_->size()-1)
+    if(frame_current_==int(camera_vector_->size())-1)
       waitForNewFrame();
 
     // if still frame current is last camera, new frame is the end signal
-    if(frame_current_==camera_vector_->size()-1){
+    if(frame_current_==int(camera_vector_->size())-1){
       break;
     }
 
@@ -200,12 +203,11 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       continue;
     }
 
-    frame_current_++;
 
     tracker_->trackCam(take_gt_poses,track_candidates,guess_type,debug_tracking);
+
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
-      // bundle_adj_->projectAndMarginalizeActivePoints();
       mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
       // mapper_->trackExistingCandidates(true,debug_mapping);
       cand_tracked_.notify_all(); // after candidates are tracked notify for ba
@@ -230,18 +232,46 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
   setOptimizationFlags(debug_optimization);
 
-  waitForInitialization();
-
   while( true ){
 
     // if current frame of bundle adjustment is still latest keyframe
-    if(bundle_adj_->getFrameCurrentIdxBA()==frame_current_){
-      //optimize
-      waitForTrackedCandidates();
+
+    waitForTrackedCandidates();
+
+    if(bundle_adj_->frame_current_ba==frame_current_){
     }
 
+    bundle_adj_->frame_current_ba=frame_current_;
+
+    // project active points
+    bundle_adj_->projectActivePoints();
+
+    // marginalize active points
+    bundle_adj_->marginalizeActivePoints();
+
     // activate new points
-    bundle_adj_->activateNewPoints();
+    bundle_adj_->activateNewPointsAndGetCoarseActivePoints();
+
+    // collect coarse active points
+    bundle_adj_->collectCoarseActivePoints();
+
+
+    // DEBUG
+    if(debug_optimization){
+      // cam on which active points are projected
+      CameraForMapping* last_keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->back());
+      last_keyframe->showProjActivePoints(1);
+      last_keyframe->showProjCandidates(1);
+      // iterate along all cameras
+      // for (int j=0; j<int(bundle_adj_->keyframe_vector_ba_->size())-1; j++){
+      //   CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
+      //   for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
+      //     // std::cout << "CAMERA " << keyframe->name_ << std::endl;
+      //     keyframe->showCoarseActivePoints(i,1);}
+      // }
+
+      cv::waitKey(0);
+    }
     // optimize
     // bundle_adj_->optimize();
     // notify all threads that optimization has been done
@@ -259,17 +289,17 @@ void Dtam::updateCamerasFromEnvironment(){
 
   while(counter< environment_->camera_vector_->size()){
 
-    std::unique_lock<std::mutex> locker(mu_frame_);
+    // std::unique_lock<std::mutex> locker(mu_frame_);
 
     double t_start=getTime();
 
     // sharedCout("\nFrame: "+ std::to_string(counter));
     addCamera(counter);
 
+    // locker.unlock();
     frame_updated_.notify_all();
 
     double t_end=getTime();
-    locker.unlock();
 
     int deltaTime=(t_end-t_start);
     // sharedCoutDebug("\nAdd Frame "+std::to_string(counter)+", computation time: "+ std::to_string(deltaTime)+" ms");
@@ -394,7 +424,7 @@ void Dtam::test_dso(){
 
   bool debug_initialization=false;
   bool debug_mapping=false;
-  bool debug_tracking=false;
+  bool debug_tracking=true;
   bool debug_optimization= true;
 
   bool initialization_loop=false;

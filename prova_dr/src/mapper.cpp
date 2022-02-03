@@ -376,6 +376,8 @@ void Mapper::trackExistingCandidates(bool take_gt_points, bool debug_mapping){
 
 void Mapper::trackExistingCandidates_(bool debug_mapping){
 
+  double t_start=getTime();
+
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
   sharedCoutDebug("   - Tracking existing candidates");
 
@@ -528,7 +530,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         if( num_mins==1 && projected_cand!=nullptr ){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushProjCandidate(projected_cand);
-          cand->invdepth_var_=cand->getInvdepthVar();
+          cand->invdepth_var_=cand->getInvdepthStandardDeviation();
           cand->one_min_=true;
 
           if(debug_mapping ){
@@ -572,6 +574,11 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
     cv::waitKey(0);
     // cv::destroyAllWindows();
   }
+
+  double t_end=getTime();
+  int deltaTime=(t_end-t_start);
+  sharedCoutDebug("   - Candidates tracking, time: "+ std::to_string(deltaTime)+" ms");
+
 
 }
 
