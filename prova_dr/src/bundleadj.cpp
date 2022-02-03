@@ -201,6 +201,7 @@ int BundleAdj::selectNewActivePoints(){
 
   // num of points to be activated
   int num_to_be_activated=parameters_->max_num_active_points- num_active_points_+num_points_to_marginalize_;
+  std::cout << "NUM TO BE ACTIVATED " << num_to_be_activated << std::endl;
   int num_activated = 0;
 
   // RegionsWithProjCandidates* regions = last_keyframe->regions_projected_cands_;
