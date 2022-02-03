@@ -201,7 +201,7 @@ int BundleAdj::selectNewActivePoints(){
 
   // num of points to be activated
   int num_to_be_activated=parameters_->max_num_active_points- num_active_points_+num_points_to_marginalize_;
-  std::cout << "NUM TO BE ACTIVATED " << num_to_be_activated << std::endl;
+  std::cout << "NUM TO BE ACTIVATED " << num_to_be_activated << " num active " << num_active_points_ << std::endl;
   int num_activated = 0;
 
   // RegionsWithProjCandidates* regions = last_keyframe->regions_projected_cands_;
@@ -261,11 +261,30 @@ void BundleAdj::optimize(){
 
 
 void BundleAdj::projectActivePoints(){
-  // iterate through all keyframe candidates
+  // iterate through all keyframe candidates (except the last)
+  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
 
-  // project active point in new keyframe
+    // iterate along all active points
+    for (ActivePoint* active_pt : keyframe->active_points_){
+      // project active point in new keyframe
+      // ActivePointProjected* active_point_proj = projectActivePoint(active_pt);
+      // // if active point is in frustum
+      // if (active_point_proj!=nullptr){
+      //  // push inside projected active points
+      //  pushProjActivePoint(active_point_proj);
+      // }
+      // // otherwise
+      // else{
+      //  // mark as not seen
+      //  active_pt->not_seen_in_last_keyframe = true;
+      // }
 
-  // put it in the relative region
+
+      // put it in the relative region
+
+    }
+  }
 }
 
 void BundleAdj::marginalizeActivePoints(){
