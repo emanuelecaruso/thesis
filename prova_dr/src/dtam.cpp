@@ -187,7 +187,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
     if (!track_candidates){
       // std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
-      // waitForOptimization();
+      waitForOptimization();
     }
 
     double t_start=getTime();
@@ -251,7 +251,9 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
     if(!frontend_thread_finished_){
       // std::cout << "OPTIMIZATION WAIT, NEW TRACK CANDS " << std::endl;
-      waitForTrackedCandidates();}
+      waitForTrackedCandidates();
+      // std::cout << "OPTIMIZATION STARTS " << std::endl;
+    }
     else
       break;
 
@@ -260,38 +262,47 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
     // project active points (and marginalize points 2 times outside the frustum)
     bundle_adj_->projectActivePoints();
 
+    // std::cout << "OPTIMIZATION 1 " << std::endl;
+
     // activate new points
     bundle_adj_->activateNewPointsAndGetCoarseActivePoints();
+
+    // std::cout << "OPTIMIZATION 2 " << std::endl;
 
     // collect coarse active points
     bundle_adj_->collectCoarseActivePoints();
 
+    // std::cout << "OPTIMIZATION 3 " << std::endl;
 
     // DEBUG
-    if(debug_optimization){
+    if(bundle_adj_->debug_optimization_){
       // cam on which active points are projected
       CameraForMapping* last_keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->back());
       last_keyframe->showProjActivePoints(1);
       last_keyframe->showProjCandidates(1);
       // iterate along all cameras
       // for (int j=0; j<int(bundle_adj_->keyframe_vector_ba_->size())-1; j++){
-      //   CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
-      //   for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
-      //     // std::cout << "CAMERA " << keyframe->name_ << std::endl;
-      //     keyframe->showCoarseActivePoints(i,1);}
-      // }
+      //     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
+      //     for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
+      //         // std::cout << "CAMERA " << keyframe->name_ << std::endl;
+      //         keyframe->showCoarseActivePoints(i,1);}
+      //     }
+      //
+        cv::waitKey(0);
+      }
 
-      cv::waitKey(0);
-    }
     // optimize
     bundle_adj_->optimize();
+
 
     // after optimization
     // std::cout << "OPTIMIZATION WAIT NEW FRAME " << std::endl;
     if(!update_cameras_thread_finished_ )
       waitForNewFrame();
     // std::cout << "OPTIMIZATION, NEW FRAME ARRIVED " << std::endl;
-    // time guard
+
+
+    // // time guard
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
 
@@ -444,8 +455,8 @@ void Dtam::test_dso(){
 
   bool debug_initialization=false;
   bool debug_mapping=false;
-  bool debug_tracking=true;
-  bool debug_optimization= false;
+  bool debug_tracking=false;
+  bool debug_optimization= true;
 
   bool initialization_loop=false;
   bool take_gt_poses=false;

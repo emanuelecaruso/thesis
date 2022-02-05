@@ -403,6 +403,19 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
 //
 // }
 
+void ActivePoint::marginalize(){
+  // remove point from vector of active points
+  std::vector<ActivePoint*>* v1 = cam_->active_points_;
+  v1->erase(std::remove(v1->begin(), v1->end(), this), v1->end());
+
+  // add point to marginalized points vector
+  std::vector<ActivePoint*>* v2 = cam_->marginalized_points_;
+  v2->push_back(this);
+
+
+
+}
+
 
 void CameraForMapping::selectNewCandidates(int max_num_candidates){
   int idx=0;

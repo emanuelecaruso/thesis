@@ -322,6 +322,7 @@ void BundleAdj::projectActivePoints(){
         // if already not seen in last keyframe, it has to be marginalized
         if(active_pt->not_seen_in_last_keyframe_){
           if(!active_pt->active_point_removed_){
+            // active_pt->marginalize();
             active_pt->to_marginalize_=true;
             active_pt->active_point_removed_=true;
             keyframe->num_marginalized_active_points_++;

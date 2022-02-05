@@ -217,8 +217,6 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   float rho_der = huberNormDerivative(u,dtam_->parameters_->huber_threshold);
   float gamma=(1/(u+0.0001))*rho_der;
 
-  if(isnan(rho_der))
-  std::cout << u << " " << dtam_->parameters_->huber_threshold << std::endl;
 
   // weight
   float weight = (ni+1.0)/(ni+(pow(error,2)/variance));

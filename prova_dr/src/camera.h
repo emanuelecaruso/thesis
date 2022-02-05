@@ -326,8 +326,6 @@ class ActivePoint : public CandidateBase{
     not_seen_in_last_keyframe_(false),
     to_marginalize_(false),
     active_point_removed_(false)
-
-
     { }
 
 
@@ -343,6 +341,8 @@ class ActivePoint : public CandidateBase{
     bool not_seen_in_last_keyframe_;
     bool to_marginalize_;
     bool active_point_removed_;
+
+    void marginalize();
 
 };
 
