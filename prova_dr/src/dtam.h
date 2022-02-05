@@ -29,10 +29,9 @@ class Dtam{
     camera_vector_(new std::vector<CameraForMapping*>),
     keyframe_vector_(new std::vector<int>),
     frame_current_(-1),
-    end_flag_(false)
-
+    update_cameras_thread_finished_(false),
+    frontend_thread_finished_(false)
     { };
-
 
     void test_mapping();
     void test_tracking();
@@ -65,7 +64,6 @@ class Dtam{
     std::vector<CameraForMapping*>* camera_vector_;
     std::vector<int>* keyframe_vector_;
     int frame_current_;
-    bool end_flag_;
 
     friend class Initializer;
     friend class BundleAdj;
@@ -85,8 +83,11 @@ class Dtam{
     std::condition_variable optimization_done_;
 
     std::thread update_cameras_thread_;
-    std::thread mapping_thread_;
-    std::thread tracking_thread_;
+    std::thread frontend_thread_;
+    std::thread initialization_thread_;
+    std::thread optimization_thread;
+    bool update_cameras_thread_finished_;
+    bool frontend_thread_finished_;
 
 
     void setOptimizationFlags( bool debug_optimization);
@@ -102,5 +103,6 @@ class Dtam{
     void doOptimization(bool active_all_candidates=false, bool debug_optimization=false);
 
     bool makeJsonForCands(const std::string& path_name, CameraForMapping* camera);
+    bool makeJsonForActivePts(const std::string& path_name, CameraForMapping* camera);
 
 };

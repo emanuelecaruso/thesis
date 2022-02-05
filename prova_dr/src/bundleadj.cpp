@@ -19,6 +19,7 @@ void BundleAdj::activateNewPointsAndGetCoarseActivePoints(){
   double t_start=getTime();
 
   int num_activated = selectNewActivePoints();
+  num_active_points_+= num_activated;
 
   double t_end=getTime();
   int deltaTime=(t_end-t_start);
@@ -201,7 +202,7 @@ int BundleAdj::selectNewActivePoints(){
 
   // num of points to be activated
   int num_to_be_activated=parameters_->max_num_active_points- num_active_points_;
-  std::cout << "NUM TO BE ACTIVATED " << num_to_be_activated << " num active " << num_active_points_ << std::endl;
+
   int num_activated = 0;
 
   // RegionsWithProjCandidates* regions = last_keyframe->regions_projected_cands_;
@@ -237,7 +238,6 @@ int BundleAdj::selectNewActivePoints(){
 
       // active point
       num_activated++;
-      num_active_points_++;
     }
 
     // if it's the last round
@@ -284,6 +284,7 @@ ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamC
 void BundleAdj::projectActivePoints(){
 
   CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+  int n_active_points_not_observed =0;
 
   // iterate through all keyframe candidates (except the last)
   for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
@@ -326,8 +327,10 @@ void BundleAdj::projectActivePoints(){
           continue;
         }
         // else mark as not seen
-        else
+        else{
           active_pt->not_seen_in_last_keyframe_=true;
+          n_active_points_not_observed++;
+        }
       }
 
 
@@ -335,6 +338,7 @@ void BundleAdj::projectActivePoints(){
 
     }
   }
+
 }
 
 void BundleAdj::marginalizeActivePoints(){

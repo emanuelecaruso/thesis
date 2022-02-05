@@ -166,13 +166,20 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
   while( true ){
 
-    if(frame_current_==int(camera_vector_->size())-1)
-      waitForNewFrame();
-
-    // if still frame current is last camera, new frame is the end signal
+    // if the frame is the latest
     if(frame_current_==int(camera_vector_->size())-1){
-      break;
+
+      //if cameras are ended
+      if(update_cameras_thread_finished_)
+        break;
+      else
+        waitForNewFrame();
     }
+
+    // // if still frame current is last camera, new frame is the end signal
+    // if(frame_current_==int(camera_vector_->size())-1){
+    //   break;
+    // }
 
     if (!track_candidates){
       waitForOptimization();
@@ -222,6 +229,9 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
   }
 
+  frontend_thread_finished_=true;
+  cand_tracked_.notify_all();
+
 }
 
 void Dtam::setOptimizationFlags( bool debug_optimization){
@@ -234,9 +244,10 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
   while( true ){
 
-    // if current frame of bundle adjustment is still latest keyframe
-
-    waitForTrackedCandidates();
+    if(!frontend_thread_finished_)
+      waitForTrackedCandidates();
+    else
+      break;
 
     bundle_adj_->frame_current_ba=frame_current_;
 
@@ -313,9 +324,8 @@ void Dtam::updateCamerasFromEnvironment(){
 
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-  end_flag_=true;
+  update_cameras_thread_finished_=true;
   frame_updated_.notify_all();
-  cand_tracked_.notify_all();
   sharedCout("\nVideo stream ended");
 
 }
@@ -449,8 +459,8 @@ void Dtam::test_dso(){
   update_cameras_thread_.join();
   frontend_thread_.join();
 
-  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
-
+  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
 
 }
@@ -459,7 +469,7 @@ void Dtam::test_dso(){
 // TODO remove
 bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* camera){
 
-  std::cout << "creating json" << std::endl;
+  std::cout << "creating json (cands)" << std::endl;
 
     const char* path_name_ = path_name.c_str(); // dataset name
     struct stat info;
@@ -515,32 +525,70 @@ bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* came
     o.close();
 
     return 1;
-    // int rows=camera->parameters_->resolution_y;
-    // int cols=camera->parameters_->resolution_x;
-    // int n_pixels=rows*cols;
-    //
-    // for
-    //
-    // for (int i=0; i<n_pixels; i++){
-    //   Cp_gpu cp= camera->cp_array_[i];
-    //   if (cp.valid){
-    //     std::stringstream ss;
-    //     ss << std::setw(6) << std::setfill('0') << i;
-    //     std::string idx = ss.str();
-    //     j["cameras"][camera->name_]["p"+idx] = {
-    //       {"color", {cp.color[0],cp.color[1],cp.color[2]}},
-    //       {"position", {cp.point[0],cp.point[1],cp.point[2]}}
-    //     };
-    //   }
-    // }
-    // // write prettified JSON to another file
-    // std::ofstream o(path_name);
-    // o << std::setw(4) << j << std::endl;
-    // o.close();
-    //
-    // double t_e=getTime();
-    // double delta=t_e-t_s;
-    // return delta;
+
+
+}
+
+
+// TODO remove
+bool Dtam::makeJsonForActivePts(const std::string& path_name, CameraForMapping* camera){
+
+  std::cout << "creating json (active pts)" << std::endl;
+
+    const char* path_name_ = path_name.c_str(); // dataset name
+    struct stat info;
+    if( stat( path_name_, &info ) != 0 )
+    { }
+    else if( info.st_mode & S_IFDIR )
+    {
+      // isdir
+      return 0;
+    }
+    else
+    {
+      // printf( "%s is not a directory\n", path_name );
+      std::string st = "rm " + path_name;
+      const char *str = st.c_str();
+
+    }
+
+    std::string st = "touch "+path_name;
+    const char *str = st.c_str();
+
+    json j;
+
+    j["cameras"][camera->name_];
+    int count=0;
+    for(RegionWithProjActivePoints* reg_proj : *(camera->regions_projected_active_points_->region_vec_) ){
+
+
+      for(int i=0; i<reg_proj->active_pts_proj_vec_->size(); i++){
+
+        ActivePointProjected* active_pt_proj = reg_proj->active_pts_proj_vec_->at(i);
+
+        int level = active_pt_proj->level_;
+        Eigen::Vector2f uv = active_pt_proj->uv_ ;
+        Eigen::Vector3f p;
+        camera->pointAtDepth( uv, 1.0/active_pt_proj->invdepth_, p);
+        std::stringstream ss;
+        ss << std::setw(6) << std::setfill('0') << count;
+        std::string idx = ss.str();
+        j["cameras"][camera->name_]["p"+idx] = {
+          {"level", level},
+          {"invdepth_var", active_pt_proj->active_point_->invdepth_var_},
+          {"position", {p[0],p[1],p[2]}}
+        };
+        count++;
+
+      }
+
+    }
+    // write prettified JSON to another file
+    std::ofstream o(path_name);
+    o << std::setw(4) << j << std::endl;
+    o.close();
+
+    return 1;
 
 
 }

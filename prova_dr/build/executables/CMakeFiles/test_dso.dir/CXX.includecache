@@ -340,20 +340,6 @@ limits
 type_traits
 -
 
-/home/manu/Desktop/thesis/prova_dr/src/bundleadj.cpp
-dtam.h
-/home/manu/Desktop/thesis/prova_dr/src/dtam.h
-bundleadj.h
-/home/manu/Desktop/thesis/prova_dr/src/bundleadj.h
-math.h
--
-utils.h
-/home/manu/Desktop/thesis/prova_dr/src/utils.h
-stdlib.h
--
-defs.h
-/home/manu/Desktop/thesis/prova_dr/src/defs.h
-
 /home/manu/Desktop/thesis/prova_dr/src/bundleadj.h
 camera.h
 /home/manu/Desktop/thesis/prova_dr/src/camera.h
@@ -394,6 +380,26 @@ sys/types.h
 dirent.h
 -
 mutex
+-
+
+/home/manu/Desktop/thesis/prova_dr/src/dtam.cpp
+mapper.h
+/home/manu/Desktop/thesis/prova_dr/src/mapper.h
+dtam.h
+/home/manu/Desktop/thesis/prova_dr/src/dtam.h
+json.hpp
+/home/manu/Desktop/thesis/prova_dr/src/json.hpp
+math.h
+-
+utils.h
+/home/manu/Desktop/thesis/prova_dr/src/utils.h
+thread
+-
+chrono
+-
+stdlib.h
+-
+fstream
 -
 
 /home/manu/Desktop/thesis/prova_dr/src/dtam.h
