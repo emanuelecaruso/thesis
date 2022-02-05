@@ -163,17 +163,21 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool take_gt_poses, bool take_gt_points, bool track_candidates, int guess_type, bool debug_mapping, bool debug_tracking){
   if(wait_for_initialization)
     waitForInitialization();
-
   while( true ){
 
     // if the frame is the latest
     if(frame_current_==int(camera_vector_->size())-1){
 
       //if cameras are ended
-      if(update_cameras_thread_finished_)
+      if(update_cameras_thread_finished_){
         break;
-      else
+      }
+      else{
+        // std::cout << "FRONT END WAIT NEW FRAME " << std::endl;
         waitForNewFrame();
+        // std::cout << "FRONT END, NEW FRAME ARRIVED " << std::endl;
+
+      }
     }
 
     // // if still frame current is last camera, new frame is the end signal
@@ -182,7 +186,8 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     // }
 
     if (!track_candidates){
-      waitForOptimization();
+      // std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
+      // waitForOptimization();
     }
 
     double t_start=getTime();
@@ -244,8 +249,9 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
   while( true ){
 
-    if(!frontend_thread_finished_)
-      waitForTrackedCandidates();
+    if(!frontend_thread_finished_){
+      // std::cout << "OPTIMIZATION WAIT, NEW TRACK CANDS " << std::endl;
+      waitForTrackedCandidates();}
     else
       break;
 
@@ -278,9 +284,16 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
       cv::waitKey(0);
     }
     // optimize
-    // bundle_adj_->optimize();
+    bundle_adj_->optimize();
 
     // after optimization
+    // std::cout << "OPTIMIZATION WAIT NEW FRAME " << std::endl;
+    if(!update_cameras_thread_finished_ )
+      waitForNewFrame();
+    // std::cout << "OPTIMIZATION, NEW FRAME ARRIVED " << std::endl;
+    // time guard
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+
 
     // notify all threads that optimization has been done
     optimization_done_.notify_all();
@@ -305,6 +318,7 @@ void Dtam::updateCamerasFromEnvironment(){
     addCamera(counter);
 
     // locker.unlock();
+    // std::cout << "CAM UPDATED" << std::endl;
     frame_updated_.notify_all();
 
     double t_end=getTime();
@@ -323,7 +337,6 @@ void Dtam::updateCamerasFromEnvironment(){
     counter++;
 
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   update_cameras_thread_finished_=true;
   frame_updated_.notify_all();
   sharedCout("\nVideo stream ended");
@@ -431,8 +444,8 @@ void Dtam::test_dso(){
 
   bool debug_initialization=false;
   bool debug_mapping=false;
-  bool debug_tracking=false;
-  bool debug_optimization= true;
+  bool debug_tracking=true;
+  bool debug_optimization= false;
 
   bool initialization_loop=false;
   bool take_gt_poses=false;

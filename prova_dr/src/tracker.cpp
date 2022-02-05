@@ -205,13 +205,20 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   normalizer=abs(normalizer);
   normalizer *= invdepth_var; // multiply with variance
   normalizer+=0.1; // add variance on img
-  // normalizer+=0.02; // add variance on img
 
   // float normalizer = 1;
 
   // error
   float error = (z_hat-z)/normalizer;
   // float error = (z_hat-z);
+
+  // robustifier
+  float u = abs(error);
+  float rho_der = huberNormDerivative(u,dtam_->parameters_->huber_threshold);
+  float gamma=(1/(u+0.0001))*rho_der;
+
+  if(isnan(rho_der))
+  std::cout << u << " " << dtam_->parameters_->huber_threshold << std::endl;
 
   // weight
   float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
@@ -226,8 +233,8 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   // J=coeff*(img_jacobian*jacobian_to_mul);
   Jtransp = J.transpose();
   // update
-  H+=Jtransp*weight*J;
-  b+=Jtransp*weight*error;
+  H+=Jtransp*gamma*weight*J;
+  b+=Jtransp*gamma*weight*error;
   chi+=error*error;
 }
 

@@ -63,7 +63,6 @@ bundleadj.cpp
 
 in bundle adj
 after SIGNAL (after tracked candidates)..
-1) activate new candidates: consider the number of marginalized points
 2) START BUNDLE ADJUSTMENT! by considering active points and cameras with marginalize flag
 
 

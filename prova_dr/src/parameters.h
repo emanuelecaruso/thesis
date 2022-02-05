@@ -29,6 +29,7 @@ static int max_num_mins_ = 3;
 static float max_invdepth_var_=0.05;
 static int end_frame_=11;
 static int fps_=30;
+static float huber_threshold_=0.1;
 // tracker parameters
 static int max_iterations_ls_=20;
 static float variance_ = 0.1;
@@ -59,6 +60,7 @@ struct Params{
   float max_invdepth_var=max_invdepth_var_;
   int end_frame=end_frame_;
   int fps=fps_;
+  float huber_threshold=huber_threshold_;
   int max_iterations_ls=max_iterations_ls_;
   float variance=variance_;
   int robustifier_dofs=robustifier_dofs_;

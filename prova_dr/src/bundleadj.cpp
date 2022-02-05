@@ -255,7 +255,10 @@ int BundleAdj::selectNewActivePoints(){
 
 
 void BundleAdj::optimize(){
-  // optimize TODO
+  // optimize
+  double t_start=getTime();
+
+  // after optimization, remove added_ba_ flag on keyframe
 
 }
 
