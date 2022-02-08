@@ -512,6 +512,18 @@ image.h
 environment.h
 /home/manu/Desktop/thesis/prova_dr/src/environment.h
 
+/home/manu/Desktop/thesis/prova_dr/src/camera.cpp
+camera.h
+/home/manu/Desktop/thesis/prova_dr/src/camera.h
+thread
+-
+vector
+-
+mutex
+-
+cstdlib
+-
+
 /home/manu/Desktop/thesis/prova_dr/src/camera.h
 defs.h
 /home/manu/Desktop/thesis/prova_dr/src/defs.h
@@ -590,9 +602,43 @@ mutex
 condition_variable
 -
 
+/home/manu/Desktop/thesis/prova_dr/src/environment.cpp
+environment.h
+/home/manu/Desktop/thesis/prova_dr/src/environment.h
+defs.h
+/home/manu/Desktop/thesis/prova_dr/src/defs.h
+json.hpp
+/home/manu/Desktop/thesis/prova_dr/src/json.hpp
+utils.h
+/home/manu/Desktop/thesis/prova_dr/src/utils.h
+fstream
+-
+sys/types.h
+-
+sys/stat.h
+-
+
 /home/manu/Desktop/thesis/prova_dr/src/environment.h
 camera.h
 /home/manu/Desktop/thesis/prova_dr/src/camera.h
+
+/home/manu/Desktop/thesis/prova_dr/src/epline.cpp
+mapper.h
+/home/manu/Desktop/thesis/prova_dr/src/mapper.h
+epline.h
+/home/manu/Desktop/thesis/prova_dr/src/epline.h
+math.h
+-
+utils.h
+/home/manu/Desktop/thesis/prova_dr/src/utils.h
+stdlib.h
+-
+defs.h
+/home/manu/Desktop/thesis/prova_dr/src/defs.h
+cstdlib
+-
+chrono
+-
 
 /home/manu/Desktop/thesis/prova_dr/src/epline.h
 camera.h
@@ -601,6 +647,10 @@ image.h
 /home/manu/Desktop/thesis/prova_dr/src/image.h
 mapper.h
 /home/manu/Desktop/thesis/prova_dr/src/mapper.h
+
+/home/manu/Desktop/thesis/prova_dr/src/image.cpp
+image.h
+/home/manu/Desktop/thesis/prova_dr/src/image.h
 
 /home/manu/Desktop/thesis/prova_dr/src/image.h
 defs.h
@@ -737,6 +787,12 @@ thread
 -
 vector
 -
+
+/home/manu/Desktop/thesis/prova_dr/src/wavelet.cpp
+wavelet.h
+/home/manu/Desktop/thesis/prova_dr/src/wavelet.h
+camera.h
+/home/manu/Desktop/thesis/prova_dr/src/camera.h
 
 /home/manu/Desktop/thesis/prova_dr/src/wavelet.h
 defs.h

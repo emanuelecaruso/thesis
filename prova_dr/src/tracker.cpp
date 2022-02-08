@@ -275,7 +275,7 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
   Eigen::Matrix<float, 3,6> state_jacobian;
   Eigen::Matrix<float, 2,6> jacobian_to_mul;
   Eigen::Matrix<float, 2,1> jacobian_to_mul_normalizer;
-  Eigen::Matrix<float, 3,1> normalizer_jacobian;
+  Eigen::Matrix<float, 3,1> invdepth_jacobian;
 
   proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
                    0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
@@ -284,11 +284,11 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
                     0, 1, 0, -point_newframe.z() ,  0                    ,  point_newframe.x(),
                     0, 0, 1,  point_newframe.y() , -point_newframe.x()  ,  0         ;
 
-  normalizer_jacobian << -cand->uv_.x()/pow(invdepth,2),
+  invdepth_jacobian << -cand->uv_.x()/pow(invdepth,2),
                          -cand->uv_.y()/pow(invdepth,2),
                          -1/pow(invdepth,2);
 
-  jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(cand->cam_->frame_camera_wrt_world_->linear()*normalizer_jacobian)));
+  jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(cand->cam_->frame_camera_wrt_world_->linear()*invdepth_jacobian)));
 
   jacobian_to_mul = (proj_jacobian*K)*state_jacobian;
 
@@ -332,8 +332,8 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   Eigen::Vector2f uv_newframe;
   Eigen::Vector2i pixel_newframe;
   Eigen::Vector3f point_newframe;
-  Eigen::Vector3f* point = active_pt->p_;
-  Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_;
+  Eigen::Vector3f* point = active_pt->p_0_; // 3D point wrt world frame
+  Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_0_; // 3D point wrt cam frame
   float invdepth = active_pt->invdepth_;
   float invdepth_var = active_pt->invdepth_var_;
   float invdepth_der = -1/pow(invdepth,2);
@@ -357,7 +357,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   Eigen::Matrix<float, 3,6> state_jacobian;
   Eigen::Matrix<float, 2,6> jacobian_to_mul;
   Eigen::Matrix<float, 2,1> jacobian_to_mul_normalizer;
-  Eigen::Matrix<float, 3,1> normalizer_jacobian;
+  Eigen::Matrix<float, 3,1> invdepth_jacobian;
 
   proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
                    0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
@@ -366,11 +366,11 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
                     0, 1, 0, -point_newframe.z() ,  0                   ,  point_newframe.x(),
                     0, 0, 1,  point_newframe.y() , -point_newframe.x()  ,  0         ;
 
-  normalizer_jacobian << -active_pt->uv_.x()/pow(invdepth,2),
+  invdepth_jacobian << -active_pt->uv_.x()/pow(invdepth,2),
                          -active_pt->uv_.y()/pow(invdepth,2),
                          -1/pow(invdepth,2);
 
-  jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(active_pt->cam_->frame_camera_wrt_world_->linear()*normalizer_jacobian)));
+  jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(active_pt->cam_->frame_camera_wrt_world_->linear()*invdepth_jacobian)));
 
   jacobian_to_mul = (proj_jacobian*K)*state_jacobian;
 
@@ -470,7 +470,7 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
       Eigen::Vector2f uv_newframe;
       Eigen::Vector2i pixel_newframe;
       Eigen::Vector3f point_newframe;
-      Eigen::Vector3f* point = active_pt->p_;
+      Eigen::Vector3f* point = active_pt->p_0_;
 
       point_newframe= current_guess*(*point);
       float invdepth_proj = 1.0/point_newframe.z();

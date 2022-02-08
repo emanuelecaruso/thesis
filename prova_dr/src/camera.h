@@ -289,16 +289,26 @@ class ActivePoint : public CandidateBase{
     ActivePoint(Candidate* cand):
     CandidateBase( cand->level_, cand->pixel_, cand->uv_),
     cam_(cand->cam_),
-    invdepth_(cand->invdepth_),
-    p_incamframe_(cand->p_incamframe_),
-    p_(cand->p_),
-    invdepth_var_(cand->invdepth_var_),
     regions_coarse_(new std::vector<RegionWithActivePoints*>),
+
+    // current guess
+    invdepth_(cand->invdepth_),
+    invdepth_var_(cand->invdepth_var_),
+    // tangent space point
+    p_incamframe_0_(cand->p_incamframe_),
+    p_0_(cand->p_),
+    invdepth_0_(cand->invdepth_),
+    // active point features
     intensity_(cand->intensity_),
     grad_magnitude_(cand->grad_magnitude_),
     grad_phase_(cand->grad_phase_),
+    // delta update x
+    delta_update_x_(0),
+
     not_seen_in_last_keyframe_(false),
-    state_point_block_idx_(-1)
+    state_point_block_idx_(-1),
+    to_marginalize_(false),
+    active_point_removed_(false)
     {}
 
     // coarse active point
@@ -312,30 +322,48 @@ class ActivePoint : public CandidateBase{
                 // float grad_phase_dx, float grad_phase_dy,
                 float invdepth, float invdepth_var, Eigen::Vector3f* p,
                 Eigen::Vector3f* p_incamframe ):
-      CandidateBase( level, pixel, uv),
+    CandidateBase( level, pixel, uv),
     cam_(cam),
-    invdepth_(invdepth),
-    p_incamframe_(p_incamframe),
-    p_(p),
-    invdepth_var_(invdepth_var),
     regions_coarse_(nullptr),
+
+    // current guess
+    invdepth_(invdepth),
+    invdepth_var_(invdepth_var),
+    // tangent space point
+    p_incamframe_0_(p_incamframe),
+    p_0_(p),
+    invdepth_0_(invdepth),
+    // active point features
     intensity_(intensity),
     grad_magnitude_(grad_magnitude),
     grad_phase_(grad_phase),
+    // delta update x
+    delta_update_x_(0),
+
     not_seen_in_last_keyframe_(false),
-    state_point_block_idx_(-1)
+    state_point_block_idx_(-1),
+    to_marginalize_(false),
+    active_point_removed_(false)
     { }
 
 
     CameraForMapping* cam_;
-    float invdepth_;
-    Eigen::Vector3f* p_incamframe_;
-    Eigen::Vector3f* p_;
-    float invdepth_var_;
     std::vector<RegionWithActivePoints*>* regions_coarse_;
-    const pixelIntensity intensity_;
-    const float grad_magnitude_;
-    const float grad_phase_;
+
+    // current guess
+    float invdepth_;
+    float invdepth_var_;
+    // tangent space point
+    Eigen::Vector3f* p_incamframe_0_;
+    Eigen::Vector3f* p_0_;
+    float invdepth_0_;
+    // active point features
+    pixelIntensity intensity_;
+    float grad_magnitude_;
+    float grad_phase_;
+    // delta update x
+    float delta_update_x_;
+
     bool not_seen_in_last_keyframe_;
     int state_point_block_idx_;
     bool to_marginalize_;
@@ -580,7 +608,7 @@ class CameraForMapping: public Camera{
     std::vector<RegionsWithActivePoints*>* regions_coarse_active_pts_vec_;
     std::vector<std::vector<ActivePoint*>*>* active_points_coarse_;
     std::vector<CameraForMapping*>* keyframes_linked_;
-    Vector6f* delta_update_ba_;
+    Vector6f* delta_update_x_;
     int num_marginalized_active_points_;
     bool to_be_marginalized_ba_;
     bool active_points_removed_;
@@ -610,7 +638,7 @@ class CameraForMapping: public Camera{
            regions_coarse_active_pts_vec_(new std::vector<RegionsWithActivePoints*>),
            active_points_coarse_(new std::vector<std::vector<ActivePoint*>*>),
            keyframes_linked_(new std::vector<CameraForMapping*>),
-           delta_update_ba_(new Vector6f),
+           delta_update_x_(new Vector6f),
            num_marginalized_active_points_(0),
            to_be_marginalized_ba_(false),
            active_points_removed_(false),

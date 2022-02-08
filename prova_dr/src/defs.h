@@ -379,6 +379,24 @@ namespace pr {
     return T;
   }
 
+  inline Eigen::Isometry3f v2t_inv(const Vector6f& t){
+    Eigen::Isometry3f T;
+
+    float a = t(3);
+    float b = t(4);
+    float c = t(5);
+    T.linear() <<   cos(b)*cos(c), cos(a)*sin(c) + cos(c)*sin(a)*sin(b), sin(a)*sin(c) - cos(a)*cos(c)*sin(b),
+                   -cos(b)*sin(c), cos(a)*cos(c) - sin(a)*sin(b)*sin(c), cos(c)*sin(a) + cos(a)*sin(b)*sin(c),
+                           sin(b),                       -cos(b)*sin(a),                        cos(a)*cos(b);
+
+    T.translation().x() = - t(1)*(cos(a)*sin(c) + cos(c)*sin(a)*sin(b)) - t(2)*(sin(a)*sin(c) - cos(a)*cos(c)*sin(b)) - t(0)*cos(b)*cos(c);
+    T.translation().y() = t(0)*cos(b)*sin(c) - t(2)*(cos(c)*sin(a) + cos(a)*sin(b)*sin(c)) - t(1)*(cos(a)*cos(c) - sin(a)*sin(b)*sin(c));
+    T.translation().z() = t(1)*cos(b)*sin(a) - t(2)*cos(a)*cos(b) - t(0)*sin(b);
+
+
+    return T;
+  }
+
   #define POSE_CONSTANT 0
   #define VELOCITY_CONSTANT 1
 

@@ -272,7 +272,7 @@ void BundleAdj::updateStateBlockIdxs(int& pose_block_size, int& point_block_size
       // set state pose block idx
       keyframe->state_pose_block_idx_=num_active_keyframes*6;
       for(int j=0; j<keyframe->active_points_->size(); j++ ){
-        keyframe->active_points_->at(j)->state_point_block_idx_=j;
+        keyframe->active_points_->at(j)->state_point_block_idx_=num_active_points_+j;
       }
       num_active_points_+=keyframe->active_points_->size();
     }
@@ -287,28 +287,40 @@ void BundleAdj::updateStateBlockIdxs(int& pose_block_size, int& point_block_size
 
 }
 
-Eigen::Matrix<float,1,6>* JacobiansBA::getJr(ActivePointProjected* active_pt_proj){
+Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePointProjected* active_pt_proj){
   ActivePoint* active_pt = active_pt_proj->active_point_;
   CameraForMapping* keyframe = active_pt->cam_;
 
+  Eigen::Matrix<float,1,6>* J_r = new Eigen::Matrix<float,1,6>;
+
+  return J_r;
 }
 
-Eigen::Matrix<float,1,6>* JacobiansBA::getJm(ActivePointProjected* active_pt_proj){
+Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePointProjected* active_pt_proj){
   ActivePoint* active_pt = active_pt_proj->active_point_;
   CameraForMapping* keyframe = active_pt_proj->cam_;
 
+  Eigen::Matrix<float,1,6>* J_m = new Eigen::Matrix<float,1,6>;
+
+  return J_m;
 }
 
-float JacobiansBA::getJd(ActivePointProjected* active_pt_proj){
+float BundleAdj::getJd(ActivePointProjected* active_pt_proj){
   ActivePoint* active_pt = active_pt_proj->active_point_;
 
+  return 1;
 }
 
-JacobiansBA* BundleAdj::getJacobiansAndError(ActivePointProjected* active_pt_proj){
+float BundleAdj::getError(ActivePointProjected* active_pt_proj){
+  float z = active_pt_proj->active_point_->intensity_;
+  // z_hat = active_pt_proj->cam_->wavelet_dec_->getWavLevel(active_pt_proj->level_)->c->evalPixel(pixel_newframe);
+}
 
-  Eigen::Matrix<float,1,6>* J_r;
-  Eigen::Matrix<float,1,6>* J_m;
-  float J_d;
+JacobiansBA* BundleAdj::getJacobians(ActivePointProjected* active_pt_proj){
+
+  Eigen::Matrix<float,1,6>* J_r = getJr(active_pt_proj);
+  Eigen::Matrix<float,1,6>* J_m = getJm(active_pt_proj);
+  float J_d = getJd(active_pt_proj);
 
   int J_r_block_idx = -1;
   int J_m_block_idx = -1;

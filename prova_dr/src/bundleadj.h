@@ -15,9 +15,7 @@ class JacobiansBA{
     int J_m_block_idx = -1;
     int J_d_block_idx = -1;
 
-    Eigen::Matrix<float,1,6>* getJr(ActivePointProjected* active_pt_proj);
-    Eigen::Matrix<float,1,6>* getJm(ActivePointProjected* active_pt_proj);
-    float getJd(ActivePointProjected* active_pt_proj);
+
 
 };
 
@@ -41,7 +39,7 @@ class BundleAdj{
     void activateNewPointsAndGetCoarseActivePoints();
     void collectCoarseActivePoints();
 
-    JacobiansBA* getJacobiansAndError(ActivePointProjected* active_pt_proj);
+    JacobiansBA* getJacobians(ActivePointProjected* active_pt_proj);
     void optimize(int pose_block_size, int point_block_size);
     void optimize();
 
@@ -74,5 +72,10 @@ class BundleAdj{
 
     void marginalize();
     void updateStateBlockIdxs(int& pose_block_size, int& point_block_size);
+
+    Eigen::Matrix<float,1,6>* getJr(ActivePointProjected* active_pt_proj);
+    Eigen::Matrix<float,1,6>* getJm(ActivePointProjected* active_pt_proj);
+    float getJd(ActivePointProjected* active_pt_proj);
+    float getError(ActivePointProjected* active_pt_proj);
 
 };
