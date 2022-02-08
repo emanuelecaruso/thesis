@@ -107,7 +107,7 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
     if(frame_current_==0){
       tracker_->trackCam(true);
-      keyframe_handler_->addKeyframe(true);
+      keyframe_handler_->addFirstKeyframe();
       initializer_->extractCorners();
       if(debug_initialization)
         initializer_->showCornersTrackCurr();
@@ -201,7 +201,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
 
       tracker_->trackCam(true);
-      keyframe_handler_->addKeyframe(true);
+      keyframe_handler_->addFirstKeyframe();
       if(frame_current_==1){
         mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
         // mapper_->trackExistingCandidates(true,debug_mapping);

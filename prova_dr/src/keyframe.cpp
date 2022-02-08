@@ -19,6 +19,13 @@ bool KeyframeHandler::addKeyframe(bool all_keyframes){
   return frame_added;
 }
 
+void KeyframeHandler::addFirstKeyframe(){
+  dtam_->camera_vector_->at(dtam_->frame_current_)->first_keyframe_=true;
+  pushKeyframeFrontend();
+  pushKeyframeBundleadj();
+  sharedCoutDebug("   - First keyframe added (frame "+ std::to_string(dtam_->frame_current_) +")");
+}
+
 bool KeyframeHandler::addKeyframe_all(){
   pushKeyframeFrontend();
   pushKeyframeBundleadj();

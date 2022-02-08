@@ -412,8 +412,6 @@ void ActivePoint::marginalize(){
   std::vector<ActivePoint*>* v2 = cam_->marginalized_points_;
   v2->push_back(this);
 
-
-
 }
 
 

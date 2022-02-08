@@ -252,11 +252,107 @@ int BundleAdj::selectNewActivePoints(){
 
 }
 
+void BundleAdj::marginalize(){
 
+  // compute marginalization term
+
+}
+
+void BundleAdj::updateStateBlockIdxs(int& pose_block_size, int& point_block_size){
+
+  int num_active_keyframes=0;
+  int num_keyframes_to_be_marginalized=0;
+  int num_active_points_=0;
+  // iterate through all keyframes
+  for (int i=0; i<keyframe_vector_ba_->size(); i++){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+
+    if(!keyframe->to_be_marginalized_ba_){
+      num_active_keyframes++;
+      // set state pose block idx
+      keyframe->state_pose_block_idx_=num_active_keyframes*6;
+      for(int j=0; j<keyframe->active_points_->size(); j++ ){
+        keyframe->active_points_->at(j)->state_point_block_idx_=j;
+      }
+      num_active_points_+=keyframe->active_points_->size();
+    }
+    else{
+      num_keyframes_to_be_marginalized++;
+    }
+  }
+
+  pose_block_size=num_active_keyframes*6;
+  point_block_size=num_active_points_;
+
+
+}
+
+Eigen::Matrix<float,1,6>* JacobiansBA::getJr(ActivePointProjected* active_pt_proj){
+  ActivePoint* active_pt = active_pt_proj->active_point_;
+  CameraForMapping* keyframe = active_pt->cam_;
+
+}
+
+Eigen::Matrix<float,1,6>* JacobiansBA::getJm(ActivePointProjected* active_pt_proj){
+  ActivePoint* active_pt = active_pt_proj->active_point_;
+  CameraForMapping* keyframe = active_pt_proj->cam_;
+
+}
+
+float JacobiansBA::getJd(ActivePointProjected* active_pt_proj){
+  ActivePoint* active_pt = active_pt_proj->active_point_;
+
+}
+
+JacobiansBA* BundleAdj::getJacobiansAndError(ActivePointProjected* active_pt_proj){
+
+  Eigen::Matrix<float,1,6>* J_r;
+  Eigen::Matrix<float,1,6>* J_m;
+  float J_d;
+
+  int J_r_block_idx = -1;
+  int J_m_block_idx = -1;
+  int J_d_block_idx = -1;
+
+  // JacobiansBA* jacobians = new JacobiansBA();
+}
+
+void BundleAdj::optimize(int pose_block_size, int point_block_size ){
+
+  // initialize H blocks
+  Eigen::MatrixXf H_pose_pose(pose_block_size,point_block_size);
+  Eigen::MatrixXf H_pose_point(point_block_size,point_block_size);
+  Eigen::MatrixXf H_point_pose(pose_block_size,point_block_size);
+  Eigen::MatrixXf H_point_point(point_block_size,point_block_size);
+
+  // initialize b blocks
+  Eigen::MatrixXf b_pose(pose_block_size,1);
+  Eigen::MatrixXf b_point(point_block_size,1);
+
+  // iterate through keyframes
+  for(int i=0; i<keyframe_vector_ba_->size(); i++ ){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+    // iterate through projected active points
+    for( ActivePointProjected* active_pt_proj : *(keyframe->regions_projected_active_points_->active_points_proj_)){
+
+    }
+  }
+
+}
 
 void BundleAdj::optimize(){
-  // optimize
+
   double t_start=getTime();
+
+  // marginalize
+  marginalize();
+
+  // get state sizes
+  int pose_block_size=0, point_block_size=0;
+  updateStateBlockIdxs(pose_block_size, point_block_size);
+
+  // optimize
+  optimize( pose_block_size, point_block_size );
 
   // after optimization, remove added_ba_ flag on keyframe
 
@@ -303,28 +399,35 @@ void BundleAdj::projectActivePoints(){
     }
 
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
+    bool keyframe_link = false;
     // iterate along all active points
     for (ActivePoint* active_pt : *keyframe->active_points_){
 
-      if(active_pt->to_marginalize_){
-        continue;
-      }
+      // if(active_pt->to_marginalize_){
+      //   continue;
+      // }
 
       // project active point in new keyframe
       ActivePointProjected* active_point_proj = projectActivePoint(active_pt, cam_couple);
       // if active point is in frustum
       if (active_point_proj!=nullptr){
-       // push active point projected
-       active_point_proj->cam_->regions_projected_active_points_->pushProjActivePoint(active_point_proj);
+
+        // push active point projected
+        if(!keyframe_link){
+          keyframe_link=true;
+          // push keyframe link
+          keyframe->keyframes_linked_->push_back(last_keyframe);
+        }
+        active_point_proj->cam_->regions_projected_active_points_->pushProjActivePoint(active_point_proj);
       }
       // otherwise
       else{
         // if already not seen in last keyframe, it has to be marginalized
         if(active_pt->not_seen_in_last_keyframe_){
           if(!active_pt->active_point_removed_){
-            // active_pt->marginalize();
-            active_pt->to_marginalize_=true;
-            active_pt->active_point_removed_=true;
+            active_pt->marginalize();
+            // active_pt->to_marginalize_=true;
+            // active_pt->active_point_removed_=true;
             keyframe->num_marginalized_active_points_++;
             num_active_points_--;
           }

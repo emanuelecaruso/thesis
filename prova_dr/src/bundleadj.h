@@ -5,6 +5,21 @@
 
 class Dtam; //forward declaration
 
+class JacobiansBA{
+  public:
+    Eigen::Matrix<float,1,6>* J_r;
+    Eigen::Matrix<float,1,6>* J_m;
+    float J_d;
+
+    int J_r_block_idx = -1;
+    int J_m_block_idx = -1;
+    int J_d_block_idx = -1;
+
+    Eigen::Matrix<float,1,6>* getJr(ActivePointProjected* active_pt_proj);
+    Eigen::Matrix<float,1,6>* getJm(ActivePointProjected* active_pt_proj);
+    float getJd(ActivePointProjected* active_pt_proj);
+
+};
 
 class BundleAdj{
 
@@ -26,7 +41,8 @@ class BundleAdj{
     void activateNewPointsAndGetCoarseActivePoints();
     void collectCoarseActivePoints();
 
-
+    JacobiansBA* getJacobiansAndError(ActivePointProjected* active_pt_proj);
+    void optimize(int pose_block_size, int point_block_size);
     void optimize();
 
     inline void addKeyframe(int idx){
@@ -56,6 +72,7 @@ class BundleAdj{
     // void projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
     int selectNewActivePoints();
 
-
+    void marginalize();
+    void updateStateBlockIdxs(int& pose_block_size, int& point_block_size);
 
 };

@@ -106,13 +106,5 @@ disp(E);
 disp("F")
 disp(F);
 
-%% verify
-
-
-% A*u1+B*v1*C
-% -----------
-% D*u1+E*v1+F
-
-
 
 

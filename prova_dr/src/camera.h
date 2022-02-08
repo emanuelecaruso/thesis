@@ -298,8 +298,7 @@ class ActivePoint : public CandidateBase{
     grad_magnitude_(cand->grad_magnitude_),
     grad_phase_(cand->grad_phase_),
     not_seen_in_last_keyframe_(false),
-    to_marginalize_(false),
-    active_point_removed_(false)
+    state_point_block_idx_(-1)
     {}
 
     // coarse active point
@@ -324,8 +323,7 @@ class ActivePoint : public CandidateBase{
     grad_magnitude_(grad_magnitude),
     grad_phase_(grad_phase),
     not_seen_in_last_keyframe_(false),
-    to_marginalize_(false),
-    active_point_removed_(false)
+    state_point_block_idx_(-1)
     { }
 
 
@@ -339,6 +337,7 @@ class ActivePoint : public CandidateBase{
     const float grad_magnitude_;
     const float grad_phase_;
     bool not_seen_in_last_keyframe_;
+    int state_point_block_idx_;
     bool to_marginalize_;
     bool active_point_removed_;
 
@@ -524,7 +523,9 @@ class RegionsWithProjActivePoints : public RegionsWithCandidatesBase{
 
     RegionsWithProjActivePoints(Params* parameters, CameraForMapping* cam, int level):
     RegionsWithCandidatesBase( parameters, cam, level),
-    region_vec_(new std::vector<RegionWithProjActivePoints*>(num_of_regions_x*num_of_regions_y) )
+    region_vec_(new std::vector<RegionWithProjActivePoints*>(num_of_regions_x*num_of_regions_y) ),
+    active_points_proj_(new std::vector<ActivePointProjected*>)
+
     {
       for(int x=0; x<num_of_regions_x; x++){
         for(int y=0; y<num_of_regions_y; y++){
@@ -534,6 +535,8 @@ class RegionsWithProjActivePoints : public RegionsWithCandidatesBase{
       }
     };
     std::vector<RegionWithProjActivePoints*>* region_vec_;
+    std::vector<ActivePointProjected*>* active_points_proj_;
+
 
     inline void pushProjActivePoint(ActivePointProjected* proj_active_pt){
 
@@ -544,9 +547,12 @@ class RegionsWithProjActivePoints : public RegionsWithCandidatesBase{
       int reg_y = proj_active_pt->pixel_.y()/scale_offs;
       int idx = xyToIdx( reg_x, reg_y);
 
-      // push the projected candidate inside the region (sorted by invdepth var)
-      std::vector<ActivePointProjected*>* active_pt_vec_ = region_vec_->at(idx)->active_pts_proj_vec_;
-      active_pt_vec_->push_back(proj_active_pt);
+      // push the projected active point inside the region (sorted by invdepth var)
+      std::vector<ActivePointProjected*>* active_pt_proj_vec = region_vec_->at(idx)->active_pts_proj_vec_;
+      active_pt_proj_vec->push_back(proj_active_pt);
+
+      // push the projected active point inside the vector
+      active_points_proj_->push_back(proj_active_pt);
 
     }
 
@@ -573,12 +579,16 @@ class CameraForMapping: public Camera{
     std::vector<std::vector<Candidate*>*>* candidates_coarse_;
     std::vector<RegionsWithActivePoints*>* regions_coarse_active_pts_vec_;
     std::vector<std::vector<ActivePoint*>*>* active_points_coarse_;
+    std::vector<CameraForMapping*>* keyframes_linked_;
+    Vector6f* delta_update_ba_;
     int num_marginalized_active_points_;
     bool to_be_marginalized_ba_;
     bool active_points_removed_;
     bool added_ba_;
-
+    bool first_keyframe_;
     int n_candidates_;
+    int state_pose_block_idx_;
+
     friend class Mapper;
     friend class Dtam;
 
@@ -599,11 +609,15 @@ class CameraForMapping: public Camera{
            candidates_coarse_(new std::vector<std::vector<Candidate*>*>),
            regions_coarse_active_pts_vec_(new std::vector<RegionsWithActivePoints*>),
            active_points_coarse_(new std::vector<std::vector<ActivePoint*>*>),
+           keyframes_linked_(new std::vector<CameraForMapping*>),
+           delta_update_ba_(new Vector6f),
            num_marginalized_active_points_(0),
            to_be_marginalized_ba_(false),
            active_points_removed_(false),
            added_ba_(false),
-           n_candidates_(0)
+           first_keyframe_(false),
+           n_candidates_(0),
+           state_pose_block_idx_(-1)
            {
              // iterate along all coarser levels
              for(int i=1; i<=parameters->coarsest_level; i++){

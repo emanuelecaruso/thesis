@@ -34,7 +34,7 @@ pretty(simplify(slv_d2,'Steps',1000));
 
 %%
 
-% u2=f(u1,v1,d1) (get bound as u2)
+% u2=f(u1,v1,d1) (get coord as u2)
 disp("u2")
 expr2 = mlt(1) == a(1);
 slv_u2 = solve(expr2,u2);
@@ -87,7 +87,7 @@ disp(H);
 
 %%
 
-% v2=f(u1,v1,d1) (get bound as v2)
+% v2=f(u1,v1,d1) (get coord as v2)
 disp("v2")
 expr3 = mlt(2) == a(2);
 slv_v2 = solve(expr3,v2);

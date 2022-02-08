@@ -362,8 +362,8 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
                    0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
 
-  state_jacobian << 1, 0, 0,  0                   ,  point_newframe.z()  , -point_newframe.y(),
-                    0, 1, 0, -point_newframe.z() ,  0                    ,  point_newframe.x(),
+  state_jacobian << 1, 0, 0,  0                  ,  point_newframe.z()  , -point_newframe.y(),
+                    0, 1, 0, -point_newframe.z() ,  0                   ,  point_newframe.x(),
                     0, 0, 1,  point_newframe.y() , -point_newframe.x()  ,  0         ;
 
   normalizer_jacobian << -active_pt->uv_.x()/pow(invdepth,2),
