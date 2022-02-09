@@ -354,7 +354,7 @@ Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePointProjected* active_pt_proj,
 
   Eigen::Matrix<float,1,6>* J_r = new Eigen::Matrix<float,1,6>;
   // *J_r=((*J_first)*state_jacobian)/normalizer;
-  *J_r=(*J_first)*(cam_m->frame_world_wrt_camera_->linear())*state_jacobian;
+  *J_r=((*J_first)*(cam_m->frame_world_wrt_camera_->linear()))*state_jacobian;
 
   return J_r;
 }
@@ -380,8 +380,18 @@ Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePointProjected* active_pt_proj,
 
 float BundleAdj::getJd(ActivePointProjected* active_pt_proj, Eigen::Matrix<float,1,3>* J_first){
   ActivePoint* active_pt = active_pt_proj->active_point_;
+  CameraForMapping* cam_m = active_pt_proj->cam_;
+  CameraForMapping* cam_r = active_pt->cam_;
 
-  return 1;
+  Eigen::Matrix<float, 3,1> invdepth_jacobian;
+
+  invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_0_,2),
+                       -active_pt->uv_.y()/pow(active_pt->invdepth_0_,2),
+                       -1/pow(active_pt->invdepth_0_,2);
+
+  float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_->linear()))*(cam_r->frame_camera_wrt_world_->linear()))*invdepth_jacobian;
+
+  return J_d;
 }
 
 float BundleAdj::getError(ActivePointProjected* active_pt_proj){
@@ -394,6 +404,55 @@ float BundleAdj::getError(ActivePointProjected* active_pt_proj){
 
   return error;
 }
+
+void HessianAndB::updateHessianAndB(JacobiansBA* jacobians, float error){
+
+  Eigen::Matrix<float,1,6> J_r = *(jacobians->J_r);
+  Eigen::Matrix<float,1,6> J_m = *(jacobians->J_m);
+  float J_d = jacobians->J_d;
+  Eigen::Matrix<float,6,1> J_r_transp = *(jacobians->J_r_transp);
+  Eigen::Matrix<float,6,1> J_m_transp = *(jacobians->J_m_transp);
+  const int r = jacobians->J_r_block_idx;
+  const int m = jacobians->J_m_block_idx;
+  const int d = jacobians->J_d_block_idx;
+
+  // ********** update H **********
+  // pose pose block
+  // O-
+  // --
+  H_pose_pose->block(m,m,6,6)=J_m_transp*J_m;
+  H_pose_pose->block(r,m,6,6)=J_r_transp*J_m;
+  H_pose_pose->block(m,r,6,6)=J_m_transp*J_r;
+  H_pose_pose->block(r,r,6,6)=J_r_transp*J_r;
+
+  // pose point block
+  // -O
+  // --
+  H_pose_point->block(m,d,6,1)=J_m_transp*J_d;
+  H_pose_point->block(r,d,6,1)=J_r_transp*J_d;
+
+  // point pose block
+  // --
+  // O-
+  H_point_pose->block(d,m,1,6)=J_d*J_m;
+  H_point_pose->block(d,r,1,6)=J_d*J_r;
+
+  // point point block
+  // --
+  // -O
+  (*H_point_point)(d,d)=J_d*J_d;
+
+  // ********** update b **********
+  // pose block
+  b_pose->block(m,1,6,1)=J_m*error;
+  b_pose->block(r,1,6,1)=J_r*error;
+
+  // point block
+  (*b_point)(d,1)=J_d*error;
+
+
+}
+
 
 JacobiansBA* BundleAdj::getJacobians(ActivePointProjected* active_pt_proj){
 
@@ -412,29 +471,24 @@ JacobiansBA* BundleAdj::getJacobians(ActivePointProjected* active_pt_proj){
   int J_m_block_idx = active_pt_proj->cam_->state_pose_block_idx_;
   int J_d_block_idx = active_pt_proj->active_point_->state_point_block_idx_;
 
-  // JacobiansBA* jacobians = new JacobiansBA();
+  JacobiansBA* jacobians = new JacobiansBA(J_r,J_m,J_d,J_r_block_idx,J_m_block_idx,J_d_block_idx);
 }
 
 void BundleAdj::optimize(int pose_block_size, int point_block_size ){
 
-  // initialize H blocks
-  Eigen::MatrixXf H_pose_pose(pose_block_size,point_block_size);
-  Eigen::MatrixXf H_pose_point(point_block_size,point_block_size);
-  Eigen::MatrixXf H_point_pose(pose_block_size,point_block_size);
-  Eigen::MatrixXf H_point_point(point_block_size,point_block_size);
-
-  // initialize b blocks
-  Eigen::MatrixXf b_pose(pose_block_size,1);
-  Eigen::MatrixXf b_point(point_block_size,1);
+  HessianAndB* hessian_b = new HessianAndB(pose_block_size, point_block_size);
 
   // iterate through keyframes
   for(int i=0; i<keyframe_vector_ba_->size(); i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     // iterate through projected active points
     for( ActivePointProjected* active_pt_proj : *(keyframe->regions_projected_active_points_->active_points_proj_)){
-
+      JacobiansBA* jacobians = getJacobians(active_pt_proj);
+      float error = getError(active_pt_proj);
+      hessian_b->updateHessianAndB(jacobians, error)
     }
   }
+
 
 }
 
