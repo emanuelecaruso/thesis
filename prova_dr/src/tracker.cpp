@@ -239,7 +239,6 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
 bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
-  float gauss_img_intensity_noise = 0.01;// Gaussian image intensity noise
   Eigen::Matrix3f K = *(frame_new->K_);
   Eigen::Matrix3f Kinv = *(frame_new->Kinv_);
   float variance = dtam_->parameters_->variance;
@@ -254,8 +253,6 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
   Eigen::Vector3f* point_incamframe = cand->p_incamframe_;
   float invdepth = cand->invdepth_;
   float invdepth_var = cand->invdepth_var_;
-  float invdepth_der = -1/pow(invdepth,2);
-  Eigen::Isometry3f* w_T_candframe = cand->cam_->frame_camera_wrt_world_;
 
   point_newframe= current_guess*(*point);
 
@@ -321,7 +318,6 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
 bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* active_pt, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
-  float gauss_img_intensity_noise = 0.01;// Gaussian image intensity noise
   Eigen::Matrix3f K = *(frame_new->K_);
   Eigen::Matrix3f Kinv = *(frame_new->Kinv_);
   float variance = dtam_->parameters_->variance;
@@ -336,8 +332,6 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_0_; // 3D point wrt cam frame
   float invdepth = active_pt->invdepth_;
   float invdepth_var = active_pt->invdepth_var_;
-  float invdepth_der = -1/pow(invdepth,2);
-  Eigen::Isometry3f* w_T_candframe = active_pt->cam_->frame_camera_wrt_world_;
 
   point_newframe= current_guess*(*point);
 

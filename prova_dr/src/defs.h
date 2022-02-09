@@ -366,7 +366,8 @@ namespace pr {
     return huber_norm_der;
   }
 
-  inline Eigen::Isometry3f v2t(const Vector6f& t){
+  inline Eigen::Isometry3f v2t(Vector6f& t){
+    // t_inv is new_T_old
     Eigen::Isometry3f T;
     T.translation()=t.head<3>();
     float a = t(3);
@@ -379,7 +380,8 @@ namespace pr {
     return T;
   }
 
-  inline Eigen::Isometry3f v2t_inv(const Vector6f& t){
+  inline Eigen::Isometry3f v2t_inv(Vector6f& t){
+    // t_inv is old_T_new
     Eigen::Isometry3f T;
 
     float a = t(3);

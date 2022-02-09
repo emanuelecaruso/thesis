@@ -287,25 +287,98 @@ void BundleAdj::updateStateBlockIdxs(int& pose_block_size, int& point_block_size
 
 }
 
-Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePointProjected* active_pt_proj){
+Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePointProjected* active_pt_proj, Eigen::Vector3f& point_m){
   ActivePoint* active_pt = active_pt_proj->active_point_;
-  CameraForMapping* keyframe = active_pt->cam_;
+  CameraForMapping* cam_m = active_pt_proj->cam_;
+  CameraForMapping* cam_r = active_pt->cam_;
+
+  float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
+  Eigen::Matrix3f K = *(cam_m->K_);
+  float variance = dtam_->parameters_->variance;
+  int ni = dtam_->parameters_->robustifier_dofs;
+  float coeff = pixels_meter_ratio/pow(2,active_pt->level_+1);
+
+  // variables
+  Eigen::Vector2f uv_newframe;
+  Eigen::Vector2i pixel_newframe;
+  Eigen::Vector3f* point = active_pt->p_0_; // 3D point wrt world frame
+
+  point_m= *(cam_m->frame_world_wrt_camera_)*(*point);
+
+  Eigen::Vector3f p_proj = K*point_m;
+  // return false if the projected point is behind the camera
+  if (p_proj.z()<cam_m->cam_parameters_->lens)
+    return nullptr;
+  uv_newframe = p_proj.head<2>()*(1./p_proj.z());
+
+  cam_m->projectPointInCamFrame( point_m, uv_newframe );
+  cam_m->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
+
+  if(!cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_newframe))
+    return nullptr;
+
+  Eigen::Matrix<float, 2,3> proj_jacobian;
+  Eigen::Matrix<float, 2,6> jacobian_to_mul;
+  Eigen::Matrix<float, 2,1> jacobian_to_mul_normalizer;
+  // Eigen::Matrix<float, 3,1> invdepth_jacobian;
+
+  // invdepth_jacobian << -active_pt->uv_.x()/pow(invdepth,2),
+  //                        -active_pt->uv_.y()/pow(invdepth,2),
+  //                        -1/pow(invdepth,2);
+  //
+  // jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(active_pt->cam_->frame_camera_wrt_world_->linear()*invdepth_jacobian)));
+
+
+  proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
+                   0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
+
+  Eigen::Matrix<float, 1,2> img_jacobian;
+  img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixel(pixel_newframe), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixel(pixel_newframe);
+
+  Eigen::Matrix<float,1,3>* J_first;
+  *J_first = coeff*((img_jacobian*proj_jacobian)*K);
+  return J_first;
+}
+
+Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePointProjected* active_pt_proj, Eigen::Matrix<float,1,3>* J_first){
+  ActivePoint* active_pt = active_pt_proj->active_point_;
+  CameraForMapping* cam_m = active_pt->cam_;
+
+  Eigen::Vector3f point = *(active_pt->p_0_);
+  Eigen::Matrix<float, 3,6> state_jacobian;
+
+  state_jacobian << 1, 0, 0,  0         ,  point.z()  , -point.y(),
+                    0, 1, 0, -point.z() ,  0          ,  point.x(),
+                    0, 0, 1,  point.y() , -point.x()  ,  0         ;
+
 
   Eigen::Matrix<float,1,6>* J_r = new Eigen::Matrix<float,1,6>;
+  // *J_r=((*J_first)*state_jacobian)/normalizer;
+  *J_r=(*J_first)*(cam_m->frame_world_wrt_camera_->linear())*state_jacobian;
 
   return J_r;
 }
 
-Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePointProjected* active_pt_proj){
-  ActivePoint* active_pt = active_pt_proj->active_point_;
-  CameraForMapping* keyframe = active_pt_proj->cam_;
+Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePointProjected* active_pt_proj, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m){
+
+
+  Eigen::Matrix<float, 3,6> state_jacobian;
+
+  state_jacobian << 1, 0, 0,  0           ,  point_m.z()  , -point_m.y(),
+                    0, 1, 0, -point_m.z() ,  0            ,  point_m.x(),
+                    0, 0, 1,  point_m.y() , -point_m.x()  ,  0         ;
+
 
   Eigen::Matrix<float,1,6>* J_m = new Eigen::Matrix<float,1,6>;
+  // *J_m=(coeff*(img_jacobian*jacobian_to_mul))/normalizer;
+  *J_m=(*J_first)*state_jacobian;
+
+
 
   return J_m;
 }
 
-float BundleAdj::getJd(ActivePointProjected* active_pt_proj){
+float BundleAdj::getJd(ActivePointProjected* active_pt_proj, Eigen::Matrix<float,1,3>* J_first){
   ActivePoint* active_pt = active_pt_proj->active_point_;
 
   return 1;
@@ -313,18 +386,31 @@ float BundleAdj::getJd(ActivePointProjected* active_pt_proj){
 
 float BundleAdj::getError(ActivePointProjected* active_pt_proj){
   float z = active_pt_proj->active_point_->intensity_;
-  // z_hat = active_pt_proj->cam_->wavelet_dec_->getWavLevel(active_pt_proj->level_)->c->evalPixel(pixel_newframe);
+  float z_hat = active_pt_proj->cam_->wavelet_dec_->getWavLevel(active_pt_proj->level_)->c->evalPixel(active_pt_proj->pixel_);
+
+  // error
+  // float error = (z_hat-z)/normalizer;
+  float error = (z_hat-z);
+
+  return error;
 }
 
 JacobiansBA* BundleAdj::getJacobians(ActivePointProjected* active_pt_proj){
 
-  Eigen::Matrix<float,1,6>* J_r = getJr(active_pt_proj);
-  Eigen::Matrix<float,1,6>* J_m = getJm(active_pt_proj);
-  float J_d = getJd(active_pt_proj);
+  Eigen::Matrix<float,1,3>* J_1;
+  Eigen::Vector3f point_m;
+  J_1= getJfirst( active_pt_proj,  point_m);
 
-  int J_r_block_idx = -1;
-  int J_m_block_idx = -1;
-  int J_d_block_idx = -1;
+  if (J_1==nullptr)
+    return nullptr;
+
+  Eigen::Matrix<float,1,6>* J_r = getJr(active_pt_proj, J_1);
+  Eigen::Matrix<float,1,6>* J_m = getJm(active_pt_proj, J_1, point_m);
+  float J_d = getJd(active_pt_proj, J_1);
+
+  int J_r_block_idx = active_pt_proj->active_point_->cam_->state_pose_block_idx_;
+  int J_m_block_idx = active_pt_proj->cam_->state_pose_block_idx_;
+  int J_d_block_idx = active_pt_proj->active_point_->state_point_block_idx_;
 
   // JacobiansBA* jacobians = new JacobiansBA();
 }
@@ -392,12 +478,52 @@ ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamC
 
 }
 
+void BundleAdj::updateCurrentGuess(){
+  // update p_incamframe_
+}
+
+void BundleAdj::updateProjActivePoints(){
+  int num_active_points_outside_frustum = 0;
+  // iterate through all keyframe
+  for (int i=0; i<keyframe_vector_ba_->size(); i++){
+    CameraForMapping* cam_m = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+
+    // iterate through projected active points
+    for(ActivePointProjected* active_pt_proj : *(cam_m->regions_projected_active_points_->active_points_proj_)){
+      ActivePoint* active_pt = active_pt_proj->active_point_;
+      CameraForMapping* cam_r = active_pt->cam_;
+      // point wrt world
+      Eigen::Vector3f p = (*(cam_r->frame_camera_wrt_world_))*v2t_inv(*(cam_r->delta_update_x_))*(*(active_pt->p_incamframe_));
+      // point wrt cam m
+      Eigen::Vector3f p_cam_m = v2t(*(cam_r->delta_update_x_))*(*(cam_m->frame_world_wrt_camera_))*p;
+      Eigen::Vector2f uv;
+      cam_m->projectPointInCamFrame(p_cam_m, uv);
+
+      Eigen::Vector2i pixel;
+      cam_m->uv2pixelCoords(uv, pixel, active_pt->level_);
+
+      if (active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c->pixelInRange(pixel))
+      {
+        active_pt_proj->uv_=uv;
+        active_pt_proj->pixel_=pixel;
+        active_pt_proj->invdepth_=1.0/p_cam_m.z();
+      }else{
+        // active_pt_proj->marginalize(); TODO
+        num_active_points_outside_frustum++;
+      }
+
+    }
+  }
+  if (num_active_points_outside_frustum)
+    std::cout << "ATTENZIONEEEEEEEE, PUNTI FUORI CON OPT " << num_active_points_outside_frustum << std::endl;
+}
+
 void BundleAdj::projectActivePoints(){
 
   CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
   int n_active_points_not_observed =0;
 
-  // iterate through all keyframe candidates (except the last)
+  // iterate through all keyframe (except the last)
   for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));

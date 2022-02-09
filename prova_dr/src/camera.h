@@ -146,10 +146,10 @@ class CameraForMapping;
 class CandidateBase{
   public:
     const int level_;
-    const Eigen::Vector2i pixel_;
-    const Eigen::Vector2f uv_;
+    Eigen::Vector2i pixel_;
+    Eigen::Vector2f uv_;
 
-    CandidateBase(const int level, const Eigen::Vector2i& pixel, const Eigen::Vector2f& uv):
+    CandidateBase(const int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv):
     level_(level), pixel_(pixel), uv_(uv){};
 };
 
@@ -294,6 +294,7 @@ class ActivePoint : public CandidateBase{
     // current guess
     invdepth_(cand->invdepth_),
     invdepth_var_(cand->invdepth_var_),
+    p_incamframe_(cand->p_incamframe_),
     // tangent space point
     p_incamframe_0_(cand->p_incamframe_),
     p_0_(cand->p_),
@@ -329,6 +330,7 @@ class ActivePoint : public CandidateBase{
     // current guess
     invdepth_(invdepth),
     invdepth_var_(invdepth_var),
+    p_incamframe_(p_incamframe),
     // tangent space point
     p_incamframe_0_(p_incamframe),
     p_0_(p),
@@ -353,6 +355,7 @@ class ActivePoint : public CandidateBase{
     // current guess
     float invdepth_;
     float invdepth_var_;
+    Eigen::Vector3f* p_incamframe_;
     // tangent space point
     Eigen::Vector3f* p_incamframe_0_;
     Eigen::Vector3f* p_0_;
