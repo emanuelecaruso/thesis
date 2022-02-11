@@ -663,7 +663,7 @@ class CameraForMapping: public Camera{
                active_points_coarse_->push_back(new std::vector<ActivePoint*>);
              }
 
-
+             delta_update_x_->setZero();
            };
 
     // CameraForMapping(const std::string& name, const CamParameters* cam_parameters,

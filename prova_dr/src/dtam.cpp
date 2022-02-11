@@ -294,7 +294,6 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
     // optimize
     bundle_adj_->optimize();
 
-
     // after optimization
     // std::cout << "OPTIMIZATION WAIT NEW FRAME " << std::endl;
     if(!update_cameras_thread_finished_ )

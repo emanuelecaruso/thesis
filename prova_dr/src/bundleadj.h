@@ -5,32 +5,52 @@
 
 class Dtam; //forward declaration
 
+class deltaUpdateIncrements{
+  public:
+    Eigen::VectorXf* dx_poses;
+    Eigen::VectorXf* dx_points;
 
-class JacobiansBA{
+    deltaUpdateIncrements(Eigen::VectorXf* dx_poses_, Eigen::VectorXf* dx_points_):
+    dx_poses(dx_poses_),
+    dx_points(dx_points_){}
+};
+
+class JacobiansAndError{
   public:
     Eigen::Matrix<float,1,6>* J_r;
     Eigen::Matrix<float,1,6>* J_m;
-    float J_d;
+    Eigen::Matrix<float,1,1>* J_d;
     Eigen::Matrix<float,6,1>* J_r_transp;
     Eigen::Matrix<float,6,1>* J_m_transp;
 
-    const int J_r_block_idx = -1;
-    const int J_m_block_idx = -1;
-    const int J_d_block_idx = -1;
+    ActivePoint* active_pt;
+    CameraForMapping* cam_m;
 
-    JacobiansBA(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, float J_d_,
-                int J_r_block_idx_, int J_m_block_idx_, int J_d_block_idx_ ):
+    float error;
+
+    JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, Eigen::Matrix<float,1,1>* J_d_,
+                      CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_ ):
     J_r(J_r_),
     J_m(J_m_),
+    J_d(J_d_),
     J_r_transp(new Eigen::Matrix<float,6,1>),
     J_m_transp(new Eigen::Matrix<float,6,1>),
-    J_d(J_d_),
-    J_r_block_idx(J_r_block_idx_),
-    J_m_block_idx(J_m_block_idx_),
-    J_d_block_idx(J_d_block_idx_)
+
+    active_pt(active_pt_),
+    cam_m(cam_m_),
+
+    error(error_)
     {
       *J_r_transp=J_r_->transpose();
       *J_m_transp=J_m_->transpose();
+    }
+
+    ~JacobiansAndError(){
+      delete J_r;
+      delete J_m;
+      delete J_d;
+      delete J_r_transp;
+      delete J_m_transp;
     }
 
 };
@@ -39,17 +59,22 @@ class JacobiansBA{
 class HessianAndB{
   public:
 
-    HessianAndB(int pose_block_size, int point_block_size ):
+    HessianAndB(int pose_block_size_, int point_block_size_ ):
+
+    // block sizes
+    pose_block_size(pose_block_size_),
+    point_block_size(point_block_size_),
 
     // initialize H blocks
-    H_pose_pose(new Eigen::MatrixXf(pose_block_size,point_block_size) ),
-    H_pose_point(new Eigen::MatrixXf(point_block_size,point_block_size)),
-    H_point_pose(new Eigen::MatrixXf(pose_block_size,point_block_size)),
-    H_point_point(new Eigen::MatrixXf(point_block_size,point_block_size)),
+    H_pose_pose(new Eigen::MatrixXf(pose_block_size_,pose_block_size_) ),
+    H_pose_point(new Eigen::MatrixXf(pose_block_size_,point_block_size_)),
+    H_point_pose(new Eigen::MatrixXf(point_block_size_,pose_block_size_)),
+    H_point_point(new Eigen::MatrixXf(point_block_size_,point_block_size_)),
+    // H_point_point_(new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size_) ),
 
     // initialize b blocks
-    b_pose(new Eigen::MatrixXf(pose_block_size,1)),
-    b_point(new Eigen::MatrixXf(point_block_size,1))
+    b_pose(new Eigen::VectorXf(pose_block_size_)),
+    b_point(new Eigen::VectorXf(point_block_size_))
     {
       H_pose_pose->setZero();
       H_pose_point->setZero();
@@ -57,18 +82,60 @@ class HessianAndB{
       H_point_point->setZero();
       b_pose->setZero();
       b_point->setZero();
+
     }
 
-    void updateHessianAndB(JacobiansBA* jacobians, float error);
+    ~HessianAndB(){
+      delete H_pose_pose;
+      delete H_pose_point;
+      delete H_point_pose;
+      delete H_point_point;
+      delete b_pose;
+      delete b_point;
+    }
 
-  private:
+    inline void thisIsNan(){
+      if (isNan(*H_pose_pose)){
+        std::cout << "H_pose_pose is nan"<<std::endl;
+        exit(1);
+      }
+      if (isNan(*H_pose_point)){
+        std::cout << "H_pose_point is nan"<<std::endl;
+        exit(1);
+      }
+      if (isNan(*H_point_pose)){
+        std::cout << "H_point_pose is nan"<<std::endl;
+        exit(1);
+      }
+      if (isNan(*H_point_point)){
+        std::cout << "H_point_point is nan"<<std::endl;
+        exit(1);
+      }
+      if (isNan(*b_pose)){
+        std::cout << "b_pose is nan"<<std::endl;
+        exit(1);
+      }
+      if (isNan(*b_point)){
+        std::cout << "b_point is nan"<<std::endl;
+        exit(1);
+      }
+    }
+
+    void updateHessianAndB(JacobiansAndError* jacobians_and_error );
+    void visualizeH();
+    deltaUpdateIncrements* getDeltaUpdateIncrements();
+
+    int pose_block_size;
+    int point_block_size;
+
     Eigen::MatrixXf* H_pose_pose;
     Eigen::MatrixXf* H_pose_point;
     Eigen::MatrixXf* H_point_pose;
     Eigen::MatrixXf* H_point_point;
+    // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_;
 
-    Eigen::MatrixXf* b_pose;
-    Eigen::MatrixXf* b_point;
+    Eigen::VectorXf* b_pose;
+    Eigen::VectorXf* b_point;
 
 };
 
@@ -94,9 +161,9 @@ class BundleAdj{
     void activateNewPointsAndGetCoarseActivePoints();
     void collectCoarseActivePoints();
 
-    JacobiansBA* getJacobians(ActivePointProjected* active_pt_proj);
+    JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m);
 
-    void optimize(int pose_block_size, int point_block_size);
+    void optimizationStep();
     void optimize();
 
     inline void addKeyframe(int idx){
@@ -129,10 +196,10 @@ class BundleAdj{
     void marginalize();
     void updateStateBlockIdxs(int& pose_block_size, int& point_block_size);
 
-    Eigen::Matrix<float,1,3>* getJfirst(ActivePointProjected* active_pt_proj, Eigen::Vector3f& point_m);
-    Eigen::Matrix<float,1,6>* getJr(ActivePointProjected* active_pt_proj, Eigen::Matrix<float,1,3>* J_first);
-    Eigen::Matrix<float,1,6>* getJm(ActivePointProjected* active_pt_proj, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m);
-    float getJd(ActivePointProjected* active_pt_proj, Eigen::Matrix<float,1,3>* J_first);
-    float getError(ActivePointProjected* active_pt_proj);
+    Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, Eigen::Vector2i& pixel_m);
+    Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
+    Eigen::Matrix<float,1,6>* getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m);
+    Eigen::Matrix<float,1,1>* getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
+    float getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector2i& pixel_m);
 
 };
