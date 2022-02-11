@@ -259,31 +259,7 @@ void BundleAdj::marginalize(){
 
 }
 
-void BundleAdj::updateStateBlockIdxs(int& pose_block_size, int& point_block_size){
 
-  int num_active_keyframes=0;
-  int num_keyframes_to_be_marginalized=0;
-  int num_active_points_=0;
-  // iterate through all keyframes
-  for (int i=0; i<keyframe_vector_ba_->size(); i++){
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
-
-    if(!keyframe->to_be_marginalized_ba_){
-      // set state pose block idx
-      keyframe->state_pose_block_idx_=num_active_keyframes*6;
-      num_active_points_+=keyframe->active_points_->size();
-      num_active_keyframes++;
-    }
-    else{
-      num_keyframes_to_be_marginalized++;
-    }
-  }
-
-  pose_block_size=num_active_keyframes*6;
-  point_block_size=num_active_points_;
-
-
-}
 
 Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, Eigen::Vector2i& pixel_m){
   CameraForMapping* cam_r = active_pt->cam_;
@@ -303,7 +279,7 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
 
 
   point_m_0= *(cam_m->frame_world_wrt_camera_)*(*point_0);
-  Eigen::Vector3f point_m= (v2t(*(cam_m->delta_update_x_))*((*(cam_m->frame_world_wrt_camera_))*((*(cam_r->frame_camera_wrt_world_))*(v2t_inv(*(cam_r->delta_update_x_))*(*p_incamframe)))));
+  Eigen::Vector3f point_m= (v2t(*(cam_m->delta_update_x_))*((*(cam_m->frame_world_wrt_camera_))*(*active_pt->p_)));
 
   Eigen::Vector3f p_proj_0 = K*point_m_0;
   // return false if the projected point is behind the camera
@@ -481,9 +457,20 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
   J_1= getJfirst( active_pt, cam_m,  point_m_0, pixel_m);
 
   if (J_1==nullptr)
-  return nullptr;
+    return nullptr;
 
   float error = getError( active_pt, cam_m ,pixel_m);
+  float error_eps = 0.000001;
+  // // saturate error
+  // if (error<error_eps)
+  //   error=error_eps;
+
+  // add error eps
+  error+=error_eps;
+
+  // // do not consider measurement
+  // if (error<error_eps)
+  //   return nullptr;
 
   Eigen::Matrix<float,1,6>* J_r = getJr( active_pt, cam_m, J_1);
   Eigen::Matrix<float,1,6>* J_m = getJm( active_pt, cam_m, J_1, point_m_0);
@@ -505,13 +492,38 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
 
   *dx_poses =  Schur_inv * ( (*b_pose) - (*H_pose_point)*H_point_point_inv*(*b_point) );
   *dx_points = (H_point_point_inv*(*b_point))-(H_point_point_inv*(*H_point_pose)*(*dx_poses));
+
+
+  deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
+  return delta;
+}
+
+void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
+  // iterate through cameras
+  for(int i=0; i<keyframe_vector_ba_->size() ; i++){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+    if (keyframe->state_pose_block_idx_!=-1){
+      // update delta update of keyframe
+      // regular sum in tangent space
+      (*keyframe->delta_update_x_)+=delta->dx_poses->segment(keyframe->state_pose_block_idx_,6);
+
+      // iterate through all active points
+      for(int j=0; j<keyframe->active_points_->size() ; j++){
+        ActivePoint* active_pt = keyframe->active_points_->at(j);
+        // update delta update of active point
+        // regular sum since invdepth is in R
+        active_pt->delta_update_x_+=(*(delta->dx_points))(active_pt->state_point_block_idx_);
+        active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
+        keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
+        // *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
+        // propagate uncertainty TODO
+      }
+    }
+  }
+
 }
 
 void BundleAdj::optimizationStep( ){
-
-  // // get state sizes
-  // int pose_block_size=0, point_block_size=0;
-  // updateStateBlockIdxs(pose_block_size, point_block_size);
 
 
   int n_cams = 0;
@@ -551,9 +563,14 @@ void BundleAdj::optimizationStep( ){
         active_pt->state_point_block_idx_=n_points;
         n_points++;
       }
+      else{
+        active_pt->state_point_block_idx_=-1;
+      }
     }
-    if (!cam_taken)
+    if (!cam_taken){
+      keyframe->state_pose_block_idx_=-1;
       std::cout << "AOOOOOOOOOOO LA CAM NON C'EEEEEE " << std::endl;
+    }
     else{
       keyframe->state_pose_block_idx_=n_cams*6;
       n_cams++;
@@ -565,7 +582,7 @@ void BundleAdj::optimizationStep( ){
 
   // create Hessian and b vector
   HessianAndB* hessian_b = new HessianAndB(n_cams*6, n_points);
-  //
+  // for each measurement update Hessian and b vector
   for(int i=0; i<jacobians_and_error_vec->size(); i++){
     JacobiansAndError* jacobians_and_error = jacobians_and_error_vec->at(i);
     hessian_b->updateHessianAndB( jacobians_and_error );
@@ -578,8 +595,9 @@ void BundleAdj::optimizationStep( ){
   // std::cout << "NUM SUPPRESSED MEASUREMENT: " << n_suppressed_measurement << std::endl;
 
   // get delta update
-  // delta =
-  // update x in each cam and active point
+  deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
+  // // update x in each cam and active point
+  updateDeltaUpdates(delta);
 
   // update
 
@@ -591,7 +609,7 @@ void BundleAdj::optimize(){
   double t_start=getTime();
 
   // marginalize
-  marginalize();
+  // marginalize();
 
   // optimize
   optimizationStep( );
@@ -600,7 +618,7 @@ void BundleAdj::optimize(){
 
 }
 
-ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple){
+ActivePointProjected* BundleAdj::projectActivePoint0(ActivePoint* active_pt, CamCouple* cam_couple){
 
 
     Eigen::Vector3f p;
@@ -608,8 +626,8 @@ ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamC
     Eigen::Vector2i pixel_coords;
     float depth_m;
 
-    cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_, depth_m );
-    cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_, uv.x(), uv.y() );
+    cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_0_, depth_m );
+    cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_0_, uv.x(), uv.y() );
 
     cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, active_pt->level_);
 
@@ -622,6 +640,12 @@ ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamC
 
 }
 
+
+ActivePointProjected* BundleAdj::projectActivePoint_(ActivePoint* active_pt, CamCouple* cam_couple){
+
+
+}
+
 void BundleAdj::updateCurrentGuess(){
   // update p_incamframe_
 
@@ -630,43 +654,8 @@ void BundleAdj::updateCurrentGuess(){
   // update invdepth_var_
 }
 
-void BundleAdj::updateProjActivePoints(){
-  int num_active_points_outside_frustum = 0;
-  // iterate through all keyframe
-  for (int i=0; i<keyframe_vector_ba_->size(); i++){
-    CameraForMapping* cam_m = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
 
-    // iterate through projected active points
-    for(ActivePointProjected* active_pt_proj : *(cam_m->regions_projected_active_points_->active_points_proj_)){
-      ActivePoint* active_pt = active_pt_proj->active_point_;
-      CameraForMapping* cam_r = active_pt->cam_;
-      // point wrt world
-      Eigen::Vector3f p = (*(cam_r->frame_camera_wrt_world_))*v2t_inv(*(cam_r->delta_update_x_))*(*(active_pt->p_incamframe_));
-      // point wrt cam m
-      Eigen::Vector3f p_cam_m = v2t(*(cam_r->delta_update_x_))*(*(cam_m->frame_world_wrt_camera_))*p;
-      Eigen::Vector2f uv;
-      cam_m->projectPointInCamFrame(p_cam_m, uv);
-
-      Eigen::Vector2i pixel;
-      cam_m->uv2pixelCoords(uv, pixel, active_pt->level_);
-
-      if (active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c->pixelInRange(pixel))
-      {
-        active_pt_proj->uv_=uv;
-        active_pt_proj->pixel_=pixel;
-        active_pt_proj->invdepth_=1.0/p_cam_m.z();
-      }else{
-        // active_pt_proj->marginalize(); TODO
-        num_active_points_outside_frustum++;
-      }
-
-    }
-  }
-  if (num_active_points_outside_frustum)
-    std::cout << "ATTENZIONEEEEEEEE, PUNTI FUORI CON OPT " << num_active_points_outside_frustum << std::endl;
-}
-
-void BundleAdj::projectActivePoints(){
+void BundleAdj::projectActivePoints0(){
 
   CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
   int n_active_points_not_observed =0;
@@ -694,7 +683,76 @@ void BundleAdj::projectActivePoints(){
       // }
 
       // project active point in new keyframe
-      ActivePointProjected* active_point_proj = projectActivePoint(active_pt, cam_couple);
+      ActivePointProjected* active_point_proj = projectActivePoint0(active_pt, cam_couple);
+      // if active point is in frustum
+      if (active_point_proj!=nullptr){
+
+        // push active point projected
+        if(!keyframe_link){
+          keyframe_link=true;
+          // push keyframe link
+          keyframe->keyframes_linked_->push_back(last_keyframe);
+        }
+        active_point_proj->cam_->regions_projected_active_points_->pushProjActivePoint(active_point_proj);
+      }
+      // otherwise
+      else{
+        // if already not seen in last keyframe, it has to be marginalized
+        if(active_pt->not_seen_in_last_keyframe_){
+          if(!active_pt->active_point_removed_){
+            active_pt->marginalize();
+            // active_pt->to_marginalize_=true;
+            // active_pt->active_point_removed_=true;
+            keyframe->num_marginalized_active_points_++;
+            num_active_points_--;
+          }
+          continue;
+        }
+        // else mark as not seen
+        else{
+          active_pt->not_seen_in_last_keyframe_=true;
+          n_active_points_not_observed++;
+        }
+      }
+
+
+      // put it in the relative region
+
+    }
+  }
+
+}
+
+
+void BundleAdj::projectActivePoints_(){
+
+  CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+  int n_active_points_not_observed =0;
+
+  // iterate through all keyframe (except the last)
+  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
+
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+
+    if (keyframe->to_be_marginalized_ba_){
+      if(!keyframe->active_points_removed_ ){
+        num_active_points_-=(keyframe->active_points_->size()-keyframe->num_marginalized_active_points_);
+        keyframe->active_points_removed_=true;
+      }
+      continue;
+    }
+
+    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
+    bool keyframe_link = false;
+    // iterate along all active points
+    for (ActivePoint* active_pt : *keyframe->active_points_){
+
+      // if(active_pt->to_marginalize_){
+      //   continue;
+      // }
+
+      // project active point in new keyframe
+      ActivePointProjected* active_point_proj = projectActivePoint_(active_pt, cam_couple);
       // if active point is in frustum
       if (active_point_proj!=nullptr){
 

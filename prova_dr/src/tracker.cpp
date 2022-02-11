@@ -330,7 +330,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   Eigen::Vector3f point_newframe;
   Eigen::Vector3f* point = active_pt->p_0_; // 3D point wrt world frame
   Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_0_; // 3D point wrt cam frame
-  float invdepth = active_pt->invdepth_;
+  float invdepth = active_pt->invdepth_0_;
   float invdepth_var = active_pt->invdepth_var_;
 
   point_newframe= current_guess*(*point);

@@ -124,10 +124,12 @@ class BundleAdj{
     {};
 
 
-    void projectActivePoints();
+    void projectActivePoints0();
+    void projectActivePoints_();
     void updateCurrentGuess();
-    void updateProjActivePoints();
-    ActivePointProjected* projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple);
+
+    ActivePointProjected* projectActivePoint0(ActivePoint* active_pt, CamCouple* cam_couple);
+    ActivePointProjected* projectActivePoint_(ActivePoint* active_pt, CamCouple* cam_couple);
     void marginalizeActivePoints();
     void activateNewPointsAndGetCoarseActivePoints();
     void collectCoarseActivePoints();
@@ -165,7 +167,7 @@ class BundleAdj{
     int selectNewActivePoints();
 
     void marginalize();
-    void updateStateBlockIdxs(int& pose_block_size, int& point_block_size);
+    void updateDeltaUpdates(deltaUpdateIncrements* delta);
 
     Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, Eigen::Vector2i& pixel_m);
     Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);

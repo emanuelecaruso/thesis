@@ -260,7 +260,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
     bundle_adj_->frame_current_ba=frame_current_;
 
     // project active points (and marginalize points 2 times outside the frustum)
-    bundle_adj_->projectActivePoints();
+    bundle_adj_->projectActivePoints0();
 
     // std::cout << "OPTIMIZATION 1 " << std::endl;
 
@@ -301,7 +301,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
     // std::cout << "OPTIMIZATION, NEW FRAME ARRIVED " << std::endl;
 
 
-    // // time guard
+    // time guard
     std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
 

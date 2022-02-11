@@ -25,8 +25,6 @@
 
 - add magnitude of d_right - d_left
 
-- return real variance TODO (camera.h)
-
 - regions projected candidates -> vector projected candidates ?
 
 - warp function for tracking can be optimized (tracking may be faster)
@@ -56,7 +54,8 @@ if keyframe is added:
 IN ORDER
 -propagate uncertainty in the right way!! (seems done)
 -think way for activating points in a sparse way (seems done)
-- tracking with active points
+- tracking with active points (seems done)
+
 
 bundleadj.cpp
 
@@ -65,6 +64,6 @@ in bundle adj
 after SIGNAL (after tracked candidates)..
 2) START BUNDLE ADJUSTMENT! by considering active points and cameras with marginalize flag
 
-
+// propagate uncertainty TODO (bundleadj.cpp)
 
 - good json for blender

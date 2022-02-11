@@ -293,12 +293,13 @@ class ActivePoint : public CandidateBase{
 
     // current guess
     invdepth_(cand->invdepth_),
-    invdepth_var_(cand->invdepth_var_),
     p_incamframe_(cand->p_incamframe_),
+    p_(cand->p_),
+    invdepth_var_(cand->invdepth_var_),
     // tangent space point
+    invdepth_0_(cand->invdepth_),
     p_incamframe_0_(cand->p_incamframe_),
     p_0_(cand->p_),
-    invdepth_0_(cand->invdepth_),
     // active point features
     intensity_(cand->intensity_),
     grad_magnitude_(cand->grad_magnitude_),
@@ -329,12 +330,13 @@ class ActivePoint : public CandidateBase{
 
     // current guess
     invdepth_(invdepth),
-    invdepth_var_(invdepth_var),
     p_incamframe_(p_incamframe),
+    p_(p),
+    invdepth_var_(invdepth_var),
     // tangent space point
+    invdepth_0_(invdepth),
     p_incamframe_0_(p_incamframe),
     p_0_(p),
-    invdepth_0_(invdepth),
     // active point features
     intensity_(intensity),
     grad_magnitude_(grad_magnitude),
@@ -354,12 +356,13 @@ class ActivePoint : public CandidateBase{
 
     // current guess
     float invdepth_;
-    float invdepth_var_;
     Eigen::Vector3f* p_incamframe_;
+    Eigen::Vector3f* p_;
+    float invdepth_var_;
     // tangent space point
+    float invdepth_0_;
     Eigen::Vector3f* p_incamframe_0_;
     Eigen::Vector3f* p_0_;
-    float invdepth_0_;
     // active point features
     pixelIntensity intensity_;
     float grad_magnitude_;
