@@ -10,16 +10,90 @@ CameraForMapping* BundleAdj::getFrameCurrentBA(){
   return dtam_->camera_vector_->at(frame_current_ba);
 }
 
+void BundleAdj::getCoarseActivePoints(){
+  int last_keyframe_idx = keyframe_vector_ba_->back(); // update frame current
+  double t_start=getTime();
 
-void BundleAdj::activateNewPointsAndGetCoarseActivePoints(){
+  CameraForMapping* last_keyframe=dtam_->camera_vector_->at(last_keyframe_idx);
+
+  for (ActivePointProjected* active_pt_proj : *(last_keyframe->regions_projected_active_points_->active_points_proj_))
+    addCoarseActivePointInRegion(active_pt_proj->active_point_);
+
+  double t_end=getTime();
+  int deltaTime=(t_end-t_start);
+
+  sharedCoutDebug("   - Coarse points generated in frame "+std::to_string(last_keyframe_idx)+", time: "+std::to_string(deltaTime)+" ms");
+
+}
+
+void BundleAdj::activateNewPoints(){
 
   int last_keyframe_idx = keyframe_vector_ba_->back(); // update frame current
 
-  sharedCoutDebug("   - activating point in frame "+std::to_string(last_keyframe_idx));
 
   double t_start=getTime();
 
-  int num_activated = selectNewActivePoints();
+  CameraForMapping* last_keyframe=dtam_->camera_vector_->at(last_keyframe_idx);
+
+  // compute min_num_of_active_pts_per_region_
+  min_num_of_active_pts_per_region_=INT_MAX;
+  RegionsWithProjActivePoints* regs = last_keyframe->regions_projected_active_points_;
+  // find min number of active points in region
+  for (RegionWithProjActivePoints* reg : *(regs->region_vec_)){
+    if(reg->active_pts_proj_vec_->size()>0 && reg->active_pts_proj_vec_->size()<min_num_of_active_pts_per_region_){
+      min_num_of_active_pts_per_region_=reg->active_pts_proj_vec_->size();
+    }
+  }
+  if(min_num_of_active_pts_per_region_==INT_MAX){
+    min_num_of_active_pts_per_region_=0;
+  }
+
+  // num of points to be activated
+  int num_to_be_activated=parameters_->max_num_active_points- num_active_points_;
+
+  int num_activated = 0;
+
+  // RegionsWithProjCandidates* regions = last_keyframe->regions_projected_cands_;
+  std::vector<RegionWithProjCandidates*>* reg_vec= last_keyframe->regions_projected_cands_->region_vec_;
+
+  std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
+
+  int i = 0;
+  int round = 0;
+  while(num_activated<num_to_be_activated){
+  // for (int i=0; i<num_to_be_activated; i++){
+
+    if (reg_vec->empty())
+      break;
+
+    int reg_idx = i%reg_vec->size();
+    RegionWithProjCandidates* reg = reg_vec->at(reg_idx);
+    if (reg->cands_proj_vec_->empty()){
+      reg_vec->erase(std::remove(reg_vec->begin(), reg_vec->end(), reg), reg_vec->end());
+      i--;
+      continue;
+    }
+
+    i++;
+
+    CandidateProjected* cand_proj = reg->cands_proj_vec_->at(0);
+    ActivePoint* active_pt = activateCandidate(cand_proj,reg,regs);
+
+    if (active_pt!=nullptr){
+      // update coarse Active Point
+      // addCoarseActivePointInRegion(active_pt);
+
+      // active point
+      num_activated++;
+    }
+
+    // if it's the last round
+    if(reg_idx==reg_vec->size()-1){
+      min_num_of_active_pts_per_region_++;
+    }
+  }
+
+
   num_active_points_+= num_activated;
 
   double t_end=getTime();
@@ -65,6 +139,8 @@ void BundleAdj::addCoarseActivePointInRegion(ActivePoint* active_pt){
 
 
 void BundleAdj::collectCoarseActivePoints(){
+
+  getCoarseActivePoints();
 
   // iterate along all keyframes (except last)
   for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
@@ -183,75 +259,15 @@ ActivePoint* BundleAdj::activateCandidate(CandidateProjected* cand_proj, RegionW
   return nullptr;
 }
 
-int BundleAdj::selectNewActivePoints(){
-
-  int last_keyframe_idx = keyframe_vector_ba_->back(); // update frame current
-  CameraForMapping* last_keyframe=dtam_->camera_vector_->at(last_keyframe_idx);
-
-  // compute min_num_of_active_pts_per_region_
-  min_num_of_active_pts_per_region_=INT_MAX;
-  RegionsWithProjActivePoints* regs = last_keyframe->regions_projected_active_points_;
-  // find min number of active points in region
-  for (RegionWithProjActivePoints* reg : *(regs->region_vec_)){
-    if(reg->active_pts_proj_vec_->size()>0 && reg->active_pts_proj_vec_->size()<min_num_of_active_pts_per_region_){
-      min_num_of_active_pts_per_region_=reg->active_pts_proj_vec_->size();
-    }
-  }
-  if(min_num_of_active_pts_per_region_==INT_MAX){
-    min_num_of_active_pts_per_region_=0;
-  }
-
-  // num of points to be activated
-  int num_to_be_activated=parameters_->max_num_active_points- num_active_points_;
-
-  int num_activated = 0;
-
-  // RegionsWithProjCandidates* regions = last_keyframe->regions_projected_cands_;
-  std::vector<RegionWithProjCandidates*>* reg_vec= last_keyframe->regions_projected_cands_->region_vec_;
-
-  std::lock_guard<std::mutex> locker(dtam_->mu_candidate_tracking_);
-
-  int i = 0;
-  int round = 0;
-  while(num_activated<num_to_be_activated){
-  // for (int i=0; i<num_to_be_activated; i++){
-
-
-    if (reg_vec->empty())
-      break;
-
-    int reg_idx = i%reg_vec->size();
-    RegionWithProjCandidates* reg = reg_vec->at(reg_idx);
-    if (reg->cands_proj_vec_->empty()){
-      reg_vec->erase(std::remove(reg_vec->begin(), reg_vec->end(), reg), reg_vec->end());
-      i--;
-      continue;
-    }
-
-    i++;
-
-    CandidateProjected* cand_proj = reg->cands_proj_vec_->at(0);
-    ActivePoint* active_pt = activateCandidate(cand_proj,reg,regs);
-
-    if (active_pt!=nullptr){
-      // update coarse Active Point
-      addCoarseActivePointInRegion(active_pt);
-
-      // active point
-      num_activated++;
-    }
-
-    // if it's the last round
-    if(reg_idx==reg_vec->size()-1){
-      min_num_of_active_pts_per_region_++;
-    }
-  }
-
-
-
-  return num_activated;
-
-}
+// int BundleAdj::selectNewActivePoints(){
+//
+//
+//
+//
+//
+//   return num_activated;
+//
+// }
 
 void BundleAdj::marginalize(){
 
@@ -506,6 +522,8 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
       // update delta update of keyframe
       // regular sum in tangent space
       (*keyframe->delta_update_x_)+=delta->dx_poses->segment(keyframe->state_pose_block_idx_,6);
+      Eigen::Isometry3f frame_camera_wrt_world =(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_));
+      keyframe->assignPose( frame_camera_wrt_world );
 
       // iterate through all active points
       for(int j=0; j<keyframe->active_points_->size() ; j++){
@@ -515,7 +533,7 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
         active_pt->delta_update_x_+=(*(delta->dx_points))(active_pt->state_point_block_idx_);
         active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
         keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
-        // *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
+        *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
         // propagate uncertainty TODO
       }
     }
@@ -612,50 +630,54 @@ void BundleAdj::optimize(){
   // marginalize();
 
   // optimize
-  optimizationStep( );
+  // optimizationStep( );
+  if(debug_optimization_){
+    CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+
+    last_keyframe->clearProjectedActivePoints();
+    bool take_fixed_point = 0;
+    projectActivePoints(take_fixed_point);
+    getCoarseActivePoints();
+    last_keyframe->showProjActivePoints(1);
+    cv::waitKey(0);
+
+  }
 
   // after optimization, remove added_ba_ flag on keyframe
 
 }
 
-ActivePointProjected* BundleAdj::projectActivePoint0(ActivePoint* active_pt, CamCouple* cam_couple){
+ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple){
 
+  Eigen::Vector3f p;
+  Eigen::Vector2f uv;
+  Eigen::Vector2i pixel_coords;
+  float depth_m;
+  float depth_r;
 
-    Eigen::Vector3f p;
-    Eigen::Vector2f uv;
-    Eigen::Vector2i pixel_coords;
-    float depth_m;
+  if(cam_couple->take_fixed_point_){
+    depth_r= 1.0/active_pt->invdepth_0_;}
+  else
+    depth_r= 1.0/active_pt->invdepth_;
 
-    cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_0_, depth_m );
-    cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), 1.0/active_pt->invdepth_0_, uv.x(), uv.y() );
+  cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, depth_m );
+  cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, uv.x(), uv.y() );
 
-    cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, active_pt->level_);
+  cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, active_pt->level_);
 
-    if (active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c->pixelInRange(pixel_coords)){
-      ActivePointProjected* active_point_proj = new ActivePointProjected(active_pt, pixel_coords, uv, 1.0/depth_m, cam_couple->cam_m_ );
-      return active_point_proj;
-    }
-    return nullptr;
+  if (active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c->pixelInRange(pixel_coords)){
+    ActivePointProjected* active_point_proj = new ActivePointProjected(active_pt, pixel_coords, uv, 1.0/depth_m, cam_couple->cam_m_ );
+    return active_point_proj;
+  }
+  return nullptr;
 
 
 }
 
 
-ActivePointProjected* BundleAdj::projectActivePoint_(ActivePoint* active_pt, CamCouple* cam_couple){
 
 
-}
-
-void BundleAdj::updateCurrentGuess(){
-  // update p_incamframe_
-
-  // update p_
-  // update invdepth_
-  // update invdepth_var_
-}
-
-
-void BundleAdj::projectActivePoints0(){
+void BundleAdj::projectActivePoints(bool take_fixed_point){
 
   CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
   int n_active_points_not_observed =0;
@@ -673,9 +695,11 @@ void BundleAdj::projectActivePoints0(){
       continue;
     }
 
-    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
+
+    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe,take_fixed_point);
     bool keyframe_link = false;
     // iterate along all active points
+    std::cout << "ao=============?" << take_fixed_point <<  std::endl;
     for (ActivePoint* active_pt : *keyframe->active_points_){
 
       // if(active_pt->to_marginalize_){
@@ -683,7 +707,7 @@ void BundleAdj::projectActivePoints0(){
       // }
 
       // project active point in new keyframe
-      ActivePointProjected* active_point_proj = projectActivePoint0(active_pt, cam_couple);
+      ActivePointProjected* active_point_proj = projectActivePoint(active_pt, cam_couple);
       // if active point is in frustum
       if (active_point_proj!=nullptr){
 
@@ -724,73 +748,6 @@ void BundleAdj::projectActivePoints0(){
 }
 
 
-void BundleAdj::projectActivePoints_(){
-
-  CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-  int n_active_points_not_observed =0;
-
-  // iterate through all keyframe (except the last)
-  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
-
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
-
-    if (keyframe->to_be_marginalized_ba_){
-      if(!keyframe->active_points_removed_ ){
-        num_active_points_-=(keyframe->active_points_->size()-keyframe->num_marginalized_active_points_);
-        keyframe->active_points_removed_=true;
-      }
-      continue;
-    }
-
-    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
-    bool keyframe_link = false;
-    // iterate along all active points
-    for (ActivePoint* active_pt : *keyframe->active_points_){
-
-      // if(active_pt->to_marginalize_){
-      //   continue;
-      // }
-
-      // project active point in new keyframe
-      ActivePointProjected* active_point_proj = projectActivePoint_(active_pt, cam_couple);
-      // if active point is in frustum
-      if (active_point_proj!=nullptr){
-
-        // push active point projected
-        if(!keyframe_link){
-          keyframe_link=true;
-          // push keyframe link
-          keyframe->keyframes_linked_->push_back(last_keyframe);
-        }
-        active_point_proj->cam_->regions_projected_active_points_->pushProjActivePoint(active_point_proj);
-      }
-      // otherwise
-      else{
-        // if already not seen in last keyframe, it has to be marginalized
-        if(active_pt->not_seen_in_last_keyframe_){
-          if(!active_pt->active_point_removed_){
-            active_pt->marginalize();
-            // active_pt->to_marginalize_=true;
-            // active_pt->active_point_removed_=true;
-            keyframe->num_marginalized_active_points_++;
-            num_active_points_--;
-          }
-          continue;
-        }
-        // else mark as not seen
-        else{
-          active_pt->not_seen_in_last_keyframe_=true;
-          n_active_points_not_observed++;
-        }
-      }
-
-
-      // put it in the relative region
-
-    }
-  }
-
-}
 
 void BundleAdj::marginalizeActivePoints(){
 

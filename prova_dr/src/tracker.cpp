@@ -11,8 +11,10 @@ void Tracker::trackGroundtruth(){
   Camera* cam_gt = cam_vec_env->at(dtam_->frame_current_);
   CameraForMapping* cam = dtam_->camera_vector_->at(dtam_->frame_current_);
 
-  cam->frame_world_wrt_camera_=cam_gt->frame_world_wrt_camera_;
-  cam->frame_camera_wrt_world_=cam_gt->frame_camera_wrt_world_;
+  *(cam->frame_world_wrt_camera_)=*(cam_gt->frame_world_wrt_camera_);
+  *(cam->frame_camera_wrt_world_)=*(cam_gt->frame_camera_wrt_world_);
+  *(cam->frame_world_wrt_camera_0_)=*(cam_gt->frame_world_wrt_camera_);
+  *(cam->frame_camera_wrt_world_0_)=*(cam_gt->frame_camera_wrt_world_);
 
   sharedCoutDebug("   - Frame tracked (groundtruth)");
 }
@@ -34,6 +36,7 @@ void Tracker::trackLS(bool track_candidates, int guess_type, bool debug_tracking
   Eigen::Isometry3f frame_camera_wrt_world_ = final_guess.inverse();
 
   curr_cam->assignPose(frame_camera_wrt_world_);
+  curr_cam->assignPose0(frame_camera_wrt_world_);
 
   double t_end=getTime();
   int deltaTime=(t_end-t_start);
@@ -328,9 +331,9 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   Eigen::Vector2f uv_newframe;
   Eigen::Vector2i pixel_newframe;
   Eigen::Vector3f point_newframe;
-  Eigen::Vector3f* point = active_pt->p_0_; // 3D point wrt world frame
-  Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_0_; // 3D point wrt cam frame
-  float invdepth = active_pt->invdepth_0_;
+  Eigen::Vector3f* point = active_pt->p_; // 3D point wrt world frame
+  Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_; // 3D point wrt cam frame
+  float invdepth = active_pt->invdepth_;
   float invdepth_var = active_pt->invdepth_var_;
 
   point_newframe= current_guess*(*point);

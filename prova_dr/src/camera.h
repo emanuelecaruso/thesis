@@ -587,7 +587,7 @@ class RegionsWithProjActivePoints : public RegionsWithCandidatesBase{
 
       // push the projected active point inside the vector
       active_points_proj_->push_back(proj_active_pt);
-
+      
     }
 
     inline int getNumOfActivePointsInReg(RegionWithProjCandidates* reg){
@@ -614,6 +614,8 @@ class CameraForMapping: public Camera{
     std::vector<RegionsWithActivePoints*>* regions_coarse_active_pts_vec_;
     std::vector<std::vector<ActivePoint*>*>* active_points_coarse_;
     std::vector<CameraForMapping*>* keyframes_linked_;
+    Eigen::Isometry3f* frame_camera_wrt_world_0_;
+    Eigen::Isometry3f* frame_world_wrt_camera_0_;
     Vector6f* delta_update_x_;
     int num_marginalized_active_points_;
     bool to_be_marginalized_ba_;
@@ -644,6 +646,8 @@ class CameraForMapping: public Camera{
            regions_coarse_active_pts_vec_(new std::vector<RegionsWithActivePoints*>),
            active_points_coarse_(new std::vector<std::vector<ActivePoint*>*>),
            keyframes_linked_(new std::vector<CameraForMapping*>),
+           frame_camera_wrt_world_0_(new Eigen::Isometry3f),
+           frame_world_wrt_camera_0_(new Eigen::Isometry3f),
            delta_update_x_(new Vector6f),
            num_marginalized_active_points_(0),
            to_be_marginalized_ba_(false),
@@ -689,7 +693,9 @@ class CameraForMapping: public Camera{
     void showCoarseActivePoints(int level, float size=1);
     void showProjCandidates(float size);
     void showActivePoints(float size);
+    void clearProjectedActivePoints();
     void showProjActivePoints(float size);
+    void assignPose0(Eigen::Isometry3f& frame_camera_wrt_world);
 
   private:
     // void collectRegions(float grad_threshold);

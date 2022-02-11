@@ -257,15 +257,18 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
     else
       break;
 
+
     bundle_adj_->frame_current_ba=frame_current_;
 
     // project active points (and marginalize points 2 times outside the frustum)
-    bundle_adj_->projectActivePoints0();
+    // take fixed point
+    bool take_fixed_point = 1;
+    bundle_adj_->projectActivePoints(take_fixed_point);
 
     // std::cout << "OPTIMIZATION 1 " << std::endl;
 
     // activate new points
-    bundle_adj_->activateNewPointsAndGetCoarseActivePoints();
+    bundle_adj_->activateNewPoints();
 
     // std::cout << "OPTIMIZATION 2 " << std::endl;
 
@@ -279,7 +282,9 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
       // cam on which active points are projected
       CameraForMapping* last_keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->back());
       last_keyframe->showProjActivePoints(1);
-      last_keyframe->showProjCandidates(1);
+      // last_keyframe->showProjCandidates(1);
+
+
       // iterate along all cameras
       // for (int j=0; j<int(bundle_adj_->keyframe_vector_ba_->size())-1; j++){
       //     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
@@ -289,6 +294,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
       //     }
       //
         cv::waitKey(0);
+        cv::destroyAllWindows();
       }
 
     // optimize

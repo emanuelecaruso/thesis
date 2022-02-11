@@ -124,14 +124,13 @@ class BundleAdj{
     {};
 
 
-    void projectActivePoints0();
-    void projectActivePoints_();
+    void projectActivePoints(bool take_fixed_point=false);
     void updateCurrentGuess();
 
-    ActivePointProjected* projectActivePoint0(ActivePoint* active_pt, CamCouple* cam_couple);
-    ActivePointProjected* projectActivePoint_(ActivePoint* active_pt, CamCouple* cam_couple);
+    ActivePointProjected* projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple);
     void marginalizeActivePoints();
-    void activateNewPointsAndGetCoarseActivePoints();
+    void activateNewPoints();
+    void getCoarseActivePoints();
     void collectCoarseActivePoints();
 
     JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m);
@@ -164,7 +163,6 @@ class BundleAdj{
     void addCoarseActivePointInRegion(ActivePoint* active_pt);
 
     // void projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
-    int selectNewActivePoints();
 
     void marginalize();
     void updateDeltaUpdates(deltaUpdateIncrements* delta);

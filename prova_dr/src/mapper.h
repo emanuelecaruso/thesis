@@ -6,6 +6,7 @@ class Dtam; //forward declaration
 
 class CamCouple{
   public:
+    bool take_fixed_point_;
     CameraForMapping* cam_r_; // cam to be projected
     CameraForMapping* cam_m_; // cam on which project
     Eigen::Isometry3f T; //cam_r expressed in cam_m
@@ -14,10 +15,11 @@ class CamCouple{
     float f, f2, w, h, w2, h2;
     Eigen::Vector2f cam_r_projected_in_cam_m;
 
-    CamCouple(CameraForMapping* cam_r, CameraForMapping* cam_m):
+    CamCouple(CameraForMapping* cam_r, CameraForMapping* cam_m, bool take_fixed_point=false):
+    take_fixed_point_(take_fixed_point),
     cam_r_(cam_r),
     cam_m_(cam_m),
-    T((*(cam_m->frame_world_wrt_camera_))*(*(cam_r->frame_camera_wrt_world_))),
+    T(getRelativeTransformation(take_fixed_point)),
     f(cam_r->cam_parameters_->lens), f2(f*f), w(cam_r->cam_parameters_->width),
     w2(w*w), h(cam_r->cam_parameters_->height), h2(h*h)
     {
@@ -56,9 +58,13 @@ class CamCouple{
     void getBoundsParameters();
     void getDepthParameters();
 
+    inline Eigen::Isometry3f getRelativeTransformation(bool take_fixed_point){
+      if(!take_fixed_point)
+        return (*(cam_m_->frame_world_wrt_camera_))*(*(cam_r_->frame_camera_wrt_world_));
+      else
+        return (*(cam_m_->frame_world_wrt_camera_0_))*(*(cam_r_->frame_camera_wrt_world_0_));
 
-
-
+    }
 };
 
 class Mapper{

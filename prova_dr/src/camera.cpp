@@ -55,6 +55,7 @@ void Camera::assignPose(Eigen::Isometry3f& frame_camera_wrt_world){
   *frame_world_wrt_camera_=frame_camera_wrt_world.inverse();
 }
 
+
 void Camera::clearImgs(){
   invdepth_map_->setAllPixels(1.0);
 }
@@ -718,6 +719,18 @@ void CameraForMapping::showActivePoints(float size){
 
 }
 
+void CameraForMapping::clearProjectedActivePoints(){
+
+
+  for (RegionWithProjActivePoints* reg : *(regions_projected_active_points_->region_vec_)){
+    reg->active_pts_proj_vec_->clear();
+  }
+  for (ActivePointProjected* active_pt_proj : *(regions_projected_active_points_->active_points_proj_)){
+    delete active_pt_proj;
+  }
+  regions_projected_active_points_->active_points_proj_->clear();
+}
+
 
 void CameraForMapping::showProjActivePoints(float size){
   double alpha = 1;
@@ -729,6 +742,7 @@ void CameraForMapping::showProjActivePoints(float size){
   for (RegionWithProjActivePoints* reg : *(regions_projected_active_points_->region_vec_)){
 
     for (ActivePointProjected* active_pt_proj : *(reg->active_pts_proj_vec_)){
+
       n_proj_active_pt++;
       // get level
       int level = active_pt_proj->level_;
@@ -753,4 +767,10 @@ void CameraForMapping::showProjActivePoints(float size){
 
   show_img->show(size, name_+", n projected active points: "+std::to_string(n_proj_active_pt));
 
+}
+
+// assign
+void CameraForMapping::assignPose0(Eigen::Isometry3f& frame_camera_wrt_world){
+  *frame_camera_wrt_world_0_=frame_camera_wrt_world;
+  *frame_world_wrt_camera_0_=frame_camera_wrt_world.inverse();
 }
