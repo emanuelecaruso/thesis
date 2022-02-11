@@ -19,7 +19,7 @@ class JacobiansAndError{
   public:
     Eigen::Matrix<float,1,6>* J_r;
     Eigen::Matrix<float,1,6>* J_m;
-    Eigen::Matrix<float,1,1>* J_d;
+    float J_d;
     Eigen::Matrix<float,6,1>* J_r_transp;
     Eigen::Matrix<float,6,1>* J_m_transp;
 
@@ -28,7 +28,7 @@ class JacobiansAndError{
 
     float error;
 
-    JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, Eigen::Matrix<float,1,1>* J_d_,
+    JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, float J_d_,
                       CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_ ):
     J_r(J_r_),
     J_m(J_m_),
@@ -48,7 +48,6 @@ class JacobiansAndError{
     ~JacobiansAndError(){
       delete J_r;
       delete J_m;
-      delete J_d;
       delete J_r_transp;
       delete J_m_transp;
     }
@@ -69,8 +68,7 @@ class HessianAndB{
     H_pose_pose(new Eigen::MatrixXf(pose_block_size_,pose_block_size_) ),
     H_pose_point(new Eigen::MatrixXf(pose_block_size_,point_block_size_)),
     H_point_pose(new Eigen::MatrixXf(point_block_size_,pose_block_size_)),
-    H_point_point(new Eigen::MatrixXf(point_block_size_,point_block_size_)),
-    // H_point_point_(new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size_) ),
+    H_point_point(new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size_) ),
 
     // initialize b blocks
     b_pose(new Eigen::VectorXf(pose_block_size_)),
@@ -94,33 +92,6 @@ class HessianAndB{
       delete b_point;
     }
 
-    inline void thisIsNan(){
-      if (isNan(*H_pose_pose)){
-        std::cout << "H_pose_pose is nan"<<std::endl;
-        exit(1);
-      }
-      if (isNan(*H_pose_point)){
-        std::cout << "H_pose_point is nan"<<std::endl;
-        exit(1);
-      }
-      if (isNan(*H_point_pose)){
-        std::cout << "H_point_pose is nan"<<std::endl;
-        exit(1);
-      }
-      if (isNan(*H_point_point)){
-        std::cout << "H_point_point is nan"<<std::endl;
-        exit(1);
-      }
-      if (isNan(*b_pose)){
-        std::cout << "b_pose is nan"<<std::endl;
-        exit(1);
-      }
-      if (isNan(*b_point)){
-        std::cout << "b_point is nan"<<std::endl;
-        exit(1);
-      }
-    }
-
     void updateHessianAndB(JacobiansAndError* jacobians_and_error );
     void visualizeH();
     deltaUpdateIncrements* getDeltaUpdateIncrements();
@@ -131,7 +102,7 @@ class HessianAndB{
     Eigen::MatrixXf* H_pose_pose;
     Eigen::MatrixXf* H_pose_point;
     Eigen::MatrixXf* H_point_pose;
-    Eigen::MatrixXf* H_point_point;
+    Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point;
     // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_;
 
     Eigen::VectorXf* b_pose;
@@ -199,7 +170,7 @@ class BundleAdj{
     Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, Eigen::Vector2i& pixel_m);
     Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
     Eigen::Matrix<float,1,6>* getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m);
-    Eigen::Matrix<float,1,1>* getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
+    float getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
     float getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector2i& pixel_m);
 
 };

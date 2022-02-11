@@ -385,7 +385,7 @@ Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapp
   return J_m;
 }
 
-Eigen::Matrix<float,1,1>* BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
+float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
   CameraForMapping* cam_r = active_pt->cam_;
 
   Eigen::Matrix<float, 3,1> invdepth_jacobian;
@@ -394,9 +394,7 @@ Eigen::Matrix<float,1,1>* BundleAdj::getJd(ActivePoint* active_pt, CameraForMapp
                        -active_pt->uv_.y()/pow(active_pt->invdepth_0_,2),
                        -1/pow(active_pt->invdepth_0_,2);
 
-  Eigen::Matrix<float,1,1>* J_d = new Eigen::Matrix<float,1,1>;
-
-  *J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_->linear()))*(cam_r->frame_camera_wrt_world_->linear()))*invdepth_jacobian;
+  float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_->linear()))*(cam_r->frame_camera_wrt_world_->linear()))*invdepth_jacobian;
 
   return J_d;
 }
@@ -407,7 +405,7 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
   Eigen::Matrix<float,1,6> J_r = *(jacobians_and_error->J_r);
   Eigen::Matrix<float,1,6> J_m = *(jacobians_and_error->J_m);
-  Eigen::Matrix<float,1,1> J_d = *(jacobians_and_error->J_d);
+  float J_d = jacobians_and_error->J_d;
   Eigen::Matrix<float,6,1> J_r_transp = *(jacobians_and_error->J_r_transp);
   Eigen::Matrix<float,6,1> J_m_transp = *(jacobians_and_error->J_m_transp);
   float error = jacobians_and_error->error;
@@ -450,7 +448,7 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   // point point block
   // --
   // -O
-  H_point_point->block(d,d,1,1)+=J_d*error;
+  H_point_point->diagonal()[d]+=J_d*error;
 
   // std::cout << (*H_point_point)(d,d) << std::endl;
 
@@ -460,7 +458,7 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   b_pose->segment(r,6)+=J_r*error;
 
   // point block
-  b_point->segment(d,1)+=J_d*error;
+  (*b_point)(d)+=J_d*error;
 
 }
 
@@ -489,7 +487,7 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
   Eigen::Matrix<float,1,6>* J_r = getJr( active_pt, cam_m, J_1);
   Eigen::Matrix<float,1,6>* J_m = getJm( active_pt, cam_m, J_1, point_m_0);
-  Eigen::Matrix<float,1,1>* J_d = getJd(active_pt, cam_m, J_1);
+  float J_d = getJd(active_pt, cam_m, J_1);
 
   JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error);
 
@@ -501,9 +499,12 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
   Eigen::VectorXf* dx_poses = new Eigen::VectorXf(pose_block_size) ;
   Eigen::VectorXf* dx_points = new Eigen::VectorXf(point_block_size) ;
 
-  Eigen::MatrixXf Schur(pose_block_size,pose_block_size);
-  // Schur=H_pose_pose-(H_pose_point*)
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic> H_point_point_inv = H_point_point->inverse();
+  Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*H_point_point_inv*(*H_point_pose));
+  Eigen::MatrixXf Schur_inv=Schur.inverse();
 
+  *dx_poses =  Schur_inv * ( (*b_pose) - (*H_pose_point)*H_point_point_inv*(*b_point) );
+  *dx_points = (H_point_point_inv*(*b_point))-(H_point_point_inv*(*H_point_pose)*(*dx_poses));
 }
 
 void BundleAdj::optimizationStep( ){
