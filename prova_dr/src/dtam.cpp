@@ -186,8 +186,10 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     // }
 
     if (!track_candidates){
-      // std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
+      std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
       waitForOptimization();
+      std::cout << "FRONT END OPTIMIZATION DONE " << std::endl;
+
     }
 
     double t_start=getTime();

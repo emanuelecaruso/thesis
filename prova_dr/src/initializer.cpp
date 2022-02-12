@@ -45,7 +45,7 @@ void Initializer::extractCorners(){
   status_vec_->clear();
   inliers_vec_->clear();
   compute_cv_K();
-  
+
   ref_frame_idx_=dtam_->frame_current_;
   const Image<float>* img_r = getReferenceImage();
   corners_vec_->push_back(new std::vector<cv::Point2f>);
@@ -136,6 +136,7 @@ bool Initializer::findPose(){
 
     // assign pose
     dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(T);
+    dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose0(T);
     // dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(*(dtam_->environment_->camera_vector_->at(dtam_->frame_current_)->frame_camera_wrt_world_));  //gt
     return true;
   }

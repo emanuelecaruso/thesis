@@ -135,7 +135,7 @@ class BundleAdj{
 
     JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m);
 
-    void optimizationStep();
+    float optimizationStep();
     void optimize();
 
     inline void addKeyframe(int idx){
@@ -166,6 +166,7 @@ class BundleAdj{
 
     void marginalize();
     void updateDeltaUpdates(deltaUpdateIncrements* delta);
+    void fixNewTangentSpace();
 
     Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, Eigen::Vector2i& pixel_m);
     Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);

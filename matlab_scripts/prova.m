@@ -16,3 +16,14 @@ t=[t0;t1;t2];
 invt = -invR*t;
 invt=simplify(invt,'Steps',1000)
 
+T=[invR , invt; 0,0,0,1];
+
+syms p0 p1 p2
+
+p=[p0;p1;p2;1];
+
+f=T*p;
+
+J=jacobian(f,[t0 t1 t2 a b c]);
+J=subs(J,[t0 t1 t2 a b c],[0 0 0 0 0 0]);
+J=simplify(J,'Steps',1000)

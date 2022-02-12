@@ -310,11 +310,11 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
   cam_m->uv2pixelCoords(uv_m, pixel_m, active_pt->level_);
 
   if(!cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_m_0)){
-    std::cout << "pixel_m_0" << " " << pixel_m_0 << std::endl;
+    // std::cout << "pixel_m_0" << " " << pixel_m_0 << std::endl;
     return nullptr;}
 
   if(!cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_m)){
-    std::cout << "pixel_m" << " " << pixel_m << std::endl;
+    // std::cout << "pixel_m" << " " << pixel_m << std::endl;
     return nullptr;}
 
 
@@ -342,31 +342,14 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
   return J_first;
 }
 
-Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
 
-  Eigen::Vector3f point = *(active_pt->p_0_);
-  Eigen::Matrix<float, 3,6> state_jacobian;
-
-  state_jacobian << 1, 0, 0,  0         ,  point.z()  , -point.y(),
-                    0, 1, 0, -point.z() ,  0          ,  point.x(),
-                    0, 0, 1,  point.y() , -point.x()  ,  0         ;
-
-
-  Eigen::Matrix<float,1,6>* J_r = new Eigen::Matrix<float,1,6>;
-  // *J_r=((*J_first)*state_jacobian)/normalizer;
-  *J_r=((*J_first)*(cam_m->frame_world_wrt_camera_->linear()))*state_jacobian;
-
-  return J_r;
-}
-
-Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m){
-
+Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m_0){
 
   Eigen::Matrix<float, 3,6> state_jacobian;
 
-  state_jacobian << 1, 0, 0,  0           ,  point_m.z()  , -point_m.y(),
-                    0, 1, 0, -point_m.z() ,  0            ,  point_m.x(),
-                    0, 0, 1,  point_m.y() , -point_m.x()  ,  0         ;
+  state_jacobian << 1, 0, 0,  0           ,  point_m_0.z()  , -point_m_0.y(),
+                    0, 1, 0, -point_m_0.z() ,  0            ,  point_m_0.x(),
+                    0, 0, 1,  point_m_0.y() , -point_m_0.x()  ,  0         ;
 
 
   Eigen::Matrix<float,1,6>* J_m = new Eigen::Matrix<float,1,6>;
@@ -377,16 +360,40 @@ Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapp
   return J_m;
 }
 
+Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
+  CameraForMapping* cam_r = active_pt->cam_;
+  Eigen::Vector3f point_r_0 = *(active_pt->p_incamframe_0_);
+  Eigen::Matrix<float, 3,6> state_jacobian;
+
+  state_jacobian <<  -1,  0,  0,  0             , -point_r_0.z()  ,  point_r_0.y(),
+                      0, -1,  0,  point_r_0.z() ,  0              , -point_r_0.x(),
+                      0,  0, -1, -point_r_0.y() ,  point_r_0.x()  ,  0            ;
+
+
+  Eigen::Matrix<float,1,6>* J_r = new Eigen::Matrix<float,1,6>;
+  // *J_r=((*J_first)*state_jacobian)/normalizer;
+  *J_r=((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear())*(cam_r->frame_camera_wrt_world_0_->linear()))*state_jacobian;
+
+  return J_r;
+}
+
 float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
   CameraForMapping* cam_r = active_pt->cam_;
+  Eigen::Matrix3f Kinv = *(cam_r->Kinv_);
 
-  Eigen::Matrix<float, 3,1> invdepth_jacobian;
+  // Eigen::Matrix<float, 3,1> invdepth_jacobian;
+  //
+  // invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_0_,2),
+  //                      -active_pt->uv_.y()/pow(active_pt->invdepth_0_,2),
+  //                      -1/pow(active_pt->invdepth_0_,2);
 
-  invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_0_,2),
-                       -active_pt->uv_.y()/pow(active_pt->invdepth_0_,2),
-                       -1/pow(active_pt->invdepth_0_,2);
+  Eigen::Matrix<float, 3,1> depth_jacobian;
 
-  float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_->linear()))*(cam_r->frame_camera_wrt_world_->linear()))*invdepth_jacobian;
+  depth_jacobian << active_pt->uv_.x(),
+                    active_pt->uv_.y(),
+                    1;
+
+  float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear()))*(cam_r->frame_camera_wrt_world_0_->linear())*Kinv )*depth_jacobian;
 
   return J_d;
 }
@@ -476,7 +483,7 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
     return nullptr;
 
   float error = getError( active_pt, cam_m ,pixel_m);
-  float error_eps = 0.000001;
+  float error_eps = 0.0001;
   // // saturate error
   // if (error<error_eps)
   //   error=error_eps;
@@ -514,6 +521,21 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
   return delta;
 }
 
+void BundleAdj::fixNewTangentSpace(){
+  // iterate through cameras
+  for(int i=0; i<keyframe_vector_ba_->size() ; i++){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+
+    keyframe->assignPose0( *(keyframe->frame_camera_wrt_world_) );
+    keyframe->delta_update_x_->setZero();
+    Eigen::Isometry3f iso0;
+    iso0.linear().setIdentity();
+    iso0.translation().setZero();
+    keyframe->assignPose( iso0 );
+
+  }
+}
+
 void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
   // iterate through cameras
   for(int i=0; i<keyframe_vector_ba_->size() ; i++){
@@ -521,9 +543,13 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
     if (keyframe->state_pose_block_idx_!=-1){
       // update delta update of keyframe
       // regular sum in tangent space
-      (*keyframe->delta_update_x_)+=delta->dx_poses->segment(keyframe->state_pose_block_idx_,6);
-      Eigen::Isometry3f frame_camera_wrt_world =(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_));
-      keyframe->assignPose( frame_camera_wrt_world );
+      // if(!keyframe->first_keyframe_){
+        (*keyframe->delta_update_x_)+=delta->dx_poses->segment(keyframe->state_pose_block_idx_,6);
+        // std::cout << "\n" << *(keyframe->delta_update_x_) << std::endl;
+
+        Eigen::Isometry3f frame_camera_wrt_world =(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_));
+        keyframe->assignPose( frame_camera_wrt_world );
+      // }
 
       // iterate through all active points
       for(int j=0; j<keyframe->active_points_->size() ; j++){
@@ -531,9 +557,11 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
         // update delta update of active point
         // regular sum since invdepth is in R
         active_pt->delta_update_x_+=(*(delta->dx_points))(active_pt->state_point_block_idx_);
-        active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
+        // std::cout << active_pt->invdepth_0_ << " " << active_pt->delta_update_x_ << std::endl;
+        // active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
+        active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+active_pt->delta_update_x_);
         keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
-        *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
+        *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
         // propagate uncertainty TODO
       }
     }
@@ -541,8 +569,9 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
 
 }
 
-void BundleAdj::optimizationStep( ){
+float BundleAdj::optimizationStep( ){
 
+  float chi = 0;
 
   int n_cams = 0;
   int n_points = 0;
@@ -604,6 +633,7 @@ void BundleAdj::optimizationStep( ){
   for(int i=0; i<jacobians_and_error_vec->size(); i++){
     JacobiansAndError* jacobians_and_error = jacobians_and_error_vec->at(i);
     hessian_b->updateHessianAndB( jacobians_and_error );
+    chi+=(jacobians_and_error->error*jacobians_and_error->error);
 
     delete jacobians_and_error;
   }
@@ -614,12 +644,13 @@ void BundleAdj::optimizationStep( ){
 
   // get delta update
   deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
-  // // update x in each cam and active point
+  // update x in each cam and active point
   updateDeltaUpdates(delta);
 
-  // update
+  // update fixed points
+  fixNewTangentSpace();
 
-
+  return chi;
 }
 
 void BundleAdj::optimize(){
@@ -630,17 +661,20 @@ void BundleAdj::optimize(){
   // marginalize();
 
   // optimize
-  // optimizationStep( );
-  if(debug_optimization_){
-    CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+  for(int i=0; i<10; i++){
+    float chi = optimizationStep( );
+    if(debug_optimization_){
+      CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
 
-    last_keyframe->clearProjectedActivePoints();
-    bool take_fixed_point = 0;
-    projectActivePoints(take_fixed_point);
-    getCoarseActivePoints();
-    last_keyframe->showProjActivePoints(1);
-    cv::waitKey(0);
-
+      last_keyframe->clearProjectedActivePoints();
+      bool take_fixed_point = 0;
+      projectActivePoints(take_fixed_point);
+      getCoarseActivePoints();
+      last_keyframe->showProjActivePoints(1);
+      std::cout << "chi: " << chi << std::endl;
+      cv::waitKey(0);
+      cv::destroyAllWindows();
+    }
   }
 
   // after optimization, remove added_ba_ flag on keyframe
@@ -699,7 +733,6 @@ void BundleAdj::projectActivePoints(bool take_fixed_point){
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe,take_fixed_point);
     bool keyframe_link = false;
     // iterate along all active points
-    std::cout << "ao=============?" << take_fixed_point <<  std::endl;
     for (ActivePoint* active_pt : *keyframe->active_points_){
 
       // if(active_pt->to_marginalize_){
