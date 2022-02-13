@@ -322,7 +322,6 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
   Eigen::Matrix3f K = *(frame_new->K_);
-  Eigen::Matrix3f Kinv = *(frame_new->Kinv_);
   float variance = dtam_->parameters_->variance;
   int ni = dtam_->parameters_->robustifier_dofs;
   float coeff = pixels_meter_ratio/pow(2,active_pt->level_+1);

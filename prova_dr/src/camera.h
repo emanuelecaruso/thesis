@@ -293,13 +293,13 @@ class ActivePoint : public CandidateBase{
 
     // current guess
     invdepth_(cand->invdepth_),
-    p_incamframe_(cand->p_incamframe_),
-    p_(cand->p_),
+    p_incamframe_( new Eigen::Vector3f ),
+    p_(new Eigen::Vector3f),
     invdepth_var_(cand->invdepth_var_),
     // tangent space point
     invdepth_0_(cand->invdepth_),
-    p_incamframe_0_(cand->p_incamframe_),
-    p_0_(cand->p_),
+    p_incamframe_0_(new Eigen::Vector3f),
+    p_0_(new Eigen::Vector3f),
     // active point features
     intensity_(cand->intensity_),
     grad_magnitude_(cand->grad_magnitude_),
@@ -311,7 +311,13 @@ class ActivePoint : public CandidateBase{
     state_point_block_idx_(-1),
     to_marginalize_(false),
     active_point_removed_(false)
-    {}
+    {
+      *p_incamframe_=*cand->p_incamframe_;
+      *p_=*cand->p_;
+
+      *p_incamframe_0_=*cand->p_incamframe_;
+      *p_0_=*cand->p_;
+    }
 
     // coarse active point
     ActivePoint(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
@@ -587,7 +593,7 @@ class RegionsWithProjActivePoints : public RegionsWithCandidatesBase{
 
       // push the projected active point inside the vector
       active_points_proj_->push_back(proj_active_pt);
-      
+
     }
 
     inline int getNumOfActivePointsInReg(RegionWithProjCandidates* reg){
@@ -622,6 +628,7 @@ class CameraForMapping: public Camera{
     bool active_points_removed_;
     bool added_ba_;
     bool first_keyframe_;
+    bool pose_updated_;
     int n_candidates_;
     int state_pose_block_idx_;
 
@@ -654,6 +661,7 @@ class CameraForMapping: public Camera{
            active_points_removed_(false),
            added_ba_(false),
            first_keyframe_(false),
+           pose_updated_(true),
            n_candidates_(0),
            state_pose_block_idx_(-1)
            {

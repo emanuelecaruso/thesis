@@ -93,8 +93,13 @@ class HessianAndB{
     }
 
     void updateHessianAndB(JacobiansAndError* jacobians_and_error );
+    void updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error );
+
     void visualizeH();
     deltaUpdateIncrements* getDeltaUpdateIncrements();
+    deltaUpdateIncrements* getDeltaUpdateIncrements_onlyCams();
+    deltaUpdateIncrements* getDeltaUpdateIncrements_onlyM();
+    deltaUpdateIncrements* getDeltaUpdateIncrements_onlyR();
 
     int pose_block_size;
     int point_block_size;
@@ -126,6 +131,9 @@ class BundleAdj{
 
     void projectActivePoints(bool take_fixed_point=false);
     void updateCurrentGuess();
+    void updateActivePointsAfterNewPose();
+    void updateActivePointsAfterNewPose(CameraForMapping* keyframe);
+
 
     ActivePointProjected* projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple);
     void marginalizeActivePoints();
@@ -134,6 +142,9 @@ class BundleAdj{
     void collectCoarseActivePoints();
 
     JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m);
+
+    void initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
+    void initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
 
     float optimizationStep();
     void optimize();

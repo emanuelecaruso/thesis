@@ -135,8 +135,11 @@ bool Initializer::findPose(){
     // Eigen::Isometry3f T = homography2pose( H );
 
     // assign pose
-    dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(T);
-    dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose0(T);
+    CameraForMapping* cam = dtam_->camera_vector_->at(dtam_->frame_current_);
+    cam->assignPose(T);
+    cam->assignPose0(T);
+
+
     // dtam_->camera_vector_->at(dtam_->frame_current_)->assignPose(*(dtam_->environment_->camera_vector_->at(dtam_->frame_current_)->frame_camera_wrt_world_));  //gt
     return true;
   }
