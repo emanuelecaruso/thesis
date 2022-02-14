@@ -94,12 +94,12 @@ class HessianAndB{
 
     void updateHessianAndB(JacobiansAndError* jacobians_and_error );
     void updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error );
+    void updateHessianAndB_onlyR(JacobiansAndError* jacobians_and_error );
 
-    void visualizeH();
     deltaUpdateIncrements* getDeltaUpdateIncrements();
     deltaUpdateIncrements* getDeltaUpdateIncrements_onlyCams();
-    deltaUpdateIncrements* getDeltaUpdateIncrements_onlyM();
-    deltaUpdateIncrements* getDeltaUpdateIncrements_onlyR();
+
+    void visualizeH();
 
     int pose_block_size;
     int point_block_size;
@@ -145,6 +145,7 @@ class BundleAdj{
 
     void initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
+    void initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
 
     float optimizationStep();
     void optimize();

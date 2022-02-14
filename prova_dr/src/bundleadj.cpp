@@ -427,9 +427,8 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   // O-
   // --
   H_pose_pose->block(m,m,6,6)+=J_m_transp*J_m;
-  H_pose_pose->block(r,m,6,6)+=J_r_transp*J_m;
-  H_pose_pose->block(m,r,6,6)+=J_m_transp*J_r;
   H_pose_pose->block(r,r,6,6)+=J_r_transp*J_r;
+  // std::cout << "aooo\n"<< J_r_transp*J_m << std::endl;
 
   // pose point block
   // -O
@@ -459,6 +458,32 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
 }
 
+
+void HessianAndB::updateHessianAndB_onlyR(JacobiansAndError* jacobians_and_error ){
+
+
+  Eigen::Matrix<float,1,6> J_r = *(jacobians_and_error->J_r);
+  Eigen::Matrix<float,6,1> J_r_transp = *(jacobians_and_error->J_r_transp);
+  float error = jacobians_and_error->error;
+
+  const int r = jacobians_and_error->active_pt->cam_->state_pose_block_idx_;
+
+  if(r <0 || r>=pose_block_size)
+    std::cout  << "\nAOOOOOOOOOOOOO " << r << " " << pose_block_size << std::endl;
+
+  // ********** update H **********
+  // pose pose block
+  // O-
+  // --
+  H_pose_pose->block(r,r,6,6)+=J_r_transp*J_r;
+
+
+
+  // ********** update b **********
+  // pose block
+  b_pose->segment(r,6)+=J_r*error;
+
+}
 
 void HessianAndB::updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error ){
 
@@ -503,23 +528,22 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
   Eigen::Vector3f point_m_0;
   Eigen::Vector2i pixel_m;
   J_1= getJfirst( active_pt, cam_m,  point_m_0, pixel_m);
-  // if(debug_optimization_){
-  //   Image<float>* img_r = active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
-  //   Image<float>* img_m = cam_m->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
-  //   img_r->showImgWithColoredPixel(active_pt->pixel_,pow(2,active_pt->level_+1), "img_r");
-  //   img_m->showImgWithColoredPixel(pixel_m,pow(2,active_pt->level_+1), "img_m");
-  //
-  //   cv::waitKey(0);
-  // }
+  if(debug_optimization_){
+    // Image<float>* img_r = active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
+    // Image<float>* img_m = cam_m->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
+    // img_r->showImgWithColoredPixel(active_pt->pixel_,pow(2,active_pt->level_+1), "img_r");
+    // img_m->showImgWithColoredPixel(pixel_m,pow(2,active_pt->level_+1), "img_m");
+    // cv::waitKey(0);
+  }
 
   if (J_1==nullptr)
     return nullptr;
 
   float error = getError( active_pt, cam_m ,pixel_m);
   float error_eps = 0.0001;
-  // // saturate error
-  // if (error<error_eps)
-  //   error=error_eps;
+  // saturate error
+  if (error<error_eps)
+    error=error_eps;
 
   // // add error eps
   // error+=error_eps;
@@ -564,6 +588,59 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements_onlyCams(){
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
 }
+
+void HessianAndB::visualizeH(){
+  Image<colorRGB>* img_H = new Image<colorRGB>("Hessian");
+  int size = pose_block_size+point_block_size;
+  // img_H->initImage(pose_block_size,pose_block_size);
+  img_H->initImage(size,size);
+  img_H->setAllPixels( white);
+
+  // pose pose block
+  for(int i=0; i<pose_block_size; i++){
+    for(int j=0; j<pose_block_size; j++){
+      if ((*H_pose_pose)(i,j)!=0){
+        img_H->setPixel(i,j, red);
+      }
+      else{
+        img_H->setPixel(i,j, white);
+
+      }
+    }
+  }
+
+  // pose point block
+  for(int i=0; i<pose_block_size; i++){
+    for(int j=0; j<point_block_size; j++){
+      if ((*H_pose_point)(i,pose_block_size+j)!=0){
+        img_H->setPixel(i,pose_block_size+j, green);
+      }
+      else{
+        img_H->setPixel(i,pose_block_size+j, white);
+
+      }
+    }
+  }
+
+  // point pose block
+  for(int i=0; i<point_block_size; i++){
+    for(int j=0; j<pose_block_size; j++){
+      if ((*H_point_pose)(i+pose_block_size,j)!=0){
+        img_H->setPixel(i+pose_block_size,j, green);
+      }
+      else{
+        img_H->setPixel(i+pose_block_size,j, white);
+
+      }
+    }
+  }
+
+
+  img_H->show(2);
+}
+
+
+
 
 void BundleAdj::fixNewTangentSpace(){
   // fix tangent space for cameras
@@ -617,7 +694,7 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
     }
 
   // UPDATE POINTS
-  if(delta->dx_points!=nullptr){
+  // if(delta->dx_points!=nullptr){
     for(int i=0; i<keyframe_vector_ba_->size() ; i++){
       CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
       if (keyframe->state_pose_block_idx_!=-1){
@@ -627,20 +704,24 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
           ActivePoint* active_pt = keyframe->active_points_->at(j);
           // update delta update of active point
           // regular sum since invdepth is in R
-          active_pt->delta_update_x_+=(*(delta->dx_points))(active_pt->state_point_block_idx_);
-          // std::cout << active_pt->invdepth_0_ << " " << active_pt->delta_update_x_ << std::endl;
-          // active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
-          active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+active_pt->delta_update_x_);
+
+          if(delta->dx_points!=nullptr){
+            active_pt->delta_update_x_+=(*(delta->dx_points))(active_pt->state_point_block_idx_);
+            // std::cout << active_pt->invdepth_0_ << " " << active_pt->delta_update_x_ << std::endl;
+            // active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
+            active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+active_pt->delta_update_x_);
+          }
+
           keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
           *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
           // propagate uncertainty TODO
         }
       }
     }
-  }
-  else{
-    std::cout << "POINTS NOT TAKEN" << std::endl;
-  }
+  // }
+  // else{
+  //   std::cout << "POINTS NOT TAKEN" << std::endl;
+  // }
 }
 
 void BundleAdj::initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
@@ -652,6 +733,30 @@ void BundleAdj::initializeStateStructure_onlyM( int& n_cams, int& n_points, std:
   keyframe_last->state_pose_block_idx_=0;
   n_cams++;
 
+
+
+  // iterate through active points
+  for( int j=0; j<keyframe->active_points_->size(); j++){
+    ActivePoint* active_pt = keyframe->active_points_->at(j);
+
+    JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_last);
+    if (jacobians!=nullptr){
+      jacobians_and_error_vec->push_back(jacobians);
+    }
+
+  }
+
+}
+
+
+void BundleAdj::initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
+
+  CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(0));
+  keyframe->state_pose_block_idx_=0;
+  n_cams++;
+
+  CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->at(1));
+  keyframe_last->state_pose_block_idx_=-1;
 
 
   // iterate through active points
@@ -728,8 +833,9 @@ float BundleAdj::optimizationStep( ){
 
   int n_cams = 0;
   int n_points = 0;
-  // initializeStateStructure( n_cams, n_points, jacobians_and_error_vec );
-  initializeStateStructure_onlyM( n_cams, n_points, jacobians_and_error_vec );
+  initializeStateStructure( n_cams, n_points, jacobians_and_error_vec );
+  // initializeStateStructure_onlyM( n_cams, n_points, jacobians_and_error_vec );
+  // initializeStateStructure_onlyR( n_cams, n_points, jacobians_and_error_vec );
 
   std::cout << "OPT N CAMS : " << n_cams << ", OPT N POINTS : " << n_points << std::endl;
 
@@ -738,13 +844,17 @@ float BundleAdj::optimizationStep( ){
   // for each measurement update Hessian and b vector
   for(int i=0; i<jacobians_and_error_vec->size(); i++){
     JacobiansAndError* jacobians_and_error = jacobians_and_error_vec->at(i);
-    // hessian_b->updateHessianAndB( jacobians_and_error );
-    hessian_b->updateHessianAndB_onlyM( jacobians_and_error );
+    hessian_b->updateHessianAndB( jacobians_and_error );
+
 
     chi+=(jacobians_and_error->error*jacobians_and_error->error);
 
     delete jacobians_and_error;
   }
+  // hessian_b->updateHessianAndB_onlyM( jacobians_and_error );
+  // hessian_b->updateHessianAndB_onlyR( jacobians_and_error );
+  hessian_b->visualizeH();
+  cv::waitKey(0);
   delete jacobians_and_error_vec;
 
 
@@ -753,7 +863,6 @@ float BundleAdj::optimizationStep( ){
   // get delta update
   // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
   deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_onlyCams();
-  // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_onlyM();
 
 
 
@@ -774,7 +883,7 @@ void BundleAdj::optimize(){
   // marginalize();
 
   // optimize
-  for(int i=0; i<100; i++){
+  for(int i=0; i<1000; i++){
     float chi = optimizationStep( );
     if(debug_optimization_){
       CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
