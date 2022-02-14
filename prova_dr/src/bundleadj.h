@@ -95,6 +95,8 @@ class HessianAndB{
     }
     Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint();
 
+    void transposePosePointBlock();
+
     void updateHessianAndB(JacobiansAndError* jacobians_and_error );
     void updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error );
     void updateHessianAndB_onlyR(JacobiansAndError* jacobians_and_error );

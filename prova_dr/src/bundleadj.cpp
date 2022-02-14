@@ -393,7 +393,9 @@ float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::M
   return J_d;
 }
 
-
+void HessianAndB::transposePosePointBlock(){
+  *H_point_pose=H_pose_point->transpose();
+}
 
 void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
@@ -432,11 +434,11 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   H_pose_point->block(r,d,6,1)+=J_r_transp*weight_total*J_d;
 
 
-  // point pose block
-  // --
-  // O-
-  H_point_pose->block(d,m,1,6)+=J_d*weight_total*J_m;
-  H_point_pose->block(d,r,1,6)+=J_d*weight_total*J_r;
+  // // point pose block
+  // // --
+  // // O-
+  // H_point_pose->block(d,m,1,6)+=J_d*weight_total*J_m;
+  // H_point_pose->block(d,r,1,6)+=J_d*weight_total*J_r;
 
   // point point block
   // --
@@ -562,7 +564,8 @@ bool BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen:
   // error+=error_eps;
 
   // do not consider measurement
-  if (error<error_eps)
+  // if (error<error_eps)
+  if (error==0)
     return false;
 
   return true;
@@ -582,6 +585,7 @@ float BundleAdj::getWeightTotal(float error){
   float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
 
   float  weight_total = weight*gamma;
+
   return weight_total;
 }
 
@@ -656,9 +660,8 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
   Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
   Eigen::MatrixXf Schur_inv=Schur.inverse();
 
-  *dx_poses =  Schur_inv * ( (*b_pose) - (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-  // *dx_points = ((*H_point_point_inv)*(*b_point))-((*H_point_point_inv)*(*H_point_pose)*(*dx_poses));
-  *dx_points = -(((*H_point_point_inv)*(*b_point))-((*H_point_point_inv)*(*H_point_pose)*(*dx_poses)));
+  *dx_poses =  Schur_inv * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
+  *dx_points = (*H_point_point_inv)* ( -(*b_point) -( (*H_point_pose)*(*dx_poses)) );
 
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
@@ -1046,6 +1049,8 @@ void BundleAdj::initializeStateStructure_onlyD( int& n_cams, int& n_points, std:
 
 }
 
+
+
 float BundleAdj::optimizationStep( ){
 
   float chi = 0;
@@ -1059,8 +1064,6 @@ float BundleAdj::optimizationStep( ){
   // initializeStateStructure_onlyM( n_cams, n_points, jacobians_and_error_vec );
   // initializeStateStructure_onlyR( n_cams, n_points, jacobians_and_error_vec );
   // initializeStateStructure_onlyD( n_cams, n_points, jacobians_and_error_vec );
-
-  std::cout << "OPT N CAMS : " << n_cams << ", OPT N POINTS : " << n_points << std::endl;
 
   // create Hessian and b vector
   HessianAndB* hessian_b = new HessianAndB(n_cams*6, n_points);
@@ -1076,6 +1079,8 @@ float BundleAdj::optimizationStep( ){
 
     delete jacobians_and_error;
   }
+  hessian_b->transposePosePointBlock();
+  // std::cout << (*hessian_b->H_pose_point)-(hessian_b->H_point_pose->transpose()) << std::endl;
   // hessian_b->visualizeH();
   // cv::waitKey(0);
   delete jacobians_and_error_vec;
@@ -1110,6 +1115,7 @@ void BundleAdj::optimize(){
 
   // optimize
   while(true){
+  // for(int i=0; i<30; i++){
     float chi = optimizationStep( );
     if(debug_optimization_){
       CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
