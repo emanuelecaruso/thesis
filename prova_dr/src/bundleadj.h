@@ -101,8 +101,10 @@ class HessianAndB{
     void updateHessianAndB_onlyD(JacobiansAndError* jacobians_and_error );
 
     deltaUpdateIncrements* getDeltaUpdateIncrements();
+    deltaUpdateIncrements* getDeltaUpdateIncrements_Slow();
     deltaUpdateIncrements* getDeltaUpdateIncrements_onlyCams();
     deltaUpdateIncrements* getDeltaUpdateIncrements_onlyPoints();
+
 
     void visualizeH();
 
