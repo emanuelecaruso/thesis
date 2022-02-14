@@ -765,7 +765,8 @@ void CameraForMapping::showProjActivePoints(float size){
   }
 
 
-  show_img->show(size, name_+", n projected active points: "+std::to_string(n_proj_active_pt));
+  // show_img->show(size, name_+", n projected active points: "+std::to_string(n_proj_active_pt));
+  show_img->show(size, name_+", projected active points");
 
 }
 

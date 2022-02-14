@@ -22,6 +22,7 @@ class JacobiansAndError{
     float J_d;
     Eigen::Matrix<float,6,1>* J_r_transp;
     Eigen::Matrix<float,6,1>* J_m_transp;
+    float weight_total;
 
     ActivePoint* active_pt;
     CameraForMapping* cam_m;
@@ -29,7 +30,7 @@ class JacobiansAndError{
     float error;
 
     JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, float J_d_,
-                      CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_ ):
+                      CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_, float weight_total_ ):
     J_r(J_r_),
     J_m(J_m_),
     J_d(J_d_),
@@ -39,7 +40,8 @@ class JacobiansAndError{
     active_pt(active_pt_),
     cam_m(cam_m_),
 
-    error(error_)
+    error(error_),
+    weight_total(weight_total_)
     {
       *J_r_transp=J_r_->transpose();
       *J_m_transp=J_m_->transpose();
@@ -91,13 +93,16 @@ class HessianAndB{
       delete b_pose;
       delete b_point;
     }
+    Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint();
 
     void updateHessianAndB(JacobiansAndError* jacobians_and_error );
     void updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error );
     void updateHessianAndB_onlyR(JacobiansAndError* jacobians_and_error );
+    void updateHessianAndB_onlyD(JacobiansAndError* jacobians_and_error );
 
     deltaUpdateIncrements* getDeltaUpdateIncrements();
     deltaUpdateIncrements* getDeltaUpdateIncrements_onlyCams();
+    deltaUpdateIncrements* getDeltaUpdateIncrements_onlyPoints();
 
     void visualizeH();
 
@@ -141,11 +146,13 @@ class BundleAdj{
     void getCoarseActivePoints();
     void collectCoarseActivePoints();
 
+    float getWeightTotal(float error);
     JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m);
 
     void initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
+    void initializeStateStructure_onlyD( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
 
     float optimizationStep();
     void optimize();
@@ -178,12 +185,15 @@ class BundleAdj{
 
     void marginalize();
     void updateDeltaUpdates(deltaUpdateIncrements* delta);
+    void updateDeltaUpdatesOnlyD(deltaUpdateIncrements* delta);
     void fixNewTangentSpace();
+    void fixNewTangentSpaceOnlyD();
 
     Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, Eigen::Vector2i& pixel_m);
     Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
     Eigen::Matrix<float,1,6>* getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m);
     float getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
     float getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector2i& pixel_m);
+    bool getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector2i& pixel_m, float& error);
 
 };

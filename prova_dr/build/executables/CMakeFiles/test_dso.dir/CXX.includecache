@@ -355,6 +355,8 @@ assert.h
 -
 defs.h
 /home/manu/Desktop/thesis/prova_dr/src/defs.h
+Eigen/QR
+-
 
 /home/manu/Desktop/thesis/prova_dr/src/bundleadj.h
 camera.h

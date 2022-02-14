@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "defs.h"
+#include <Eigen/QR>
 
 CameraForMapping* BundleAdj::getFrameCurrentBA(){
   return dtam_->camera_vector_->at(frame_current_ba);
@@ -282,8 +283,6 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
   Eigen::Matrix3f K = *(cam_m->K_);
-  float variance = dtam_->parameters_->variance;
-  int ni = dtam_->parameters_->robustifier_dofs;
   float coeff = pixels_meter_ratio/pow(2,active_pt->level_+1);
 
   // variables
@@ -322,14 +321,6 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
   Eigen::Matrix<float, 2,3> proj_jacobian;
   Eigen::Matrix<float, 2,6> jacobian_to_mul;
   Eigen::Matrix<float, 2,1> jacobian_to_mul_normalizer;
-  // Eigen::Matrix<float, 3,1> invdepth_jacobian;
-
-  // invdepth_jacobian << -active_pt->uv_.x()/pow(invdepth,2),
-  //                        -active_pt->uv_.y()/pow(invdepth,2),
-  //                        -1/pow(invdepth,2);
-  //
-  // jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(active_pt->cam_->frame_camera_wrt_world_->linear()*invdepth_jacobian)));
-
 
   proj_jacobian << 1./p_proj_0.z(), 0, -p_proj_0.x()/pow(p_proj_0.z(),2),
                    0, 1./p_proj_0.z(), -p_proj_0.y()/pow(p_proj_0.z(),2);
@@ -383,10 +374,12 @@ float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::M
   Eigen::Matrix3f Kinv = *(cam_r->Kinv_);
 
   // Eigen::Matrix<float, 3,1> invdepth_jacobian;
-  //
+
   // invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_0_,2),
   //                      -active_pt->uv_.y()/pow(active_pt->invdepth_0_,2),
   //                      -1/pow(active_pt->invdepth_0_,2);
+  //
+  // float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear()))*(cam_r->frame_camera_wrt_world_0_->linear())*Kinv )*invdepth_jacobian;
 
   Eigen::Matrix<float, 3,1> depth_jacobian;
 
@@ -410,6 +403,7 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   Eigen::Matrix<float,6,1> J_r_transp = *(jacobians_and_error->J_r_transp);
   Eigen::Matrix<float,6,1> J_m_transp = *(jacobians_and_error->J_m_transp);
   float error = jacobians_and_error->error;
+  float weight_total = jacobians_and_error->weight_total;
 
   const int r = jacobians_and_error->active_pt->cam_->state_pose_block_idx_;
   const int m = jacobians_and_error->cam_m->state_pose_block_idx_;
@@ -426,35 +420,35 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   // pose pose block
   // O-
   // --
-  H_pose_pose->block(m,m,6,6)+=J_m_transp*J_m;
-  H_pose_pose->block(r,r,6,6)+=J_r_transp*J_r;
+  H_pose_pose->block(m,m,6,6)+=J_m_transp*weight_total*J_m;
+  H_pose_pose->block(r,r,6,6)+=J_r_transp*weight_total*J_r;
   // std::cout << "aooo\n"<< J_r_transp*J_m << std::endl;
 
   // pose point block
   // -O
   // --
-  H_pose_point->block(m,d,6,1)+=J_m_transp*J_d;
-  H_pose_point->block(r,d,6,1)+=J_r_transp*J_d;
+  H_pose_point->block(m,d,6,1)+=J_m_transp*weight_total*J_d;
+  H_pose_point->block(r,d,6,1)+=J_r_transp*weight_total*J_d;
 
 
   // point pose block
   // --
   // O-
-  H_point_pose->block(d,m,1,6)+=J_d*J_m;
-  H_point_pose->block(d,r,1,6)+=J_d*J_r;
+  H_point_pose->block(d,m,1,6)+=J_d*weight_total*J_m;
+  H_point_pose->block(d,r,1,6)+=J_d*weight_total*J_r;
 
   // point point block
   // --
   // -O
-  H_point_point->diagonal()[d]+=J_d*error;
+  H_point_point->diagonal()[d]+=J_d*weight_total*J_d;
 
   // ********** update b **********
   // pose block
-  b_pose->segment(m,6)+=J_m*error;
-  b_pose->segment(r,6)+=J_r*error;
+  b_pose->segment(m,6)+=J_m*weight_total*error;
+  b_pose->segment(r,6)+=J_r*weight_total*error;
 
   // point block
-  (*b_point)(d)+=J_d*error;
+  (*b_point)(d)+=J_d*weight_total*error;
 
 }
 
@@ -465,6 +459,7 @@ void HessianAndB::updateHessianAndB_onlyR(JacobiansAndError* jacobians_and_error
   Eigen::Matrix<float,1,6> J_r = *(jacobians_and_error->J_r);
   Eigen::Matrix<float,6,1> J_r_transp = *(jacobians_and_error->J_r_transp);
   float error = jacobians_and_error->error;
+  float weight_total = jacobians_and_error->weight_total;
 
   const int r = jacobians_and_error->active_pt->cam_->state_pose_block_idx_;
 
@@ -475,13 +470,13 @@ void HessianAndB::updateHessianAndB_onlyR(JacobiansAndError* jacobians_and_error
   // pose pose block
   // O-
   // --
-  H_pose_pose->block(r,r,6,6)+=J_r_transp*J_r;
+  H_pose_pose->block(r,r,6,6)+=J_r_transp*weight_total*J_r;
 
 
 
   // ********** update b **********
   // pose block
-  b_pose->segment(r,6)+=J_r*error;
+  b_pose->segment(r,6)+=J_r*weight_total*error;
 
 }
 
@@ -491,6 +486,7 @@ void HessianAndB::updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error
   Eigen::Matrix<float,1,6> J_m = *(jacobians_and_error->J_m);
   Eigen::Matrix<float,6,1> J_m_transp = *(jacobians_and_error->J_m_transp);
   float error = jacobians_and_error->error;
+  float weight_total = jacobians_and_error->weight_total;
 
   const int m = jacobians_and_error->cam_m->state_pose_block_idx_;
 
@@ -501,13 +497,40 @@ void HessianAndB::updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error
   // pose pose block
   // O-
   // --
-  H_pose_pose->block(m,m,6,6)+=J_m_transp*J_m;
+  H_pose_pose->block(m,m,6,6)+=J_m_transp*weight_total*J_m;
 
 
 
   // ********** update b **********
   // pose block
-  b_pose->segment(m,6)+=J_m*error;
+  b_pose->segment(m,6)+=J_m*weight_total*error;
+
+}
+
+
+void HessianAndB::updateHessianAndB_onlyD(JacobiansAndError* jacobians_and_error ){
+
+
+  float J_d = jacobians_and_error->J_d;
+  float error = jacobians_and_error->error;
+  float weight_total = jacobians_and_error->weight_total;
+
+  const int d = jacobians_and_error->active_pt->state_point_block_idx_;
+
+  if(d <0 || d>=point_block_size)
+    std::cout  << "AOOOOOOOOOOOOO " << d << " " << point_block_size << std::endl;
+
+  // ********** update H **********
+  // point point block
+  // --
+  // -O
+  H_point_point->diagonal()[d]+=J_d*weight_total*J_d;
+
+
+
+  // ********** update b **********
+  // point block
+  (*b_point)(d)+=J_d*weight_total*error;
 
 }
 
@@ -520,6 +543,47 @@ float BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen
   float error = (z_hat-z);
   return error;
 }
+
+bool BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector2i& pixel_m, float& error){
+  float z = active_pt->intensity_;
+  float z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixel(pixel_m);
+
+  // error
+  // float error = (z_hat-z)/normalizer;
+  error = (z_hat-z);
+
+  float error_eps = 0.0001;
+  // // saturate error
+  // if (error<error_eps)
+  //   error=error_eps;
+  //
+  // // // add error eps
+  // // error+=error_eps;
+  //
+  // do not consider measurement
+  if (error<error_eps)
+    return false;
+
+  return true;
+}
+
+
+float BundleAdj::getWeightTotal(float error){
+  // robustifier
+  float u = abs(error);
+  float rho_der = huberNormDerivative(u,dtam_->parameters_->huber_threshold);
+  float gamma=(1/(u+0.0001))*rho_der;
+
+
+  // weight
+  float variance = dtam_->parameters_->variance;
+  int ni = dtam_->parameters_->robustifier_dofs;
+  float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
+
+  float  weight_total = weight*gamma;
+  return weight_total;
+}
+
 
 JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m){
 
@@ -539,39 +603,60 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
   if (J_1==nullptr)
     return nullptr;
 
-  float error = getError( active_pt, cam_m ,pixel_m);
-  float error_eps = 0.0001;
-  // saturate error
-  if (error<error_eps)
-    error=error_eps;
+  float error;
+  bool flag = getError( active_pt, cam_m ,pixel_m, error);
+  if(!flag){
+    return nullptr;}
 
-  // // add error eps
-  // error+=error_eps;
+  // float error= getError( active_pt, cam_m ,pixel_m);
 
-  // do not consider measurement
-  if (error<error_eps)
-    return nullptr;
+  // float error_eps = 0.0001;
+  // // // saturate error
+  // // if (error<error_eps)
+  // //   error=error_eps;
+  // //
+  // // // // add error eps
+  // // // error+=error_eps;
+  // //
+  // // do not consider measurement
+  // if (error<error_eps)
+  //   return nullptr;
+
+  float  weight_total = getWeightTotal(error);
+
 
   Eigen::Matrix<float,1,6>* J_r = getJr( active_pt, cam_m, J_1);
   Eigen::Matrix<float,1,6>* J_m = getJm( active_pt, cam_m, J_1, point_m_0);
   float J_d = getJd(active_pt, cam_m, J_1);
 
-  JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error);
+  JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error, weight_total);
 
   return jacobians;
 
 }
 
+Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB::invertHPointPoint(){
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
+  for(int i=0; i<point_block_size; i++){
+    if(H_point_point->diagonal()(i)!=0)
+      H_point_point_inv->diagonal()(i)=1.0/H_point_point->diagonal()(i);
+  }
+  return H_point_point_inv;
+}
+
+
 deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
   Eigen::VectorXf* dx_poses = new Eigen::VectorXf(pose_block_size) ;
   Eigen::VectorXf* dx_points = new Eigen::VectorXf(point_block_size) ;
 
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic> H_point_point_inv = H_point_point->inverse();
-  Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*H_point_point_inv*(*H_point_pose));
+  // Eigen::DiagonalMatrix<float,Eigen::Dynamic> H_point_point_inv = H_point_point->inverse();
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+
+  Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
   Eigen::MatrixXf Schur_inv=Schur.inverse();
 
-  *dx_poses =  Schur_inv * ( (*b_pose) - (*H_pose_point)*H_point_point_inv*(*b_point) );
-  *dx_points = (H_point_point_inv*(*b_point))-(H_point_point_inv*(*H_point_pose)*(*dx_poses));
+  *dx_poses =  Schur_inv * ( (*b_pose) - (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
+  *dx_points = ((*H_point_point_inv)*(*b_point))-((*H_point_point_inv)*(*H_point_pose)*(*dx_poses));
 
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
@@ -584,6 +669,22 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements_onlyCams(){
 
   *dx_poses =  -(H_pose_pose->inverse()) * (*b_pose) ;
 
+
+  deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
+  return delta;
+}
+
+deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements_onlyPoints(){
+  Eigen::VectorXf* dx_poses = nullptr ;
+  Eigen::VectorXf* dx_points = new Eigen::VectorXf(point_block_size) ;
+
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+
+  *dx_points =  (*H_point_point_inv) * (-(*(b_point))) ;
+
+  // std::cout << H_point_point_inv.diagonal() << std::endl;
+  // std::cout << *(b_point) << std::endl;
+  // std::cout << *(dx_points) << std::endl;
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
@@ -612,7 +713,7 @@ void HessianAndB::visualizeH(){
   // pose point block
   for(int i=0; i<pose_block_size; i++){
     for(int j=0; j<point_block_size; j++){
-      if ((*H_pose_point)(i,pose_block_size+j)!=0){
+      if ((*H_pose_point)(i,j)!=0){
         img_H->setPixel(i,pose_block_size+j, green);
       }
       else{
@@ -625,7 +726,7 @@ void HessianAndB::visualizeH(){
   // point pose block
   for(int i=0; i<point_block_size; i++){
     for(int j=0; j<pose_block_size; j++){
-      if ((*H_point_pose)(i+pose_block_size,j)!=0){
+      if ((*H_point_pose)(i,j)!=0){
         img_H->setPixel(i+pose_block_size,j, green);
       }
       else{
@@ -635,8 +736,19 @@ void HessianAndB::visualizeH(){
     }
   }
 
+  // point point block
+  for(int i=0; i<point_block_size; i++){
+    if ((H_point_point->diagonal())(i)!=0){
+      img_H->setPixel(i+pose_block_size,i+pose_block_size, blue);
+    }
+    else{
+      img_H->setPixel(i+pose_block_size,i+pose_block_size, white);
 
-  img_H->show(2);
+    }
+
+  }
+
+  img_H->show(1);
 }
 
 
@@ -669,6 +781,25 @@ void BundleAdj::fixNewTangentSpace(){
 
 
 
+void BundleAdj::fixNewTangentSpaceOnlyD(){
+
+
+  // fix tangent space for points
+  for(int i=0; i<keyframe_vector_ba_->size() ; i++){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+
+    // iterate through all active points
+    for(int j=0; j<keyframe->active_points_->size() ; j++){
+      ActivePoint* active_pt = keyframe->active_points_->at(j);
+      active_pt->invdepth_0_=active_pt->invdepth_;
+      active_pt->delta_update_x_=0;
+    }
+
+  }
+}
+
+
+
 void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
   // UPDATE CAMERAS
   if(delta->dx_poses!=nullptr)
@@ -680,11 +811,6 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
         // if(!keyframe->first_keyframe_){
           (*keyframe->delta_update_x_)+=delta->dx_poses->segment(keyframe->state_pose_block_idx_,6);
           // std::cout << "CHAIOHCAEO\n" << (*keyframe->delta_update_x_) << "\n" << std::endl;
-          // std::cout << "\n" << *(keyframe->delta_update_x_) << std::endl;
-
-          // Eigen::Isometry3f frame_world_wrt_camera_ =v2t(*(keyframe->delta_update_x_))*(*(keyframe->frame_world_wrt_camera_0_));
-          // Eigen::Isometry3f frame_camera_wrt_world = frame_world_wrt_camera_.inverse();
-          // keyframe->assignPose( frame_camera_wrt_world );
 
           Eigen::Isometry3f frame_camera_wrt_world =(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_));
           keyframe->assignPose( frame_camera_wrt_world );
@@ -712,6 +838,7 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
             active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+active_pt->delta_update_x_);
           }
 
+          // since change both poses and invdepths
           keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
           *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
           // propagate uncertainty TODO
@@ -724,53 +851,40 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
   // }
 }
 
-void BundleAdj::initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
 
+void BundleAdj::updateDeltaUpdatesOnlyD(deltaUpdateIncrements* delta){
   CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(0));
-  keyframe->state_pose_block_idx_=-1;
 
-  CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->at(1));
-  keyframe_last->state_pose_block_idx_=0;
-  n_cams++;
-
-
-
-  // iterate through active points
-  for( int j=0; j<keyframe->active_points_->size(); j++){
+  // UPDATE POINTS
+  // iterate through all active points
+  for(int j=0; j<keyframe->active_points_->size() ; j++){
     ActivePoint* active_pt = keyframe->active_points_->at(j);
+    // update delta update of active point
+    // regular sum since invdepth is in R
 
-    JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_last);
-    if (jacobians!=nullptr){
-      jacobians_and_error_vec->push_back(jacobians);
+    if(delta->dx_points!=nullptr){
+      active_pt->delta_update_x_+=(*(delta->dx_points))(active_pt->state_point_block_idx_);
+      // std::cout << active_pt->invdepth_0_ << " " << active_pt->delta_update_x_ << std::endl;
+      // active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
+
+      active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+active_pt->delta_update_x_);
+      // active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+(1.0/active_pt->delta_update_x_));
+
     }
 
+    // since change both poses and invdepths
+    keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
+    *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
+    // propagate uncertainty TODO
   }
 
+
+  // }
+  // else{
+  //   std::cout << "POINTS NOT TAKEN" << std::endl;
+  // }
 }
 
-
-void BundleAdj::initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
-
-  CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(0));
-  keyframe->state_pose_block_idx_=0;
-  n_cams++;
-
-  CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->at(1));
-  keyframe_last->state_pose_block_idx_=-1;
-
-
-  // iterate through active points
-  for( int j=0; j<keyframe->active_points_->size(); j++){
-    ActivePoint* active_pt = keyframe->active_points_->at(j);
-
-    JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_last);
-    if (jacobians!=nullptr){
-      jacobians_and_error_vec->push_back(jacobians);
-    }
-
-  }
-
-}
 
 void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
 
@@ -824,6 +938,85 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
   n_cams++;
 }
 
+
+void BundleAdj::initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
+
+  CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(0));
+  keyframe->state_pose_block_idx_=-1;
+
+  CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->at(1));
+  keyframe_last->state_pose_block_idx_=0;
+  n_cams++;
+
+
+
+  // iterate through active points
+  for( int j=0; j<keyframe->active_points_->size(); j++){
+    ActivePoint* active_pt = keyframe->active_points_->at(j);
+
+    JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_last);
+    if (jacobians!=nullptr){
+      jacobians_and_error_vec->push_back(jacobians);
+    }
+
+  }
+
+}
+
+
+void BundleAdj::initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
+
+  CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(0));
+  keyframe->state_pose_block_idx_=0;
+  n_cams++;
+
+  CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->at(1));
+  keyframe_last->state_pose_block_idx_=-1;
+
+
+  // iterate through active points
+  for( int j=0; j<keyframe->active_points_->size(); j++){
+    ActivePoint* active_pt = keyframe->active_points_->at(j);
+
+    JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_last);
+    if (jacobians!=nullptr){
+      jacobians_and_error_vec->push_back(jacobians);
+    }
+
+  }
+
+}
+
+
+void BundleAdj::initializeStateStructure_onlyD( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
+
+  CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(0));
+  keyframe->state_pose_block_idx_=-1;
+
+  CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->at(1));
+  keyframe_last->state_pose_block_idx_=-1;
+
+  // iterate through active points
+  for( int j=0; j<keyframe->active_points_->size(); j++){
+    ActivePoint* active_pt = keyframe->active_points_->at(j);
+    bool point_taken = false;
+    JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_last);
+
+    if (jacobians==nullptr){
+      active_pt->state_point_block_idx_=-1;
+    }
+    else{
+      point_taken=true;
+      active_pt->state_point_block_idx_=n_points;
+      n_points++;
+      jacobians_and_error_vec->push_back(jacobians);
+    }
+
+
+  }
+
+}
+
 float BundleAdj::optimizationStep( ){
 
   float chi = 0;
@@ -836,6 +1029,7 @@ float BundleAdj::optimizationStep( ){
   initializeStateStructure( n_cams, n_points, jacobians_and_error_vec );
   // initializeStateStructure_onlyM( n_cams, n_points, jacobians_and_error_vec );
   // initializeStateStructure_onlyR( n_cams, n_points, jacobians_and_error_vec );
+  // initializeStateStructure_onlyD( n_cams, n_points, jacobians_and_error_vec );
 
   std::cout << "OPT N CAMS : " << n_cams << ", OPT N POINTS : " << n_points << std::endl;
 
@@ -845,14 +1039,14 @@ float BundleAdj::optimizationStep( ){
   for(int i=0; i<jacobians_and_error_vec->size(); i++){
     JacobiansAndError* jacobians_and_error = jacobians_and_error_vec->at(i);
     hessian_b->updateHessianAndB( jacobians_and_error );
-
+    // hessian_b->updateHessianAndB_onlyM( jacobians_and_error );
+    // hessian_b->updateHessianAndB_onlyR( jacobians_and_error );
+    // hessian_b->updateHessianAndB_onlyD( jacobians_and_error );
 
     chi+=(jacobians_and_error->error*jacobians_and_error->error);
 
     delete jacobians_and_error;
   }
-  // hessian_b->updateHessianAndB_onlyM( jacobians_and_error );
-  // hessian_b->updateHessianAndB_onlyR( jacobians_and_error );
   hessian_b->visualizeH();
   cv::waitKey(0);
   delete jacobians_and_error_vec;
@@ -861,16 +1055,18 @@ float BundleAdj::optimizationStep( ){
   // std::cout << "NUM SUPPRESSED MEASUREMENT: " << n_suppressed_measurement << std::endl;
 
   // get delta update
-  // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
-  deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_onlyCams();
-
+  deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
+  // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_onlyCams();
+  // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_onlyPoints();
 
 
   // update x in each cam and active point
   updateDeltaUpdates(delta);
+  // updateDeltaUpdatesOnlyD(delta);
 
   // update fixed points
   fixNewTangentSpace();
+  // fixNewTangentSpaceOnlyD();
 
   return chi;
 }
@@ -883,7 +1079,7 @@ void BundleAdj::optimize(){
   // marginalize();
 
   // optimize
-  for(int i=0; i<1000; i++){
+  while(true){
     float chi = optimizationStep( );
     if(debug_optimization_){
       CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
