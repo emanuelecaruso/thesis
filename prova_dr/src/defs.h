@@ -275,6 +275,7 @@ namespace pr {
   const float pixelIntensity_maxval = 1;
   const int pixelIntensity_CODE = CV_32FC1;
 
+  typedef Eigen::Vector2f pxl;
 
   struct Cp // Colored point (in 3D)
   {

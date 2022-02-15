@@ -91,21 +91,21 @@ class Camera{
 
     // sampling
     void sampleRandomUv(Eigen::Vector2f& uv);
-    void sampleRandomPixel(Eigen::Vector2i& pixel_coords);
+    void sampleRandomPixel(pxl& pixel_coords);
 
     // access
     void getCenterAsUV(Eigen::Vector2f& uv) const;
-    void getCentreAsPixel(Eigen::Vector2i& pixel_coords) const;
+    void getCentreAsPixel(pxl& pixel_coords) const;
     float getPixelWidth(int level=-1) const;
 
     // assign
     void assignPose(Eigen::Isometry3f& frame_camera_wrt_world);
 
     // functions for projections/transformations
-    void pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv, int level) const;
-    void pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv) const;
-    void uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords, int level) const;
-    void uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const;
+    void pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv, int level) const;
+    void pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv) const;
+    void uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords, int level) const;
+    void uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p, Eigen::Vector3f& p_incamframe) const;
     void pointAtDepthInCamFrame(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p_incamframe) const;
@@ -146,10 +146,10 @@ class CameraForMapping;
 class CandidateBase{
   public:
     const int level_;
-    Eigen::Vector2i pixel_;
+    pxl pixel_;
     Eigen::Vector2f uv_;
 
-    CandidateBase(const int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv):
+    CandidateBase(const int level, pxl& pixel, Eigen::Vector2f& uv):
     level_(level), pixel_(pixel), uv_(uv){};
 };
 
@@ -187,7 +187,7 @@ class Candidate : public CandidateBase{
   public:
 
     // create candidate
-    Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
+    Candidate(int level, pxl& pixel, Eigen::Vector2f& uv,
               CameraForMapping* cam,
               pixelIntensity intensity,
               float grad_magnitude,
@@ -212,7 +212,7 @@ class Candidate : public CandidateBase{
     {};
 
     // candidate coarse
-    Candidate(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
+    Candidate(int level, pxl& pixel, Eigen::Vector2f& uv,
               CameraForMapping* cam,
               pixelIntensity intensity,
               float grad_magnitude,
@@ -271,7 +271,7 @@ class CandidateProjected : public CandidateBase{
     Candidate* cand_;
     CameraForMapping* cam_;
 
-    CandidateProjected(Candidate* cand, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth, CameraForMapping* cam):
+    CandidateProjected(Candidate* cand, pxl& pixel, Eigen::Vector2f& uv, float invdepth, CameraForMapping* cam):
     CandidateBase(cand->level_, pixel, uv),
     invdepth_(invdepth),
     cand_(cand),
@@ -320,7 +320,7 @@ class ActivePoint : public CandidateBase{
     }
 
     // coarse active point
-    ActivePoint(int level, Eigen::Vector2i& pixel, Eigen::Vector2f& uv,
+    ActivePoint(int level, pxl& pixel, Eigen::Vector2f& uv,
                 CameraForMapping* cam,
                 pixelIntensity intensity,
                 float grad_magnitude,
@@ -414,7 +414,7 @@ class ActivePointProjected : public CandidateBase{
     {}
 
     // project active point
-    ActivePointProjected(ActivePoint* active_point, Eigen::Vector2i& pixel, Eigen::Vector2f& uv, float invdepth, CameraForMapping* cam):
+    ActivePointProjected(ActivePoint* active_point, pxl& pixel, Eigen::Vector2f& uv, float invdepth, CameraForMapping* cam):
     CandidateBase(active_point->level_, pixel, uv),
     invdepth_(invdepth),
     active_point_(active_point),

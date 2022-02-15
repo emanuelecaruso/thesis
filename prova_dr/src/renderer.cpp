@@ -19,7 +19,7 @@ bool Renderer::renderPoint(Cp& cp, Camera* camera){
   if(uv.y()<0 || uv.y()>height)
     return false;
 
-  Eigen::Vector2i pixel_coords;
+  pxl pixel_coords;
   camera->uv2pixelCoords( uv, pixel_coords);
 
   float depth = depth_cam/camera->max_depth_;

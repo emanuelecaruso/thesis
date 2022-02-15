@@ -22,7 +22,7 @@ void Camera::printMembers() const {
 }
 
 // sampling
-void Camera::sampleRandomPixel(Eigen::Vector2i& pixel_coords){
+void Camera::sampleRandomPixel(pxl& pixel_coords){
   pixel_coords.x() = rand() % cam_parameters_->resolution_x;
   pixel_coords.y() = rand() % cam_parameters_->resolution_y;
 }
@@ -38,7 +38,7 @@ void Camera::getCenterAsUV(Eigen::Vector2f& uv) const{
   uv.y() = cam_parameters_->height/2;
 }
 
-void Camera::getCentreAsPixel(Eigen::Vector2i& pixel_coords) const{
+void Camera::getCentreAsPixel(pxl& pixel_coords) const{
   pixel_coords.x() = cam_parameters_->resolution_x/2;
   pixel_coords.y() = cam_parameters_->resolution_y/2;
 }
@@ -75,31 +75,29 @@ Eigen::Matrix3f* Camera::compute_K(){
   return K;
 }
 
-void Camera::pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv, int level) const {
+void Camera::pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv, int level) const {
 
   int resolution_x=cam_parameters_->resolution_x/(pow(2,level+1));
   int resolution_y=cam_parameters_->resolution_y/(pow(2,level+1));
 
-  float pixel_width = cam_parameters_->width/(float)resolution_x;
-
-  uv.x()=((float)pixel_coords.x()/(float)resolution_x)*cam_parameters_->width+(pixel_width/2);
-  uv.y()=((float)pixel_coords.y()/(float)resolution_y)*cam_parameters_->height+(pixel_width/2);
+  uv.x()=((float)pixel_coords.x()/(float)resolution_x)*cam_parameters_->width;
+  uv.y()=((float)pixel_coords.y()/(float)resolution_y)*cam_parameters_->height;
 }
 
-void Camera::pixelCoords2uv(const Eigen::Vector2i& pixel_coords, Eigen::Vector2f& uv) const {
+void Camera::pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv) const {
   pixelCoords2uv( pixel_coords, uv, -1);
 }
 
-void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords, int level) const {
+void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords, int level) const {
 
   int resolution_x=cam_parameters_->resolution_x/(pow(2,level+1));
   int resolution_y=cam_parameters_->resolution_y/(pow(2,level+1));
 
-  pixel_coords.x()=(int)((uv.x()/cam_parameters_->width)*resolution_x);
-  pixel_coords.y()=(int)((uv.y()/cam_parameters_->height)*resolution_y);
+  pixel_coords.x()=((uv.x()/cam_parameters_->width)*(float)resolution_x);
+  pixel_coords.y()=((uv.y()/cam_parameters_->height)*(float)resolution_y);
 }
 
-void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, Eigen::Vector2i& pixel_coords) const {
+void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords) const {
 uv2pixelCoords(uv, pixel_coords, -1);
 }
 
@@ -274,7 +272,7 @@ void Candidate::marginalize() const{
 
 void Candidate::setInvdepthGroundtruth(){
 
-  Eigen::Vector2i pixel;
+  pxl pixel;
   this->cam_->uv2pixelCoords( this->uv_, pixel);
   float invdepth_val = cam_->grountruth_camera_->invdepth_map_->evalPixel(pixel);
   float invdepth_gt = invdepth_val/cam_->cam_parameters_->min_depth;
@@ -324,7 +322,7 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
         pixelIntensity phase_cd_dx = wvlt_lvl->phase_cd_dx->evalPixel(y_curr,x_curr);
         pixelIntensity phase_cd_dy = wvlt_lvl->phase_cd_dy->evalPixel(y_curr,x_curr);
 
-        Eigen::Vector2i pixel_coords{x_curr,y_curr};
+        pxl pixel_coords{x_curr,y_curr};
         Eigen::Vector2f uv;
         cam_->pixelCoords2uv(pixel_coords, uv, wav_level);
 
@@ -548,7 +546,7 @@ void CameraForMapping::showCandidates(float size){
     // get level
     int level = candidate->level_;
 
-    Eigen::Vector2i pixel= candidate->pixel_;
+    pxl pixel= candidate->pixel_;
     pixel*=pow(2,level+1);
 
     // compute corners
@@ -587,7 +585,7 @@ void CameraForMapping::showCoarseCandidates(int level, float size){
     // get level
     // int level = candidate->level_;
 
-    Eigen::Vector2i pixel= candidate->pixel_;
+    pxl pixel= candidate->pixel_;
     pixel*=pow(2,level+1);
 
     // compute corners
@@ -629,7 +627,7 @@ void CameraForMapping::showCoarseActivePoints(int level, float size){
     // get level
     // int level = candidate->level_;
 
-    Eigen::Vector2i pixel= active_point->pixel_;
+    pxl pixel= active_point->pixel_;
     pixel*=pow(2,level+1);
 
     // compute corners
@@ -667,12 +665,14 @@ void CameraForMapping::showProjCandidates(float size){
       // get level
       int level = cand_proj->level_;
 
-      Eigen::Vector2i pixel= cand_proj->pixel_;
+      pxl pixel= cand_proj->pixel_;
       pixel*=pow(2,level+1);
+
       std::string name = "" ;
 
-      if (pixel.y()>=0 && pixel.y()<image_intensity_->image_.rows && pixel.x()>=0 && pixel.x()<image_intensity_->image_.cols)
+      if (pixel.y()>=(1) && pixel.y()<(float)image_intensity_->image_.rows-(1) && pixel.x()>=(1) && pixel.x()<image_intensity_->image_.cols-(1))
       {
+
         // compute corners
         cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
 
@@ -680,6 +680,7 @@ void CameraForMapping::showProjCandidates(float size){
 
         show_img->drawRectangle(r, color, cv::FILLED, alpha);
         // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+
       }
 
     }
@@ -700,19 +701,20 @@ void CameraForMapping::showActivePoints(float size){
     // get level
     int level = active_pt->level_;
 
-    Eigen::Vector2i pixel= active_pt->pixel_;
+    pxl pixel= active_pt->pixel_;
     pixel*=pow(2,level+1);
     std::string name = "" ;
 
-    if (pixel.y()>=0 && pixel.y()<image_intensity_->image_.rows && pixel.x()>=0 && pixel.x()<image_intensity_->image_.cols)
+    if (pixel.y()>=(1) && pixel.y()<(float)image_intensity_->image_.rows-(1) && pixel.x()>=(1) && pixel.x()<image_intensity_->image_.cols-(1))
     {
       // compute corners
-      cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));
+      cv::Rect r= cv::Rect((int)pixel.x(),(int)pixel.y(),pow(2,level+1),pow(2,level+1));
 
       colorRGB color = invdepthToRgb(active_pt->invdepth_);
 
       show_img->drawRectangle(r, color, cv::FILLED, alpha);
       // show_img->drawRectangle(r, color_map[level], cv::LINE_8, alpha);
+
     }
   }
   show_img->show(size, name_+", n projected active points: "+std::to_string(n_proj_active_pt));
@@ -747,11 +749,11 @@ void CameraForMapping::showProjActivePoints(float size){
       // get level
       int level = active_pt_proj->level_;
 
-      Eigen::Vector2i pixel= active_pt_proj->pixel_;
+      pxl pixel= active_pt_proj->pixel_;
       pixel*=pow(2,level+1);
       std::string name = "" ;
 
-      if (pixel.y()>=0 && pixel.y()<image_intensity_->image_.rows && pixel.x()>=0 && pixel.x()<image_intensity_->image_.cols)
+      if (pixel.y()>=(1) && pixel.y()<(float)image_intensity_->image_.rows-(1) && pixel.x()>=(1) && pixel.x()<image_intensity_->image_.cols-(1))
       {
         // compute corners
         cv::Rect r= cv::Rect(pixel.x(),pixel.y(),pow(2,level+1),pow(2,level+1));

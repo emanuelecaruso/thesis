@@ -142,14 +142,14 @@ void Mapper::selectNewCandidates(){
 float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_line, CamCouple* cam_couple, Eigen::Vector2f& uv_min, float pixel_width){
 
   float standard_deviation;
-  Eigen::Vector2i pixel_m;
+  pxl pixel_m;
   cam_couple->cam_m_->uv2pixelCoords(uv_min, pixel_m, candidate->level_);
   if (!cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->pixelInRange(pixel_m))
     return -1;
   // GEOMETRIC DISPARITY ERROR
   float g_dot_l; // squared scalar product between direction of gradient and ep_line -> |g| |l| cos(a)
                  // since |g|, |l| =1 -> cos(angle between g and l)
-  float angle_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixel(pixel_m);
+  float angle_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixelBilinear(pixel_m);
   float angle_l =ep_line->slope2angle();
 
   float a = radiansSub(angle_g,angle_l);
@@ -169,7 +169,7 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
 
   // PHOTOMETRIC ERROR
   // gradient on epline direction
-  float magn_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel_m);
+  float magn_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixelBilinear(pixel_m);
   float g_p = g_dot_l*magn_g;
 
   // standard deviation img noise
@@ -277,7 +277,7 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
 
   Eigen::Vector3f p;
   Eigen::Vector2f uv;
-  Eigen::Vector2i pixel_coords;
+  pxl pixel_coords;
   float depth_m;
 
   cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, depth_m );
@@ -297,7 +297,7 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
 
 CandidateProjected* Mapper::projectCandidateAndUpdateCandInvdepth(Candidate* candidate, CamCouple* cam_couple, EpipolarLine* ep_line , Eigen::Vector2f uv_curr){
 
-  Eigen::Vector2i pixel_curr;
+  pxl pixel_curr;
   cam_couple->cam_m_->uv2pixelCoords(uv_curr,pixel_curr,candidate->level_);
 
   float coord, d1, d2;
@@ -528,7 +528,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           cand->one_min_=true;
 
           if(debug_mapping ){
-            Eigen::Vector2i pixel_proj;
+            pxl pixel_proj;
             last_keyframe->uv2pixelCoords(projected_cand->uv_, pixel_proj);
             float invdepth_val = last_keyframe->grountruth_camera_->invdepth_map_->evalPixel(pixel_proj);
             float invdepth_gt = invdepth_val/last_keyframe->cam_parameters_->min_depth;

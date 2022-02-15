@@ -124,22 +124,22 @@ std::vector<pixelIntensity>* EpipolarLine::collectIntensitiesMOfDSOPattern(Candi
   cam_couple->getD1(cand->uv_.x(),cand->uv_.y(),d1,coord,u_or_v);
 
   // push central pixel
-  Eigen::Vector2i pixel_central_m;
+  pxl pixel_central_m;
   cam_couple->cam_m_->uv2pixelCoords(uv_m,pixel_central_m,cand->level_);
-  pixelIntensity intensity_central_r = c_r->evalPixel(cand->pixel_);
-  pixelIntensity intensity_central_m = c_m->evalPixel(pixel_central_m);
+  pixelIntensity intensity_central_r = c_r->evalPixelBilinear(cand->pixel_);
+  pixelIntensity intensity_central_m = c_m->evalPixelBilinear(pixel_central_m);
   intensities_r->push_back(intensity_central_r);
   intensities_m->push_back(intensity_central_m);
 
   //project each point inside r on cam m
   for(Eigen::Vector2f uv_r : *uvs_r){
     Eigen::Vector2f uv_m;
-    Eigen::Vector2i pixel_r, pixel_m;
+    pxl pixel_r, pixel_m;
     cam_couple->getUv(uv_r.x(),uv_r.y(),d1,uv_m.x(),uv_m.y());
     cam_couple->cam_r_->uv2pixelCoords(uv_r,pixel_r,cand->level_);
     cam_couple->cam_m_->uv2pixelCoords(uv_m,pixel_m,cand->level_);
-    pixelIntensity intensity_r = c_r->evalPixel(pixel_r);
-    pixelIntensity intensity_m = c_m->evalPixel(pixel_m);
+    pixelIntensity intensity_r = c_r->evalPixelBilinear(pixel_r);
+    pixelIntensity intensity_m = c_m->evalPixelBilinear(pixel_m);
     intensities_r->push_back(intensity_r);
     intensities_m->push_back(intensity_m);
   }
@@ -245,12 +245,12 @@ bool EpipolarLine::searchMinDSO(Candidate* candidate, Params* parameters, CamCou
 
   for(int i=0; i<uvs->size(); i++){
     Eigen::Vector2f uv = uvs->at(i);
-    Eigen::Vector2i pixel;
+    pxl pixel;
     cam->uv2pixelCoords(uv,pixel,candidate->level_);
 
     float magnitude_m;
 
-    if(! cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m)){
+    if(! cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixelBilinear(pixel, magnitude_m)){
       continue;
     }
 
@@ -312,7 +312,7 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
 
   for(int i=0; i<uvs->size(); i++){
     Eigen::Vector2f uv = uvs->at(i);
-    Eigen::Vector2i pixel;
+    pxl pixel;
     cam->uv2pixelCoords(uv,pixel,candidate->level_);
 
     pixelIntensity intensity_m;
@@ -320,11 +320,11 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
     float phase_m;
 
 
-    if(!cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixel(pixel, intensity_m))
+    if(!cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->c->evalPixelBilinear(pixel, intensity_m))
       continue;
 
-    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixel(pixel, magnitude_m);
-    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixel(pixel, phase_m);
+    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->magn_cd->evalPixelBilinear(pixel, magnitude_m);
+    cam->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixelBilinear(pixel, phase_m);
 
     float cost = getCostMagn(intensity_r, intensity_m, magnitude_r, magnitude_m);
 
@@ -393,7 +393,7 @@ void EpipolarLine::showEpipolarWithMin(int level,float size){
 
     if(!uv_idxs_mins->empty()){
       for (int idx : *uv_idxs_mins){
-        Eigen::Vector2i pixel;
+        pxl pixel;
         cam->uv2pixelCoords(uvs->at(idx),pixel,level);
         image_intensity_new->setPixel(pixel,blue);
       }
@@ -420,7 +420,7 @@ void EpipolarLine::drawEpipolar(Image<colorRGB>* img, const colorRGB& color, int
 
     if (!uvs->empty())
       for( int i=0; i<uvs->size(); i++){
-        Eigen::Vector2i pixel;
+        pxl pixel;
 
         cam->uv2pixelCoords(uvs->at(i),pixel,level);
 

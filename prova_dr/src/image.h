@@ -90,8 +90,8 @@ class Image{
       return new_img;
     }
 
-    inline bool pixelInRange(const Eigen::Vector2i& pixel_coords) const{
-      if (pixel_coords.y()>=0 && pixel_coords.y()<image_.rows && pixel_coords.x()>=0 && pixel_coords.x()<image_.cols){
+    inline bool pixelInRange(const pxl& pixel_coords) const{
+      if (pixel_coords.y()>0.5 && pixel_coords.y()<image_.rows-0.5 && pixel_coords.x()>0.5 && pixel_coords.x()<image_.cols-0.5){
         return true;
       }
       return false;
@@ -104,13 +104,70 @@ class Image{
       return false;
     }
 
-    inline T evalPixel(const Eigen::Vector2i& pixel_coords) const{
+    inline T evalPixel(const pxl& pixel_coords) const{
       T color;
       if(pixelInRange(pixel_coords))
       {
-        color = image_.template at<T>(pixel_coords.y(),pixel_coords.x());
+        color = image_.template at<T>((int)(pixel_coords.y()-0.5),(int)(pixel_coords.x()-0.5));
       }
       return color;
+    }
+
+    inline T evalPixelBilinear(const pxl& pixel_coords) const{
+      T color;
+      if(pixelInRange(pixel_coords))
+      {
+        float x1 = trunc(pixel_coords.x());
+        float x2 = x1+1;
+        float y1 = trunc(pixel_coords.y());
+        float y2 = y1+1;
+        float x_x1 = pixel_coords.x()-x1;
+        float x2_x = 1-x_x1;
+        float y_y1 = pixel_coords.y()-y1;
+        float y2_y = 1-y_y1;
+        T q11 = image_.template at<T>(y1,x1);
+        T q21 = image_.template at<T>(y1,x2);
+        T q12 = image_.template at<T>(y2,x1);
+        T q22 = image_.template at<T>(y2,x2);
+        T r1  = q11 * x2_x + q21 * x_x1;
+        T r2  = q12 * x2_x + q22 * x_x1;
+        color = r1 * y2_y + r2 * y_y1 ;
+
+        // R1(x, y) = Q11 · (x2 – x) / (x2 – x1) + Q21 · (x – x1) / (x2 – x1)
+        // R2(x, y) = Q12 · (x2 – x) / (x2 – x1) + Q22 · (x – x1) / (x2 – x1)
+        // P(x, y) = R1 · (y2 – y) / (y2 – y1) + R2 · (y – y1) / (y2 – y1)
+
+      }
+      return color;
+    }
+
+
+    inline bool evalPixelBilinear(const pxl& pixel_coords, T& color) const{
+
+      if(pixelInRange(pixel_coords))
+      {
+        float x1 = trunc(pixel_coords.x());
+        float x2 = x1+1;
+        float y1 = trunc(pixel_coords.y());
+        float y2 = y1+1;
+        float x_x1 = pixel_coords.x()-x1;
+        float x2_x = 1-x_x1;
+        float y_y1 = pixel_coords.y()-y1;
+        float y2_y = 1-y_y1;
+        T q11 = image_.template at<T>(y1,x1);
+        T q21 = image_.template at<T>(y1,x2);
+        T q12 = image_.template at<T>(y2,x1);
+        T q22 = image_.template at<T>(y2,x2);
+        T r1  = q11 * x2_x + q21 * x_x1;
+        T r2  = q12 * x2_x + q22 * x_x1;
+        color = r1 * y2_y + r2 * y_y1 ;
+
+        // R1(x, y) = Q11 · (x2 – x) / (x2 – x1) + Q21 · (x – x1) / (x2 – x1)
+        // R2(x, y) = Q12 · (x2 – x) / (x2 – x1) + Q22 · (x – x1) / (x2 – x1)
+        // P(x, y) = R1 · (y2 – y) / (y2 – y1) + R2 · (y – y1) / (y2 – y1)
+        return true;
+      }
+      return false;
     }
 
     inline T evalPixel(const int row, const int col) const{
@@ -122,10 +179,10 @@ class Image{
       return color;
     }
 
-    inline bool evalPixel(const Eigen::Vector2i& pixel_coords, T& color) const{
+    inline bool evalPixel(const pxl& pixel_coords, T& color) const{
       if(pixelInRange(pixel_coords))
       {
-        color = image_.template at<T>(pixel_coords.y(),pixel_coords.x());
+        color = image_.template at<T>((int)(pixel_coords.y()-0.5),(int)(pixel_coords.x()-0.5));
         return true;
       }
       return false;
@@ -140,10 +197,10 @@ class Image{
       return false;
     }
 
-    inline bool setPixel(const Eigen::Vector2i& pixel_coords, const T& color){
+    inline bool setPixel(const pxl& pixel_coords, const T& color){
       if(pixelInRange(pixel_coords))
       {
-        image_.template at<T>(pixel_coords.y(),pixel_coords.x()) = color;
+        image_.template at<T>((int)(pixel_coords.y()-0.5),(int)(pixel_coords.x()-0.5)) = color;
         return true;
       }
       return false;
@@ -168,22 +225,22 @@ class Image{
     inline Image< pixelIntensity>* compute_sobel_x(const std::string& name) const{
       Image<  pixelIntensity >* img_sobel_x=new Image< pixelIntensity >(name);
 
-      // cv::Mat_<float> kernel(3,3);
-      // kernel <<  -1,  0, 1,
-      //            -2,  0, 2,
-      //            -1,  0, 1;
-      // // normalize
-      // kernel/=4;
-
-      cv::Mat_<float> kernel(5,5);
-      kernel <<  -2, -1,  0, 1, 2,
-                 -2, -1,  0, 1, 2,
-                 -4, -2,  0, 2, 4,
-                 -2, -1,  0, 1; 2,
-                 -2, -1,  0, 1, 2;
-
+      cv::Mat_<float> kernel(3,3);
+      kernel <<  -1,  0, 1,
+                 -2,  0, 2,
+                 -1,  0, 1;
       // normalize
-      kernel/=18;
+      kernel/=4;
+
+      // cv::Mat_<float> kernel(5,5);
+      // kernel <<  -2, -1,  0, 1, 2,
+      //            -2, -1,  0, 1, 2,
+      //            -4, -2,  0, 2, 4,
+      //            -2, -1,  0, 1; 2,
+      //            -2, -1,  0, 1, 2;
+      //
+      // // normalize
+      // kernel/=18;
 
       // kernel <<  -1,  0, 1,
       //            -1,  0, 1,
@@ -203,21 +260,21 @@ class Image{
     inline Image<pixelIntensity>* compute_sobel_y(const std::string& name) const{
       Image< pixelIntensity >* img_sobel_y =new Image< pixelIntensity >(name);
 
-      // cv::Mat_<float> kernel(3,3);
-      // kernel <<  -1, -2, -1,
-      //             0,  0,  0,
-      //             1,  2,  1;
-      // // normalize
-      // kernel/=4;
-
-      cv::Mat_<float> kernel(5,5);
-      kernel <<  -2, -2, -4, -2, -2,
-                 -1, -1, -2, -1, -1,
-                  0,  0,  0,  0,  0,
-                  1,  1,  2,  1,  1,
-                  2,  2,  4,  2,  2;
+      cv::Mat_<float> kernel(3,3);
+      kernel <<  -1, -2, -1,
+                  0,  0,  0,
+                  1,  2,  1;
       // normalize
-      kernel/=18;
+      kernel/=4;
+
+      // cv::Mat_<float> kernel(5,5);
+      // kernel <<  -2, -2, -4, -2, -2,
+      //            -1, -1, -2, -1, -1,
+      //             0,  0,  0,  0,  0,
+      //             1,  1,  2,  1,  1,
+      //             2,  2,  4,  2,  2;
+      // // normalize
+      // kernel/=18;
 
       // kernel <<  -1, -1, -1,
       //             0,  0,  0,
@@ -265,7 +322,7 @@ class Image{
       cv::circle	(	image_,point,radius,color, thickness);
     }
 
-    inline void drawCircle(colorRGB color, Eigen::Vector2i point, int radius=2, int thickness=2){
+    inline void drawCircle(colorRGB color, pxl point, int radius=2, int thickness=2){
       cv::Point2f point_(point.x(),point.y());
       cv::circle	(	image_,point_ ,radius,color, thickness);
     }
@@ -278,13 +335,13 @@ class Image{
     }
 
 
-    inline void showImgWithColoredPixel(const Eigen::Vector2i pixel, float size, const std::string& name) const{
+    inline void showImgWithColoredPixel(const pxl pixel, float size, const std::string& name) const{
       Image< colorRGB >* show_image = returnColoredImgFromIntensityImg(name);
       show_image->setPixel( pixel, red);
       show_image->show(size, name);
     }
 
-    inline void showImgWithCircledPixel(const Eigen::Vector2i pixel, float size, const std::string& name, int radius=2, int thickness=2) const{
+    inline void showImgWithCircledPixel(const pxl pixel, float size, const std::string& name, int radius=2, int thickness=2) const{
       Image< colorRGB >* show_image = returnColoredImgFromIntensityImg(name);
       // show_image->setPixel( pixel, red);
       show_image->drawCircle(red, pixel, radius, thickness);

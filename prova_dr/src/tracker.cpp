@@ -132,13 +132,13 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
       // if region is not empty
       if(!reg->cands_vec_->empty()){
 
-        Eigen::Vector2i pixel {reg->x_, reg->y_};
+        pxl pixel {reg->x_, reg->y_};
         Eigen::Vector2f uv;
         keyframe->pixelCoords2uv(pixel,uv, i);
 
-        pixelIntensity c = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(pixel);
-        // pixelIntensity c_dx = keyframe->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(pixel);
-        // pixelIntensity c_dy = keyframe->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(pixel);
+        pixelIntensity c = keyframe->wavelet_dec_->getWavLevel(i)->c->evalPixel(reg->y_,reg->x_);
+        // pixelIntensity c_dx = keyframe->wavelet_dec_->getWavLevel(i)->c_dx->evalPixel(reg->y_,reg->x_);
+        // pixelIntensity c_dy = keyframe->wavelet_dec_->getWavLevel(i)->c_dy->evalPixel(reg->y_,reg->x_);
         pixelIntensity magn_cd = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd->evalPixel(reg->y_,reg->x_);
         // pixelIntensity magn_cd_dx = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dx->evalPixel(reg->y_,reg->x_);
         // pixelIntensity magn_cd_dy = keyframe->wavelet_dec_->getWavLevel(i)->magn_cd_dy->evalPixel(reg->y_,reg->x_);
@@ -250,7 +250,7 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
 
   // variables
   Eigen::Vector2f uv_newframe;
-  Eigen::Vector2i pixel_newframe;
+  pxl pixel_newframe;
   Eigen::Vector3f point_newframe;
   Eigen::Vector3f* point = cand->p_;
   Eigen::Vector3f* point_incamframe = cand->p_incamframe_;
@@ -296,14 +296,14 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
   pixelIntensity z, z_hat;
 
   z = cand->intensity_;
-  z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->c->evalPixel(pixel_newframe);
-  img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dy->evalPixel(pixel_newframe);
+  z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->c->evalPixelBilinear(pixel_newframe);
+  img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dx->evalPixelBilinear(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->c_dy->evalPixelBilinear(pixel_newframe);
   updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
 
 
   // z = cand->grad_magnitude_;
-  // z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd->evalPixel(pixel_newframe);
-  // img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dy->evalPixel(pixel_newframe);
+  // z_hat = frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd->evalPixelBilinear(pixel_newframe);
+  // img_jacobian << frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dx->evalPixelBilinear(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dy->evalPixelBilinear(pixel_newframe);
   // updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
 
 
@@ -328,7 +328,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
 
   // variables
   Eigen::Vector2f uv_newframe;
-  Eigen::Vector2i pixel_newframe;
+  pxl pixel_newframe;
   Eigen::Vector3f point_newframe;
   Eigen::Vector3f* point = active_pt->p_; // 3D point wrt world frame
   Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_; // 3D point wrt cam frame
@@ -374,14 +374,14 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   pixelIntensity z, z_hat;
 
   z = active_pt->intensity_;
-  z_hat = frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixel(pixel_newframe);
-  img_jacobian << frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixel(pixel_newframe);
+  z_hat = frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_newframe);
+  img_jacobian << frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_newframe);
   updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
 
 
   // z = active_pt->grad_magnitude_;
-  // z_hat = frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd->evalPixel(pixel_newframe);
-  // img_jacobian << frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dx->evalPixel(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dy->evalPixel(pixel_newframe);
+  // z_hat = frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd->evalPixelBilinear(pixel_newframe);
+  // img_jacobian << frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dx->evalPixelBilinear(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(cand->level_)->magn_cd_dy->evalPixelBilinear(pixel_newframe);
   // updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
 
 
@@ -419,7 +419,7 @@ void Tracker::showProjectCandsWithCurrGuess(Eigen::Isometry3f& current_guess, in
     for(Candidate* cand : *v){
       if (cand->one_min_){
         Eigen::Vector2f uv_newframe;
-        Eigen::Vector2i pixel_newframe;
+        pxl pixel_newframe;
         Eigen::Vector3f point_newframe;
         Eigen::Vector3f* point = cand->p_;
 
@@ -464,7 +464,7 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
     for(ActivePoint* active_pt : *v){
 
       Eigen::Vector2f uv_newframe;
-      Eigen::Vector2i pixel_newframe;
+      pxl pixel_newframe;
       Eigen::Vector3f point_newframe;
       Eigen::Vector3f* point = active_pt->p_0_;
 
@@ -506,7 +506,7 @@ void Tracker::filterOutOcclusionsGT(){
         Candidate* cand = v->at(i);
         if (cand->one_min_){
           Eigen::Vector2f uv_newframe;
-          Eigen::Vector2i pixel_newframe;
+          pxl pixel_newframe;
           Eigen::Vector3f point_newframe;
           Eigen::Vector3f* point = cand->p_;
 

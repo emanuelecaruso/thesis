@@ -94,8 +94,9 @@ class HessianAndB{
       delete b_point;
     }
     Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint();
+    Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPointDLS(float mu);
 
-    void transposePosePointBlock();
+    void mirrorTriangH();
 
     void updateHessianAndB(JacobiansAndError* jacobians_and_error );
     void updateHessianAndB_onlyM(JacobiansAndError* jacobians_and_error );
@@ -157,6 +158,8 @@ class BundleAdj{
     void initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyD( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
+    void initializeStateStructure_onlyMandPoints( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
+
 
     float optimizationStep();
     void optimize();
@@ -193,11 +196,11 @@ class BundleAdj{
     void fixNewTangentSpace();
     void fixNewTangentSpaceOnlyD();
 
-    Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, Eigen::Vector2i& pixel_m);
+    Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m);
     Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
     Eigen::Matrix<float,1,6>* getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m);
     float getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
-    float getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector2i& pixel_m);
-    bool getError(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector2i& pixel_m, float& error);
+    float getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m);
+    bool getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, float& error);
 
 };
