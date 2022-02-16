@@ -15,21 +15,8 @@
 - return on frame selection for initialization (large baseline/score ?)
 - return on homography/fundamentalmat on initialization
 
-- consider curvature
+- warp function for tracking and opt can be optimized
 
-- invdepth or depth?
-
-- consider linear interpolation instead of nn
-
-- implement tracking as dso, but try to choose better coarser resolutions later
-
-- add magnitude of d_right - d_left
-
-- regions projected candidates -> vector projected candidates ?
-
-- warp function for tracking can be optimized (tracking may be faster)
-
-- start working on bundle adjustment
 
 
 TODO

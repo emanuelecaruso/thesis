@@ -6,7 +6,8 @@ project(dense3Dtracking LANGUAGES C CXX CUDA)
 option(USE_CUDA "Use Cuda" ON)
 
 #ds set cmake build flags
-set(CMAKE_BUILD_TYPE Release)
+#set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "-std=c++11 -O3 ") #c++11 features, enable maximum optimization and disable debug symbols
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 

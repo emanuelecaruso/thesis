@@ -7,12 +7,23 @@ class Dtam; //forward declaration
 
 class priorMarg{
   public:
-    int num_active_poses;
-    int num_active_points;
+    std::vector<CameraForMapping*>* activeKeyframe;
+    std::vector<ActivePoint*>* marginalizedPoint;
+    bool active;
 
     Eigen::MatrixXf* H0;
     Eigen::VectorXf* b0;
     Eigen::VectorXf* b_curr;
+
+    // default constructor
+    priorMarg():
+    activeKeyframe(new std::vector<CameraForMapping*>),
+    marginalizedPoint(new std::vector<ActivePoint*>),
+    active(false),
+    H0(new Eigen::MatrixXf),
+    b0(new Eigen::VectorXf),
+    b_curr(new Eigen::VectorXf)
+    {}
 };
 
 class deltaUpdateIncrements{
@@ -149,6 +160,7 @@ class BundleAdj{
     {};
 
 
+    void projectActivePoints_prepMarg(bool take_fixed_point=false);
     void projectActivePoints(bool take_fixed_point=false);
     void updateCurrentGuess();
     void updateActivePointsAfterNewPose();
@@ -170,7 +182,7 @@ class BundleAdj{
     void initializeStateStructure_onlyD( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyMandPoints( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
 
-    void initializeStateStructure_marg( int& n_cams_marg, int& n_points_marg,int& n_cams_marg_link, int& n_points_marg_link, std::vector<JacobiansAndError*>* jacobians_and_error_marg_vec );
+    priorMarg* getMarginalizationPrior();
 
 
     float optimizationStep();

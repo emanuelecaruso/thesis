@@ -2,6 +2,7 @@
 #include "dtam.h"
 #include "parameters.h"
 #include <stdio.h>
+#include <cassert>
 
 using namespace std;
 using namespace pr;
@@ -13,8 +14,6 @@ int main (int argc, char * argv[]) {
   // read arguments
   const std::string dataset_name = argv[1]; // dataset name
   const std::string path_name = "./dataset/"+dataset_name;
-
-
 
   // initialization
   Params* parameters = new Params();

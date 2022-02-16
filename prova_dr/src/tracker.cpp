@@ -574,7 +574,7 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
         else
           v= keyframe->active_points_;
 
-        // for each candidate
+        // for each active point
         for(ActivePoint* active_pt : *v){
           iterationLS( H, b, chi, active_pt, frame_new, current_guess );
         }

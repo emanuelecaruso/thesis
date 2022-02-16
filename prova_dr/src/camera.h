@@ -311,8 +311,7 @@ class ActivePoint : public CandidateBase{
     state_point_block_idx_(-1),
     state_point_block_marg_idx_(-1),
     state_point_block_marg_link_idx_(-1),
-    to_marginalize_(false),
-    active_point_removed_(false)
+    to_marginalize_(false)
     {
       *p_incamframe_=*cand->p_incamframe_;
       *p_=*cand->p_;
@@ -356,8 +355,7 @@ class ActivePoint : public CandidateBase{
     state_point_block_idx_(-1),
     state_point_block_marg_idx_(-1),
     state_point_block_marg_link_idx_(-1),
-    to_marginalize_(false),
-    active_point_removed_(false)
+    to_marginalize_(false)
     { }
 
 
@@ -385,7 +383,6 @@ class ActivePoint : public CandidateBase{
     int state_point_block_marg_idx_;
     int state_point_block_marg_link_idx_;
     bool to_marginalize_;
-    bool active_point_removed_;
 
     void marginalize();
 

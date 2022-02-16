@@ -267,7 +267,9 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
     // project active points (and marginalize points 2 times outside the frustum)
     // take fixed point
     bool take_fixed_point = 1;
-    bundle_adj_->projectActivePoints(take_fixed_point);
+    // bundle_adj_->projectActivePoints(take_fixed_point);
+    bundle_adj_->projectActivePoints_prepMarg(take_fixed_point);
+
 
     // std::cout << "OPTIMIZATION 1 " << std::endl;
 
