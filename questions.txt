@@ -2,4 +2,13 @@
 
 - how to handle pose refinement in bundle adjustment with front end part?
 
+- pseudoinverse of all H is very good
+
+- damped least square in pseudoinversion for h point point
+
+- subspace gauss newton should be better??
+
+
+
+
 - why dso downweights high gradient regions?

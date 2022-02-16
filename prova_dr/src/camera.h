@@ -309,6 +309,8 @@ class ActivePoint : public CandidateBase{
 
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
+    state_point_block_marg_idx_(-1),
+    state_point_block_marg_link_idx_(-1),
     to_marginalize_(false),
     active_point_removed_(false)
     {
@@ -352,6 +354,8 @@ class ActivePoint : public CandidateBase{
 
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
+    state_point_block_marg_idx_(-1),
+    state_point_block_marg_link_idx_(-1),
     to_marginalize_(false),
     active_point_removed_(false)
     { }
@@ -378,6 +382,8 @@ class ActivePoint : public CandidateBase{
 
     bool not_seen_in_last_keyframe_;
     int state_point_block_idx_;
+    int state_point_block_marg_idx_;
+    int state_point_block_marg_link_idx_;
     bool to_marginalize_;
     bool active_point_removed_;
 
@@ -631,6 +637,8 @@ class CameraForMapping: public Camera{
     bool pose_updated_;
     int n_candidates_;
     int state_pose_block_idx_;
+    int state_pose_block_marg_idx_;
+    int state_pose_block_marg_link_idx_;
 
     friend class Mapper;
     friend class Dtam;
@@ -663,7 +671,9 @@ class CameraForMapping: public Camera{
            first_keyframe_(false),
            pose_updated_(true),
            n_candidates_(0),
-           state_pose_block_idx_(-1)
+           state_pose_block_idx_(-1),
+           state_pose_block_marg_idx_(-1),
+           state_pose_block_marg_link_idx_(-1)
            {
              // iterate along all coarser levels
              for(int i=1; i<=parameters->coarsest_level; i++){

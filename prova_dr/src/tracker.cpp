@@ -203,17 +203,17 @@ void Tracker::collectCoarseCandidates(CameraForMapping* keyframe){
 bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float, 2,6>& jacobian_to_mul, Eigen::Matrix<float, 2,1>& jacobian_to_mul_normalizer, pixelIntensity z, pixelIntensity z_hat, Eigen::Matrix<float, 1,2>& img_jacobian, float ni, float variance, float coeff, float invdepth_var ){
 
 
-  float normalizer = img_jacobian*jacobian_to_mul_normalizer;
-  normalizer*=coeff; // get d r/d invdepth
-  normalizer=abs(normalizer);
-  normalizer *= invdepth_var; // multiply with variance
-  normalizer+=0.1; // add variance on img
+  // float normalizer = img_jacobian*jacobian_to_mul_normalizer;
+  // normalizer*=coeff; // get d r/d invdepth
+  // normalizer=abs(normalizer);
+  // normalizer *= invdepth_var; // multiply with variance
+  // normalizer+=0.1; // add variance on img
 
   // float normalizer = 1;
 
   // error
-  float error = (z_hat-z)/normalizer;
-  // float error = (z_hat-z);
+  // float error = (z_hat-z)/normalizer;
+  float error = (z_hat-z);
 
   // robustifier
   float u = abs(error);
@@ -229,9 +229,9 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   Eigen::Matrix<float, 1, 6> J; // 1 row, 6 cols
   Eigen::Matrix<float, 6, 1> Jtransp; // 1 row, 6 cols
 
-  J=(coeff*(img_jacobian*jacobian_to_mul))/normalizer;
-  // J=coeff*(img_jacobian*jacobian_to_mul);
-  // J=coeff*(img_jacobian*jacobian_to_mul);
+  // J=(coeff*(img_jacobian*jacobian_to_mul))/normalizer;
+  J=(coeff*(img_jacobian*jacobian_to_mul));
+
   Jtransp = J.transpose();
   // update
   H+=Jtransp*gamma*weight*J;

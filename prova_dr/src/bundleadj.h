@@ -5,6 +5,16 @@
 
 class Dtam; //forward declaration
 
+class priorMarg{
+  public:
+    int num_active_poses;
+    int num_active_points;
+
+    Eigen::MatrixXf* H0;
+    Eigen::VectorXf* b0;
+    Eigen::VectorXf* b_curr;
+};
+
 class deltaUpdateIncrements{
   public:
     Eigen::VectorXf* dx_poses;
@@ -159,6 +169,8 @@ class BundleAdj{
     void initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyD( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     void initializeStateStructure_onlyMandPoints( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
+
+    void initializeStateStructure_marg( int& n_cams_marg, int& n_points_marg,int& n_cams_marg_link, int& n_points_marg_link, std::vector<JacobiansAndError*>* jacobians_and_error_marg_vec );
 
 
     float optimizationStep();

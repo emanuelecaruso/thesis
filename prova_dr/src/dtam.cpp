@@ -464,7 +464,7 @@ void Dtam::test_dso(){
 
   bool debug_initialization=false;
   bool debug_mapping=false;
-  bool debug_tracking=true;
+  bool debug_tracking=false;
   bool debug_optimization= true;
 
   bool initialization_loop=false;
