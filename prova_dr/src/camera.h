@@ -385,6 +385,7 @@ class ActivePoint : public CandidateBase{
     bool to_marginalize_;
 
     void marginalize();
+    void remove();
 
 };
 

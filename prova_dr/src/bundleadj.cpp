@@ -260,23 +260,6 @@ ActivePoint* BundleAdj::activateCandidate(CandidateProjected* cand_proj, RegionW
   return nullptr;
 }
 
-// int BundleAdj::selectNewActivePoints(){
-//
-//
-//
-//
-//
-//   return num_activated;
-//
-// }
-
-void BundleAdj::marginalize(){
-
-  // compute marginalization term
-
-}
-
-
 
 Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m){
   CameraForMapping* cam_r = active_pt->cam_;
@@ -393,7 +376,7 @@ float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::M
   return J_d;
 }
 
-void HessianAndB::mirrorTriangH(){
+void HessianAndB_base::mirrorTriangH(){
   *H_point_pose=H_pose_point->transpose();
   for (int m=0 ; m<pose_block_size ; m+=6){
     for (int r=0 ; r<m ; r+=6){
@@ -406,6 +389,7 @@ void HessianAndB::mirrorTriangH(){
 
 void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
+  assert(jacobians_and_error!=nullptr);
 
   Eigen::Matrix<float,1,6> J_r = *(jacobians_and_error->J_r);
   Eigen::Matrix<float,1,6> J_m = *(jacobians_and_error->J_m);
@@ -415,21 +399,18 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   float error = jacobians_and_error->error;
   float weight_total = jacobians_and_error->weight_total;
 
-  const int r = jacobians_and_error->active_pt->cam_->state_pose_block_idx_;
-  const int m = jacobians_and_error->cam_m->state_pose_block_idx_;
-  const int d = jacobians_and_error->active_pt->state_point_block_idx_;
+  int r = jacobians_and_error->active_pt->cam_->state_pose_block_idx_;
+  int m = jacobians_and_error->cam_m->state_pose_block_idx_;
+  int d = jacobians_and_error->active_pt->state_point_block_idx_;
+
+  assert(d>-1 && d<point_block_size);
+  assert(m>=-1 && m<pose_block_size);
+  assert(r>=-1 && r<pose_block_size);
 
   // need for dealing with fixed first keyframe
   bool r_flag = r!=-1;
   bool m_flag = m!=-1;
 
-
-  // if(r <0 || r>=pose_block_size)
-  //   std::cout  << "\nAOOOOOOOOOOOOO " << r << " " << pose_block_size << std::endl;
-  // if(m <0 || m>=pose_block_size)
-  //   std::cout  << "AOOOOOOOOOOOOO " << m << " " << pose_block_size <<  std::endl;
-  // if(d <0 || d>=point_block_size)
-  //   std::cout  << "AOOOOOOOOOOOOO " << d << " " << point_block_size << std::endl;
 
   // ********** update H **********
   // pose pose block
@@ -443,8 +424,7 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
     H_pose_pose->block(m,r,6,6)+=J_m_transp*weight_total*J_r;
     // H_pose_pose->block(r,m,6,6)+=J_r_transp*weight_total*J_m;
   }
-  // std::cout <<
-  // std::cout << "aooo\n"<< J_r_transp*J_m << std::endl;
+
 
   // pose point block
   // -O
@@ -458,12 +438,6 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
 
 
-  // // point pose block
-  // // --
-  // // O-
-  // H_point_pose->block(d,m,1,6)+=J_d*weight_total*J_m;
-  // H_point_pose->block(d,r,1,6)+=J_d*weight_total*J_r;
-
   // point point block
   // --
   // -O
@@ -475,6 +449,53 @@ void HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
     b_pose->segment(m,6)+=J_m*(weight_total*error);
   if(r_flag)
     b_pose->segment(r,6)+=J_r*(weight_total*error);
+
+  // point block
+  (*b_point)(d)+=J_d*(weight_total*error);
+
+}
+
+void HessianAndB_Marg::updateHessianAndB_marg(JacobiansAndError* jacobians_and_error ){
+
+  assert(jacobians_and_error!=nullptr);
+  assert(jacobians_and_error->J_r==nullptr);
+  assert(jacobians_and_error->J_m!=nullptr);
+
+  Eigen::Matrix<float,1,6> J_m = *(jacobians_and_error->J_m);
+  float J_d = jacobians_and_error->J_d;
+  Eigen::Matrix<float,6,1> J_m_transp = *(jacobians_and_error->J_m_transp);
+  float error = jacobians_and_error->error;
+  float weight_total = jacobians_and_error->weight_total;
+
+  int m = jacobians_and_error->cam_m->state_pose_block_marg_idx_;
+  int d = jacobians_and_error->active_pt->state_point_block_marg_idx_;
+
+  // need for dealing with fixed first keyframe
+  assert(d>-1 && d<point_block_size);
+  assert(m>-1 && m<pose_block_size);
+
+  // ********** update H **********
+  // pose pose block
+  // O-
+  // --
+  H_pose_pose->block(m,m,6,6)+=J_m_transp*weight_total*J_m;
+  // std::cout <<
+  // std::cout << "aooo\n"<< J_r_transp*J_m << std::endl;
+
+  // pose point block
+  // -O
+  // --
+  H_pose_point->block(m,d,6,1)+=J_m_transp*(weight_total*J_d);
+  // H_pose_point->block(m,d,6,1)+=J_m*(weight_total*J_d);
+
+  // point point block
+  // --
+  // -O
+  H_point_point->diagonal()[d]+=J_d*weight_total*J_d;
+
+  // ********** update b **********
+  // pose block
+  b_pose->segment(m,6)+=J_m*(weight_total*error);
 
   // point block
   (*b_point)(d)+=J_d*(weight_total*error);
@@ -536,7 +557,7 @@ float BundleAdj::getWeightTotal(float error){
 }
 
 
-JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m){
+JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool marg){
 
 
   Eigen::Matrix<float,1,3>* J_1;
@@ -551,6 +572,7 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
     // cv::waitKey(0);
   }
 
+  // if J_1 is nullptr, point is outside the frustum of cam m
   if (J_1==nullptr)
     return nullptr;
 
@@ -558,8 +580,10 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
   float  weight_total = getWeightTotal(error);
 
+  Eigen::Matrix<float,1,6>* J_r = nullptr;
+  if (!marg)
+    J_r = getJr( active_pt, cam_m, J_1);
 
-  Eigen::Matrix<float,1,6>* J_r = getJr( active_pt, cam_m, J_1);
   Eigen::Matrix<float,1,6>* J_m = getJm( active_pt, cam_m, J_1, point_m_0);
   float J_d = getJd(active_pt, cam_m, J_1);
 
@@ -572,7 +596,7 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
 }
 
-Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB::invertHPointPoint(){
+Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint(){
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
 
   // threshold based on paper
@@ -596,7 +620,7 @@ Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB::invertHPointPoint(){
   return H_point_point_inv;
 }
 
-Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB::invertHPointPointDLS(float mu){
+Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPointDLS(float mu){
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
   for(int i=0; i<point_block_size; i++){
     float val = H_point_point->diagonal()(i);
@@ -800,18 +824,7 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
 }
 
 
-
-
-priorMarg* BundleAdj::getMarginalizationPrior( ){
-
-  int n_cams=0;
-  int n_points_marg=0;
-
-
-std::vector<JacobiansAndError*>* jacobians_and_error_vec = new std::vector<JacobiansAndError*>;
-
-  CameraForMapping* keyframe_to_marginalize = nullptr;
-
+void BundleAdj::initializeStateStructureMarg( int& n_cams, int& n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec, CameraForMapping* keyframe_to_marginalize ){
   // iterate through keyframes with active points (except last)
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
@@ -836,7 +849,7 @@ std::vector<JacobiansAndError*>* jacobians_and_error_vec = new std::vector<Jacob
         }
 
 
-        JacobiansAndError* jacobians = getJacobiansAndError(pt_to_be_marg, keyframe_proj);
+        JacobiansAndError* jacobians = getJacobiansAndError(pt_to_be_marg, keyframe_proj, true);
         if (jacobians==nullptr){
           // n_suppressed_measurement++;
         }
@@ -856,17 +869,67 @@ std::vector<JacobiansAndError*>* jacobians_and_error_vec = new std::vector<Jacob
         n_points_marg++;
       }
       else{
-        pt_to_be_marg->state_point_block_marg_idx_=-1;
+        pt_to_be_marg->remove();
+        j--;
       }
     }
 
     if (keyframe->to_be_marginalized_ba_)
       keyframe_to_marginalize = keyframe;
   }
+}
+
+
+void priorMarg::build(int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec){
+
+}
+
+priorMarg* BundleAdj::getMarginalizationPrior(int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec){
+  priorMarg* marg_prior = new priorMarg(n_cams,n_points_marg);
+  // marg_prior->build(n_cams,n_points_marg,jacobians_and_error_vec );
+
+}
+
+
+void BundleAdj::marginalize( ){
+
+  int n_cams=0;
+  int n_points_marg=0;
+  std::vector<JacobiansAndError*>* jacobians_and_error_vec = new std::vector<JacobiansAndError*>;
+
+  CameraForMapping* keyframe_to_marginalize = nullptr;
+  initializeStateStructureMarg(n_cams,n_points_marg,jacobians_and_error_vec, keyframe_to_marginalize);
 
   // build prior
+  getMarginalizationPrior(int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
+
+
+
+  // // create Hessian and b vector
+  // HessianAndB* hessian_b = new HessianAndB(n_cams*6, n_points);
+  // // for each measurement update Hessian and b vector
+  // for(int i=0; i<jacobians_and_error_vec->size(); i++){
+  //   JacobiansAndError* jacobians_and_error = jacobians_and_error_vec->at(i);
+  //   hessian_b->updateHessianAndB( jacobians_and_error );
+  //
+  //   chi+=(jacobians_and_error->error*jacobians_and_error->error);
+  //
+  //   delete jacobians_and_error;
+  // }
+  // hessian_b->mirrorTriangH();
+  //
+  // // std::cout << (*hessian_b->H_pose_point)-(hessian_b->H_point_pose->transpose()) << std::endl;
+  // // std::cout << (*hessian_b->H_pose_point) << std::endl;
+  // hessian_b->visualizeH();
+  // cv::waitKey(0);
+  // delete jacobians_and_error_vec;
+
 
   // remove keyframe to marginalize
+
+  // compute deltas
+
+  // remember to set all state_point_block_marg_idx_ to -1
 
 }
 

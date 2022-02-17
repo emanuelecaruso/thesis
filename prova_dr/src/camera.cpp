@@ -3,6 +3,7 @@
 #include <vector>
 #include <mutex>
 #include <cstdlib>
+#include <cassert>
 
 using namespace std;
 using namespace pr;
@@ -44,6 +45,7 @@ void Camera::getCentreAsPixel(pxl& pixel_coords) const{
 }
 
 float Camera::getPixelWidth(int level) const{
+  assert(level>-1);
   float pixel_width= cam_parameters_->pixel_width*pow(2,level+1);
   return pixel_width;
 }
@@ -66,6 +68,10 @@ Eigen::Matrix3f* Camera::compute_K(){
   float width = cam_parameters_->width;
   float height = cam_parameters_->height;
 
+  assert(lens>0);
+  assert(width>0);
+  assert(height>0);
+
   Eigen::Matrix3f* K = new Eigen::Matrix3f;
   *K <<
       lens ,  0   , width/2,
@@ -76,12 +82,21 @@ Eigen::Matrix3f* Camera::compute_K(){
 }
 
 void Camera::pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv, int level) const {
+  assert(level>=-1);
+  int res_x = cam_parameters_->resolution_x;
+  int res_y = cam_parameters_->resolution_y;
 
-  int resolution_x=cam_parameters_->resolution_x/(pow(2,level+1));
-  int resolution_y=cam_parameters_->resolution_y/(pow(2,level+1));
+  int resolution_x=res_x/(pow(2,level+1));
+  int resolution_y=res_y/(pow(2,level+1));
+  assert( pixel_coords.x()>=0 || pixel_coords.y()>=0);
+  assert( pixel_coords.x()<res_x || pixel_coords.y()<res_y );
 
-  uv.x()=((float)pixel_coords.x()/(float)resolution_x)*cam_parameters_->width;
-  uv.y()=((float)pixel_coords.y()/(float)resolution_y)*cam_parameters_->height;
+  float ratio_x = ((float)pixel_coords.x()/(float)resolution_x);
+  float ratio_y = ((float)pixel_coords.y()/(float)resolution_y);
+  assert( ratio_x>=0 || ratio_x<=1 || ratio_y>=0 || ratio_y<=1 );
+
+  uv.x()=ratio_x*cam_parameters_->width;
+  uv.y()=ratio_y*cam_parameters_->height;
 }
 
 void Camera::pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv) const {
@@ -93,12 +108,16 @@ void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords, int le
   int resolution_x=cam_parameters_->resolution_x/(pow(2,level+1));
   int resolution_y=cam_parameters_->resolution_y/(pow(2,level+1));
 
-  pixel_coords.x()=((uv.x()/cam_parameters_->width)*(float)resolution_x);
-  pixel_coords.y()=((uv.y()/cam_parameters_->height)*(float)resolution_y);
+  float ratio_x = (uv.x()/cam_parameters_->width);
+  float ratio_y = (uv.y()/cam_parameters_->height);
+  assert( ratio_x>=0 || ratio_x<=1 || ratio_y>=0 || ratio_y<=1 );
+
+  pixel_coords.x()=(ratio_x*(float)resolution_x);
+  pixel_coords.y()=(ratio_y*(float)resolution_y);
 }
 
 void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords) const {
-uv2pixelCoords(uv, pixel_coords, -1);
+  uv2pixelCoords(uv, pixel_coords, -1);
 }
 
 
@@ -410,6 +429,19 @@ void ActivePoint::marginalize(){
   // add point to marginalized points vector
   std::vector<ActivePoint*>* v2 = cam_->marginalized_points_;
   v2->push_back(this);
+
+}
+
+void ActivePoint::remove(){
+  // remove point from vector of active points
+  std::vector<ActivePoint*>* v1 = cam_->active_points_;
+  v1->erase(std::remove(v1->begin(), v1->end(), this), v1->end());
+
+  // add point to marginalized points vector
+  std::vector<ActivePoint*>* v2 = cam_->marginalized_points_;
+  v2->erase(std::remove(v2->begin(), v2->end(), this), v2->end());
+
+  delete this;
 
 }
 
