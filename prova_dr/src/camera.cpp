@@ -110,7 +110,7 @@ void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords, int le
 
   float ratio_x = (uv.x()/cam_parameters_->width);
   float ratio_y = (uv.y()/cam_parameters_->height);
-  assert( ratio_x>=0 || ratio_x<=1 || ratio_y>=0 || ratio_y<=1 );
+  // assert( ratio_x>=0 || ratio_x<=1 || ratio_y>=0 || ratio_y<=1 );
 
   pixel_coords.x()=(ratio_x*(float)resolution_x);
   pixel_coords.y()=(ratio_y*(float)resolution_y);

@@ -98,7 +98,8 @@ CamParameters* Environment::loadCamParameters(const std::string& path_name, cons
   if( stat( path_name_, &info ) != 0 )
   {
     printf( "ERROR: Dataset NOT found: %s \n", path_name_ );
-    return cam_parameters_out;
+    exit(1);
+    // return cam_parameters_out;
   }
   else if( info.st_mode & S_IFDIR )
   {
@@ -107,7 +108,8 @@ CamParameters* Environment::loadCamParameters(const std::string& path_name, cons
   else
   {
     printf( "ERROR: %s Is not a directory\n", path_name_ );
-    return cam_parameters_out;
+    exit(1);
+    // return cam_parameters_out;
   }
 
 

@@ -283,25 +283,25 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
     // std::cout << "OPTIMIZATION 3 " << std::endl;
 
-    // DEBUG
-    if(bundle_adj_->debug_optimization_){
-      // cam on which active points are projected
-      CameraForMapping* last_keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->back());
-      last_keyframe->showProjActivePoints(1);
-      // last_keyframe->showProjCandidates(1);
-
-
-      // iterate along all cameras
-      // for (int j=0; j<int(bundle_adj_->keyframe_vector_ba_->size())-1; j++){
-      //     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
-      //     for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
-      //         // std::cout << "CAMERA " << keyframe->name_ << std::endl;
-      //         keyframe->showCoarseActivePoints(i,1);}
-      //     }
-      //
-        cv::waitKey(0);
-        cv::destroyAllWindows();
-      }
+    // // DEBUG
+    // if(bundle_adj_->debug_optimization_){
+    //   // cam on which active points are projected
+    //   CameraForMapping* last_keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->back());
+    //   last_keyframe->showProjActivePoints(1);
+    //   // last_keyframe->showProjCandidates(1);
+    //
+    //
+    //   // iterate along all cameras
+    //   // for (int j=0; j<int(bundle_adj_->keyframe_vector_ba_->size())-1; j++){
+    //   //     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
+    //   //     for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
+    //   //         // std::cout << "CAMERA " << keyframe->name_ << std::endl;
+    //   //         keyframe->showCoarseActivePoints(i,1);}
+    //   //     }
+    //   //
+    //     cv::waitKey(0);
+    //     cv::destroyAllWindows();
+    //   }
 
     // optimize
     bundle_adj_->optimize();
@@ -326,6 +326,8 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
 
 void Dtam::updateCamerasFromEnvironment(){
+
+  assert(environment_->camera_vector_->size()!=0);
 
   float fps=environment_->fps_;
   int counter=0;

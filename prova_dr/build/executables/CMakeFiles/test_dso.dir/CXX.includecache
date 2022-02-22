@@ -365,6 +365,8 @@ image.h
 /home/emanuele/Scrivania/thesis/prova_dr/src/image.h
 environment.h
 /home/emanuele/Scrivania/thesis/prova_dr/src/environment.h
+stdexcept
+-
 
 /home/emanuele/Scrivania/thesis/prova_dr/src/camera.h
 defs.h

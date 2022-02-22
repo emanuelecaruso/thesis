@@ -310,7 +310,6 @@ class ActivePoint : public CandidateBase{
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
     state_point_block_marg_idx_(-1),
-    state_point_block_marg_link_idx_(-1),
     to_marginalize_(false)
     {
       *p_incamframe_=*cand->p_incamframe_;
@@ -354,7 +353,6 @@ class ActivePoint : public CandidateBase{
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
     state_point_block_marg_idx_(-1),
-    state_point_block_marg_link_idx_(-1),
     to_marginalize_(false)
     { }
 
@@ -381,7 +379,6 @@ class ActivePoint : public CandidateBase{
     bool not_seen_in_last_keyframe_;
     int state_point_block_idx_;
     int state_point_block_marg_idx_;
-    int state_point_block_marg_link_idx_;
     bool to_marginalize_;
 
     void marginalize();
@@ -623,7 +620,6 @@ class CameraForMapping: public Camera{
     std::vector<std::vector<Candidate*>*>* candidates_coarse_;
     std::vector<RegionsWithActivePoints*>* regions_coarse_active_pts_vec_;
     std::vector<std::vector<ActivePoint*>*>* active_points_coarse_;
-    std::vector<CameraForMapping*>* keyframes_linked_;
     Eigen::Isometry3f* frame_camera_wrt_world_0_;
     Eigen::Isometry3f* frame_world_wrt_camera_0_;
     Vector6f* delta_update_x_;
@@ -636,7 +632,6 @@ class CameraForMapping: public Camera{
     int n_candidates_;
     int state_pose_block_idx_;
     int state_pose_block_marg_idx_;
-    int state_pose_block_marg_link_idx_;
 
     friend class Mapper;
     friend class Dtam;
@@ -658,7 +653,6 @@ class CameraForMapping: public Camera{
            candidates_coarse_(new std::vector<std::vector<Candidate*>*>),
            regions_coarse_active_pts_vec_(new std::vector<RegionsWithActivePoints*>),
            active_points_coarse_(new std::vector<std::vector<ActivePoint*>*>),
-           keyframes_linked_(new std::vector<CameraForMapping*>),
            frame_camera_wrt_world_0_(new Eigen::Isometry3f),
            frame_world_wrt_camera_0_(new Eigen::Isometry3f),
            delta_update_x_(new Vector6f),
@@ -670,8 +664,7 @@ class CameraForMapping: public Camera{
            pose_updated_(true),
            n_candidates_(0),
            state_pose_block_idx_(-1),
-           state_pose_block_marg_idx_(-1),
-           state_pose_block_marg_link_idx_(-1)
+           state_pose_block_marg_idx_(-1)
            {
              // iterate along all coarser levels
              for(int i=1; i<=parameters->coarsest_level; i++){

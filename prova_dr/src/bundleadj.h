@@ -2,6 +2,7 @@
 #include "camera.h"
 #include "image.h"
 #include "environment.h"
+#include <stdexcept>
 
 class Dtam; //forward declaration
 class JacobiansAndError;
@@ -45,7 +46,13 @@ class JacobiansAndError{
     error(error_),
     weight_total(weight_total_)
     {
-      *J_r_transp=J_r_->transpose();
+      if(J_r==nullptr){
+        delete J_r_transp;
+        J_r_transp= nullptr;
+      }
+      else
+        *J_r_transp=J_r_->transpose();
+
       *J_m_transp=J_m_->transpose();
     }
 
@@ -63,6 +70,8 @@ public:
 
   // initialize just the class
   HessianAndB_base():
+  pose_block_size(0),
+  point_block_size(0),
   H_pose_pose(nullptr),
   H_pose_point(nullptr),
   H_point_pose(nullptr),
@@ -89,46 +98,103 @@ public:
 
   // initialize H and b matrices knowing sizes
   HessianAndB_base(int pose_block_size_, int point_block_size_ ):
+  // block sizes
+  pose_block_size(pose_block_size_),
+  point_block_size(point_block_size_),
 
-    // block sizes
-    pose_block_size(pose_block_size_),
-    point_block_size(point_block_size_),
+  // initialize H blocks
+  H_pose_pose(new Eigen::MatrixXf(pose_block_size_,pose_block_size_)),
+  H_pose_point(new Eigen::MatrixXf(pose_block_size_,point_block_size_)),
+  H_point_pose(new Eigen::MatrixXf(point_block_size_,pose_block_size_)),
+  H_point_point(new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size_) ),
 
-    // initialize H blocks
-    H_pose_pose(new Eigen::MatrixXf(pose_block_size_,pose_block_size_) ),
-    H_pose_point(new Eigen::MatrixXf(pose_block_size_,point_block_size_)),
-    H_point_pose(new Eigen::MatrixXf(point_block_size_,pose_block_size_)),
-    H_point_point(new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size_) ),
-
-    // initialize b blocks
-    b_pose(new Eigen::VectorXf(pose_block_size_)),
-    b_point(new Eigen::VectorXf(point_block_size_))
-    {
-      H_pose_pose->setZero();
-      H_pose_point->setZero();
-      H_point_pose->setZero();
-      H_point_point->setZero();
-      b_pose->setZero();
-      b_point->setZero();
-    }
+  // initialize b blocks
+  b_pose(new Eigen::VectorXf(pose_block_size_)),
+  b_point(new Eigen::VectorXf(point_block_size_))
+  {
+    H_pose_pose->setZero();
+    H_pose_point->setZero();
+    H_point_pose->setZero();
+    H_point_point->setZero();
+    b_pose->setZero();
+    b_point->setZero();
+  }
 
   ~HessianAndB_base(){
-    deleteAllPtrs();
+    // deleteAllPtrs();
+  }
+
+  inline bool isNull(){
+    if (H_pose_pose==nullptr &&
+        H_pose_point==nullptr &&
+        H_point_pose==nullptr &&
+        H_point_point==nullptr &&
+        b_pose==nullptr &&
+        b_point==nullptr ){
+        return true;}
+    else if ( H_pose_pose!=nullptr &&
+              H_pose_point!=nullptr &&
+              H_point_pose!=nullptr &&
+              H_point_point!=nullptr &&
+              b_pose!=nullptr &&
+              b_point!=nullptr ){
+        return false;}
+    else{
+      // return false;
+      throw std::invalid_argument( "some pointers are null and some other not" );
+    }
+
+  }
+
+  inline void initHessianAndB(int pose_block_size_, int point_block_size_){
+    assert(pose_block_size_>=0);
+    assert(point_block_size_>=0);
+
+    // if(!this->isNull())
+    //   this->deleteAllPtrs();
+
+    // block sizes
+    pose_block_size=pose_block_size_;
+    point_block_size=point_block_size_;
+
+    // initialize H blocks
+    H_pose_pose= new Eigen::MatrixXf(pose_block_size_,pose_block_size_) ;
+    H_pose_point= new Eigen::MatrixXf(pose_block_size_,point_block_size_);
+    H_point_pose= new Eigen::MatrixXf(point_block_size_,pose_block_size_);
+    H_point_point= new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size_) ;
+
+    // initialize b blocks
+    b_pose = new Eigen::VectorXf(pose_block_size_);
+    b_point = new Eigen::VectorXf(point_block_size_);
+
+    H_pose_pose->setZero();
+    H_pose_point->setZero();
+    H_point_pose->setZero();
+    H_point_point->setZero();
+    b_pose->setZero();
+    b_point->setZero();
   }
 
   inline void deleteAllPtrs(){
-    delete H_pose_pose;
-    delete H_pose_point;
-    delete H_point_pose;
-    delete H_point_point;
-    delete b_pose;
-    delete b_point;
+    if (H_pose_pose!=nullptr)
+      delete H_pose_pose;
+    if (H_pose_point!=nullptr)
+      delete H_pose_point;
+    if (H_point_pose!=nullptr)
+      delete H_point_pose;
+    if (H_point_point!=nullptr)
+      delete H_point_point;
+    if (b_pose!=nullptr)
+      delete b_pose;
+    if (b_point!=nullptr)
+      delete b_point;
   }
 
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint();
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPointDLS(float mu);
 
-  void mirrorTriangH();
+  void mirrorTriangH(bool pose_pose_not_diagonal=true);
+  bool visualizeH(const std::string& name);
 
   int pose_block_size;
   int point_block_size;
@@ -152,8 +218,6 @@ class HessianAndB : public HessianAndB_base{
     deltaUpdateIncrements* getDeltaUpdateIncrements();
     deltaUpdateIncrements* getDeltaUpdateIncrements_Slow();
 
-    void visualizeH();
-
 };
 
 class HessianAndB_Marg : public HessianAndB_base{
@@ -167,9 +231,12 @@ class HessianAndB_Marg : public HessianAndB_base{
     hessian_b_marg_old(nullptr)
     {}
 
+    void updateHessianAndB_marg(JacobiansAndError* jacobians_and_error );
+
     HessianAndB_base* hessian_b_marg_old;
 
     void curr2old();
+    bool visualizeHMarg(const std::string& name);
 
     // void updateHessianAndB_marg(JacobiansAndError* jacobians_and_error );
     //
@@ -237,10 +304,13 @@ class BundleAdj{
     // void initializeStateStructure_onlyMandPoints( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
 
     void initializeStateStructureMarg( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec, CameraForMapping* keyframe_to_marginalize );
-    bool updateOldHessianAndB();
-    void getDataForNewUpdate();
+
+    bool updateOldMargHessianAndB();
+    void getJacobiansForNewUpdate(int& new_points, int& poses_new_size, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
+    void updateMargHessianAndB(int new_points, int poses_new_size, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
+
     void deleteMarginalizedPoints();
-    void marginalize();
+    bool marginalize();
     priorMarg* updateMarginalizationPrior( int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
 
 

@@ -100,6 +100,8 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
 
   float slope_m, bound_up, bound_low;
   getSlope(u1, v1, slope_m);
+  if (std::isnan(slope_m))
+    return nullptr;
 
   bool u_or_v = (slope_m<1 && slope_m>-1);
 
@@ -420,6 +422,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
       for(int j=0; j<bounds_size; j++){
 
         EpipolarLine* ep_segment = cam_couple->getEpSegment( cand, j );
+        if (ep_segment==nullptr)
+          continue;
 
         // if uvs is empty, uvs are outside the frustum
         if(ep_segment->uvs->empty()){
