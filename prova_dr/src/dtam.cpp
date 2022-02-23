@@ -283,25 +283,25 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
     // std::cout << "OPTIMIZATION 3 " << std::endl;
 
-    // // DEBUG
-    // if(bundle_adj_->debug_optimization_){
-    //   // cam on which active points are projected
-    //   CameraForMapping* last_keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->back());
-    //   last_keyframe->showProjActivePoints(1);
-    //   // last_keyframe->showProjCandidates(1);
-    //
-    //
-    //   // iterate along all cameras
-    //   // for (int j=0; j<int(bundle_adj_->keyframe_vector_ba_->size())-1; j++){
-    //   //     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
-    //   //     for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
-    //   //         // std::cout << "CAMERA " << keyframe->name_ << std::endl;
-    //   //         keyframe->showCoarseActivePoints(i,1);}
-    //   //     }
-    //   //
-    //     cv::waitKey(0);
-    //     cv::destroyAllWindows();
-    //   }
+    // DEBUG
+    if(bundle_adj_->debug_optimization_){
+      // cam on which active points are projected
+      CameraForMapping* last_keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->back());
+      last_keyframe->showProjActivePoints(1);
+      // last_keyframe->showProjCandidates(1);
+
+
+      // iterate along all cameras
+      // for (int j=0; j<int(bundle_adj_->keyframe_vector_ba_->size())-1; j++){
+      //     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(j));
+      //     for (int i=keyframe->candidates_coarse_->size(); i>0; i--){
+      //         // std::cout << "CAMERA " << keyframe->name_ << std::endl;
+      //         keyframe->showCoarseActivePoints(i,1);}
+      //     }
+      //
+        cv::waitKey(0);
+        cv::destroyAllWindows();
+      }
 
     // optimize
     bundle_adj_->optimize();
@@ -314,7 +314,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
 
 
     // time guard
-    std::this_thread::sleep_for(std::chrono::microseconds(1000));
+    std::this_thread::sleep_for(std::chrono::microseconds(100000));
 
 
     // notify all threads that optimization has been done
@@ -445,7 +445,8 @@ void Dtam::test_tracking(){
 
   // tracking flags
   bool take_gt_poses=false;
-  bool take_gt_points=true;
+  // bool take_gt_points=true;
+  bool take_gt_points=false;
   bool track_candidates=true;
   int guess_type=POSE_CONSTANT;
 
@@ -468,7 +469,7 @@ void Dtam::test_dso(){
 
   bool debug_initialization=false;
   bool debug_mapping=false;
-  bool debug_tracking=false;
+  bool debug_tracking=true;
   bool debug_optimization= true;
 
   bool initialization_loop=false;

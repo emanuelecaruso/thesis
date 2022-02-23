@@ -237,6 +237,8 @@ bool Tracker::updateLS(Matrix6f& H, Vector6f& b, float& chi, Eigen::Matrix<float
   H+=Jtransp*gamma*weight*J;
   b+=Jtransp*gamma*weight*error;
   chi+=error*error;
+  assert(!std::isnan(chi));
+  assert(!std::isinf(chi));
 }
 
 bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* cand, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
@@ -580,7 +582,14 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
         }
 
       }
-      Vector6f dx=-H.inverse()*b;
+      // Matrix6f H_inv = H.inverse();
+
+      Matrix6f H_inv = H.completeOrthogonalDecomposition().pseudoInverse();
+      Vector6f dx=-H_inv*b;
+
+      // Matrix6f* H_inv = pinv(H);
+      // Vector6f dx=-(*H_inv)*b;
+
       Eigen::Isometry3f new_guess;
       new_guess=v2t(dx)*current_guess;
       chi_vec.push_back(chi);

@@ -418,4 +418,55 @@ namespace pr {
     return *it;
   }
 
+
+  inline float getPinvThreshold(Eigen::VectorXf& singular_values){
+    float sv_sum = 0;
+    int size = singular_values.size();
+    for(int i=0; i<size; i++)
+      sv_sum += singular_values[i];
+    float sv_average = sv_sum/size;
+
+    // float thresh = 2.858*sv_average;
+    float thresh = 2.858*sv_average;
+    return thresh;
+  }
+
+  template<class T>
+  inline T* pinv(T& A){
+    //SVD decomposition
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    // Eigen::JacobiSVD<Eigen::MatrixXf> svd(A);
+    Eigen::VectorXf singular_values = svd.singularValues();
+    Eigen::MatrixXf U = svd.matrixU();
+    Eigen::MatrixXf V = svd.matrixV();
+    Eigen::MatrixXf U_transp = U.transpose();
+    int m = U.rows();
+    int n = V.rows();
+    assert(singular_values.size()==m);
+
+    float threshold = getPinvThreshold(singular_values);
+
+    // std::cout << "thresh " << threshold << std::endl;
+
+
+    // hard thresholding on singular values
+    for(int i=0; i<singular_values.size(); i++){
+      float val = singular_values[i];
+      if(val>threshold)
+        singular_values[i]=1.0/val;
+      else
+        singular_values[i]=0;
+    }
+
+    Eigen::MatrixXf EPS_pinv = Eigen::MatrixXf::Zero(n, m);
+    for(int i=0; i<singular_values.size(); i++){
+      EPS_pinv(i,i)=singular_values[i];
+    }
+
+    T* A_pinv = new T(V*EPS_pinv*U_transp);
+
+    // std::cout << V << "\n\n" << EPS_pinv << "\n\n" << U_transp << std::endl;
+
+    return A_pinv;
+  }
 }

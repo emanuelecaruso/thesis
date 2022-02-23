@@ -47,18 +47,25 @@ void CamCouple::getDepthParameters(){
   D_d=t(2);
 }
 
-void CamCouple::getSlope(float u1, float v1, float& slope_m){
+bool CamCouple::getSlope(float u1, float v1, float& slope_m){
   slope_m=(A_s*u1+B_s*v1+C_s)/(D_s*u1+E_s*v1+F_s);
+  // assert(!std::isnan(slope_m));
+  if (std::isnan(slope_m) || std::isinf(slope_m)){
+    return false;
+  }
+  return true;
 }
 
-void CamCouple::getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v){
+bool CamCouple::getBounds(float u1, float v1, float min_depth, float max_depth, float& bound_low, float& bound_up , bool u_or_v){
 
-  getCoord(u1, v1, min_depth, bound_low, u_or_v);
-  getCoord(u1, v1, max_depth, bound_up, u_or_v);
-
+  bool c1 = getCoord(u1, v1, min_depth, bound_low, u_or_v);
+  bool c2 = getCoord(u1, v1, max_depth, bound_up, u_or_v);
+  if (!c1 || !c2)
+    return false;
+  return true;
 }
 
-void CamCouple::getCoord(float u1, float v1, float d1, float& coord, bool u_or_v){
+bool CamCouple::getCoord(float u1, float v1, float d1, float& coord, bool u_or_v){
   // u2
   if (u_or_v){
     coord=(A_bu*u1*d1+B_bu*v1*d1+C_bu*d1+D_bu)/(E_bu*u1*d1+F_bu*v1*d1+G_bu*d1+H_bu);
@@ -67,14 +74,26 @@ void CamCouple::getCoord(float u1, float v1, float d1, float& coord, bool u_or_v
   else{
     coord=(A_bv*u1*d1+B_bv*v1*d1+C_bv*d1+D_bv)/(E_bv*u1*d1+F_bv*v1*d1+G_bv*d1+H_bv);
   }
+  assert(!std::isnan(coord));
+  if (std::isnan(coord) || std::isinf(coord)){
+    return false;
+  }
+  return true;
 }
 
-void CamCouple::getUv(float u1, float v1, float d1, float& u2, float& v2 ){
+bool CamCouple::getUv(float u1, float v1, float d1, float& u2, float& v2 ){
   u2=(A_bu*u1*d1+B_bu*v1*d1+C_bu*d1+D_bu)/(E_bu*u1*d1+F_bu*v1*d1+G_bu*d1+H_bu);
   v2=(A_bv*u1*d1+B_bv*v1*d1+C_bv*d1+D_bv)/(E_bv*u1*d1+F_bv*v1*d1+G_bv*d1+H_bv);
+  // assert(!std::isnan(u2));
+  // assert(!std::isnan(v2));
+  if (std::isnan(u2) || std::isnan(v2) || std::isinf(u2) || std::isinf(v2) ){
+    return false;
+  }
+  return true;
+
 }
 
-void CamCouple::getD1(float u1, float v1, float& d1, float coord, bool u_or_v){
+bool CamCouple::getD1(float u1, float v1, float& d1, float coord, bool u_or_v){
   // u2
   if (u_or_v){
     d1=((-H_bu)*coord + D_bu)/(E_bu*coord*u1 + F_bu*coord*v1 + G_bu*coord + (-A_bu)*u1 + (-B_bu)*v1 - C_bu);
@@ -84,10 +103,22 @@ void CamCouple::getD1(float u1, float v1, float& d1, float coord, bool u_or_v){
   else{
     d1=((-H_bv)*coord + D_bv)/(E_bv*coord*u1 + F_bv*coord*v1 + G_bv*coord + (-A_bv)*u1 + (-B_bv)*v1 - C_bv);
   }
+  // assert(!std::isnan(d1));
+  if (std::isnan(d1) || std::isinf(d1) ){
+    return false;
+  }
+  return true;
+
 }
 
-void CamCouple::getD2(float u1, float v1, float d1, float& d2){
+bool CamCouple::getD2(float u1, float v1, float d1, float& d2){
   d2=(A_d*u1*d1+B_d*v1*d1+C_d*d1+D_d);
+  // assert(!std::isnan(d2));
+  if (std::isnan(d2) || std::isinf(d2) ){
+    return false;
+  }
+  return true;
+
 }
 
 EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
@@ -100,12 +131,14 @@ EpipolarLine* CamCouple::getEpSegment(Candidate* candidate, int bound_idx){
 
   float slope_m, bound_up, bound_low;
   getSlope(u1, v1, slope_m);
-  if (std::isnan(slope_m))
+  if (std::isnan(slope_m) || std::isinf(slope_m))
     return nullptr;
 
   bool u_or_v = (slope_m<1 && slope_m>-1);
 
-  getBounds(u1, v1, min_depth, max_depth, bound_low, bound_up, u_or_v);
+  bool boundsnotnan = getBounds(u1, v1, min_depth, max_depth, bound_low, bound_up, u_or_v);
+  if (!boundsnotnan)
+    return nullptr;
 
   EpipolarLine* ep_seg = new EpipolarLine(  cam_m_, slope_m, bound_low, bound_up, cam_r_projected_in_cam_m, candidate->level_);
 
@@ -146,12 +179,15 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
   float standard_deviation;
   pxl pixel_m;
   cam_couple->cam_m_->uv2pixelCoords(uv_min, pixel_m, candidate->level_);
-  if (!cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->pixelInRange(pixel_m))
+  bool pixel_in_range = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->pixelInRange(pixel_m);
+  if (!pixel_in_range)
     return -1;
   // GEOMETRIC DISPARITY ERROR
   float g_dot_l; // squared scalar product between direction of gradient and ep_line -> |g| |l| cos(a)
                  // since |g|, |l| =1 -> cos(angle between g and l)
   float angle_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixelBilinear(pixel_m);
+
+
   float angle_l =ep_line->slope2angle();
 
   float a = radiansSub(angle_g,angle_l);
@@ -282,8 +318,11 @@ CandidateProjected* Mapper::projectCandidate(Candidate* candidate, CamCouple* ca
   pxl pixel_coords;
   float depth_m;
 
-  cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, depth_m );
-  cam_couple->getUv(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, uv.x(), uv.y() );
+  bool d2isnotnan = cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, depth_m );
+  bool uvisnotnan = cam_couple->getUv(candidate->uv_.x(), candidate->uv_.y(), 1.0/candidate->invdepth_, uv.x(), uv.y() );
+
+  if(!d2isnotnan || !uvisnotnan)
+    return nullptr;
 
   cam_couple->cam_m_->uv2pixelCoords( uv, pixel_coords, candidate->level_);
 
@@ -309,8 +348,11 @@ CandidateProjected* Mapper::projectCandidateAndUpdateCandInvdepth(Candidate* can
     coord=uv_curr.y();
 
   // update depth of candidate (unique, used only if there is one min)
-  cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), d1, coord, ep_line->u_or_v);
-  cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), d1, d2);
+  bool d1isnotnan = cam_couple->getD1(candidate->uv_.x(), candidate->uv_.y(), d1, coord, ep_line->u_or_v);
+  bool d2isnotnan = cam_couple->getD2(candidate->uv_.x(), candidate->uv_.y(), d1, d2);
+
+  if(!d2isnotnan || !d1isnotnan)
+    return nullptr;
 
   candidate->invdepth_=1/d1;
   cam_couple->cam_r_->pointAtDepth(candidate->uv_, d1, *(candidate->p_), *(candidate->p_incamframe_));
