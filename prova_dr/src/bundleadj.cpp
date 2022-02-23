@@ -823,7 +823,7 @@ bool HessianAndB_Marg::visualizeHMarg( const std::string& name){
 
   }
 
-  img_H->show(1);
+  img_H->show(0.5);
 }
 
 
@@ -934,15 +934,21 @@ bool BundleAdj::updateOldMargHessianAndB(){
 
   // ************* set old cam marg idxs, get row to marg *************
 
+  int max_poses_old_size = hessian_b_old->pose_block_size;
+  int max_point_old_size = hessian_b_old->point_block_size;
   int poses_old_size = 0;
   int row_pose_to_be_marginalized = -1;
+
+
   // iterate along active keyframes
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     int block_idx = keyframe->state_pose_block_marg_idx_;
     // if keyframe is not the one that is going to be marginalized, and keyframe has link with marg prior
     if (!keyframe->to_be_marginalized_ba_ && block_idx!=-1 ){
-      std::cout << "AOOOO " << block_idx << " " << hessian_b_old->H_pose_pose->rows() << std::endl;
+      hessian_b_old->visualizeH("ao=?");
+      cv::waitKey(0);
+      // std::cout << "\n\npose blocks\n" << hessian_b_old->H_pose_pose->block<6,6>(block_idx,block_idx) << std::endl;
       Matrix6f pose_pose_block = hessian_b_old->H_pose_pose->block<6,6>(block_idx,block_idx);
       pose_pose_blocks.push_back(pose_pose_block);
       Vector6f b_pose_segment = hessian_b_old->b_pose->segment<6>(block_idx);
@@ -1092,7 +1098,20 @@ void BundleAdj::deleteMarginalizedPoints(){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     // iterate through points to be marginalized
     for( int j=0; j<keyframe->marginalized_points_->size(); j++){
-      ActivePoint* pt_to_be_marg = keyframe->active_points_->at(j);
+      ActivePoint* pt_to_be_marg = keyframe->marginalized_points_->at(j);
+      pt_to_be_marg->remove();
+    }
+  }
+}
+
+
+void BundleAdj::removeMarginalizedKeyframe(){
+  // iterate along active keyframes
+  for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+    if (keyframe->to_be_marginalized_ba_){
+      keyframe_vector_ba_->erase(keyframe_vector_ba_->begin() + i);
+      break;
     }
   }
 }
@@ -1143,10 +1162,12 @@ bool BundleAdj::marginalize( ){
   updateMargHessianAndB(new_points, poses_new_size, jacobians_and_error_vec);
 
   deleteMarginalizedPoints();
+  removeMarginalizedKeyframe();
 
   // debug
   if(debug_optimization_){
     hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
     cv::waitKey(0);
   }
 

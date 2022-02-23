@@ -310,6 +310,7 @@ class BundleAdj{
     void updateMargHessianAndB(int new_points, int poses_new_size, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
 
     void deleteMarginalizedPoints();
+    void removeMarginalizedKeyframe();
     bool marginalize();
     priorMarg* updateMarginalizationPrior( int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
 
