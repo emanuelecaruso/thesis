@@ -232,6 +232,7 @@ class HessianAndB_Marg : public HessianAndB_base{
     {}
 
     void updateHessianAndB_marg(JacobiansAndError* jacobians_and_error );
+    void updateBFromDelta(Eigen::VectorXf* dx_poses_marg);
 
     HessianAndB_base* hessian_b_marg_old;
 
@@ -240,7 +241,7 @@ class HessianAndB_Marg : public HessianAndB_base{
 
     // void updateHessianAndB_marg(JacobiansAndError* jacobians_and_error );
     //
-    // deltaUpdateIncrements* getDeltaUpdateIncrements();
+    Eigen::VectorXf* getDeltaUpdateIncrementsMarg();
     // deltaUpdateIncrements* getDeltaUpdateIncrements_Slow();
     //
     // void visualizeH();
@@ -313,7 +314,8 @@ class BundleAdj{
     void removeMarginalizedKeyframe();
     bool marginalize();
     priorMarg* updateMarginalizationPrior( int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
-
+    bool updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta);
+    Eigen::VectorXf* getDeltaForMargFromOpt(deltaUpdateIncrements* delta);
 
     float optimizationStep();
     void optimize();

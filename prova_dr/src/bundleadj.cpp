@@ -557,8 +557,8 @@ float BundleAdj::getWeightTotal(float error){
 
   float  weight_total = weight*gamma;
 
-  // return weight_total;
-  return 1;
+  return weight_total;
+  // return 1;
 }
 
 
@@ -665,6 +665,27 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
+}
+
+
+Eigen::VectorXf* HessianAndB_Marg::getDeltaUpdateIncrementsMarg(){
+  Eigen::VectorXf* dx_poses = new Eigen::VectorXf(pose_block_size) ;
+
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+
+  Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
+  // Eigen::MatrixXf Schur_inv=Schur.inverse();
+
+
+  Eigen::MatrixXf Schur_inv = Schur.completeOrthogonalDecomposition().pseudoInverse();
+  *dx_poses =  (Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
+
+  // Eigen::MatrixXf* Schur_inv = pinv(Schur);
+  // *dx_poses =  (*Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
+
+  delete H_point_point_inv;
+
+  return dx_poses;
 }
 
 
@@ -1089,6 +1110,10 @@ void BundleAdj::getJacobiansForNewUpdate(int& new_points, int& poses_new_size, s
           continue;
         }
 
+        if(keyframe_proj->first_keyframe_){
+          continue;
+        }
+
         JacobiansAndError* jacobians = getJacobiansAndError(pt_to_be_marg, keyframe_proj, true);
         if (jacobians==nullptr){
           // n_suppressed_measurement++;
@@ -1190,9 +1215,9 @@ bool BundleAdj::marginalize( ){
 
   // debug
   if(debug_optimization_){
-    hessian_b_marg->visualizeHMarg("Hessian marginalization");
-    hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
-    cv::waitKey(0);
+    // hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
+    // cv::waitKey(0);
   }
 
   return true;
@@ -1262,8 +1287,64 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
   n_cams++;
 }
 
+Eigen::VectorXf* BundleAdj::getDeltaForMargFromOpt(deltaUpdateIncrements* delta){
 
 
+  Eigen::VectorXf* dx_poses_marg = new Eigen::VectorXf(hessian_b_marg->pose_block_size) ;
+
+  // iterate through all keyframes
+  for (int i=0; i<keyframe_vector_ba_->size(); i++){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+    int block_idx_marg = keyframe->state_pose_block_marg_idx_;
+    // if keyframe has a link with prior
+    if(block_idx_marg!=-1){
+      // std::cout << keyframe->state_pose_block_idx_ << " " << block_idx_marg << " " << keyframe->name_ << " " << delta->dx_poses->size() << std::endl;
+      Vector6f segment = delta->dx_poses->segment<6>(keyframe->state_pose_block_idx_);
+      dx_poses_marg->segment<6>(block_idx_marg)=segment;
+    }
+  }
+
+  return dx_poses_marg;
+}
+
+void HessianAndB_Marg::updateBFromDelta(Eigen::VectorXf* dx_poses_marg){
+  (*b_pose)+=((*H_pose_pose)*(*dx_poses_marg));
+  (*b_point)+=((*H_point_pose)*(*dx_poses_marg));
+}
+
+
+bool BundleAdj::updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta){
+
+  if (hessian_b_marg->pose_block_size==0)
+    return false;
+
+  // get delta in marg from delta given by optimization
+  Eigen::VectorXf* dx_poses_marg_from_opt = getDeltaForMargFromOpt(delta);
+
+  // update b
+  hessian_b_marg->updateBFromDelta(dx_poses_marg_from_opt);
+
+  // get delta from marginalization (solve the marg linear system)
+  Eigen::VectorXf* dx_poses_marg_new = hessian_b_marg->getDeltaUpdateIncrementsMarg();
+
+  // update b again for next time
+  hessian_b_marg->updateBFromDelta(dx_poses_marg_new);
+
+  // update deltaUpdates
+  // iterate through all keyframes
+  for (int i=0; i<keyframe_vector_ba_->size(); i++){
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+    int block_idx_marg = keyframe->state_pose_block_marg_idx_;
+    // if keyframe has a link with prior
+    if(block_idx_marg!=-1){
+      // add marg delta inside total delta
+      delta->dx_poses->segment<6>(keyframe->state_pose_block_idx_)+=dx_poses_marg_new->segment<6>(block_idx_marg);
+    }
+  }
+
+  return true;
+
+}
 
 float BundleAdj::optimizationStep( ){
 
@@ -1291,10 +1372,10 @@ float BundleAdj::optimizationStep( ){
 
   // std::cout << (*hessian_b->H_pose_point)-(hessian_b->H_point_pose->transpose()) << std::endl;
   // std::cout << (*hessian_b->H_pose_point) << std::endl;
-  // if(debug_optimization_){
-  //   hessian_b->visualizeH("Hessian");
-  //   cv::waitKey(0);
-  // }
+  if(debug_optimization_){
+    // hessian_b->visualizeH("Hessian");
+    // cv::waitKey(0);
+  }
   delete jacobians_and_error_vec;
 
 
@@ -1304,9 +1385,7 @@ float BundleAdj::optimizationStep( ){
   deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
   // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_Slow();
 
-
-  delete hessian_b;
-
+  // updateDeltaUpdateIncrementsMarg(delta);
 
   // update x in each cam and active point
   updateDeltaUpdates(delta);
@@ -1314,6 +1393,7 @@ float BundleAdj::optimizationStep( ){
   // update fixed points
   updateTangentSpace();
 
+  delete hessian_b;
   return chi;
 }
 
@@ -1329,14 +1409,14 @@ void BundleAdj::optimize(){
   for(int i=0; i<6; i++){
     float chi = optimizationStep( );
     if(debug_optimization_){
-      // CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-      //
-      // last_keyframe->clearProjectedActivePoints();
-      // bool take_fixed_point = 1;
-      // projectActivePoints(take_fixed_point);
-      // last_keyframe->showProjActivePoints(1);
+      CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+
+      last_keyframe->clearProjectedActivePoints();
+      bool take_fixed_point = 1;
+      projectActivePoints(take_fixed_point);
+      last_keyframe->showProjActivePoints(1);
       std::cout << "chi: " << chi << std::endl;
-      // cv::waitKey(0);
+      cv::waitKey(0);
     }
   }
   getCoarseActivePoints();

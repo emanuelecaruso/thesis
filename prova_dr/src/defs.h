@@ -319,7 +319,10 @@ namespace pr {
 
   inline float radiansSub(float rad1, float rad2){
 
-    assert(rad1>=0 && rad1<2*PI);
+    if(rad2<0 || rad2>2*PI){
+      std::cout << "OAOOO " << rad2 << std::endl;
+    }
+    assert(rad1>=0 && rad1<=2*PI);
     assert(rad2>=0 && rad2<=2*PI);
 
     float sub = rad1-rad2;
