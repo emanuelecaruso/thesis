@@ -300,6 +300,10 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
     // std::cout << "pixel_m" << " " << pixel_m << std::endl;
     return nullptr;}
 
+  Eigen::Matrix<float, 1,2> img_jacobian;
+  img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
+  if(img_jacobian.isZero()){
+    return nullptr;}
 
   Eigen::Matrix<float, 2,3> proj_jacobian;
   Eigen::Matrix<float, 2,6> jacobian_to_mul;
@@ -308,8 +312,6 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
   proj_jacobian << 1./p_proj_0.z(), 0, -p_proj_0.x()/pow(p_proj_0.z(),2),
                    0, 1./p_proj_0.z(), -p_proj_0.y()/pow(p_proj_0.z(),2);
 
-  Eigen::Matrix<float, 1,2> img_jacobian;
-  img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
 
   Eigen::Matrix<float,1,3>* J_first = new Eigen::Matrix<float,1,3>;
   *J_first = coeff*((img_jacobian*proj_jacobian)*K);
@@ -463,6 +465,7 @@ void HessianAndB_Marg::updateHessianAndB_marg(JacobiansAndError* jacobians_and_e
   assert(jacobians_and_error!=nullptr);
   assert(jacobians_and_error->J_r==nullptr);
   assert(jacobians_and_error->J_m!=nullptr);
+  assert(jacobians_and_error->J_d!=0);
 
   Eigen::Matrix<float,1,6> J_m = *(jacobians_and_error->J_m);
   float J_d = jacobians_and_error->J_d;
@@ -588,6 +591,10 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
   Eigen::Matrix<float,1,6>* J_m = getJm( active_pt, cam_m, J_1, point_m_0);
   float J_d = getJd(active_pt, cam_m, J_1);
+  if(J_d==0){
+    std::cout << *J_1 << std::endl;
+    exit(1);
+  }
 
   // if(J_d*J_d<0.001)
   //   return nullptr;
@@ -958,11 +965,11 @@ bool BundleAdj::updateOldMargHessianAndB(){
       // hessian_b_old->visualizeH("ao=?");
       // cv::waitKey(0);
       // std::cout << "\n\npose blocks\n" << hessian_b_old->H_pose_pose->block<6,6>(block_idx,block_idx) << std::endl;
-      // Matrix6f pose_pose_block = hessian_b_old->H_pose_pose->block<6,6>(block_idx,block_idx);
-      // pose_pose_blocks.push_back(pose_pose_block);
-      // Vector6f b_pose_segment = hessian_b_old->b_pose->segment<6>(block_idx);
-      // b_pose_segments.push_back(b_pose_segment);
-      // keyframe->state_pose_block_marg_idx_=poses_old_size;
+      Matrix6f pose_pose_block = hessian_b_old->H_pose_pose->block<6,6>(block_idx,block_idx);
+      pose_pose_blocks.push_back(pose_pose_block);
+      Vector6f b_pose_segment = hessian_b_old->b_pose->segment<6>(block_idx);
+      b_pose_segments.push_back(b_pose_segment);
+      keyframe->state_pose_block_marg_idx_=poses_old_size;
       poses_old_size+=6;
     }
     // save initial row of pose block to marginalize
@@ -978,70 +985,73 @@ bool BundleAdj::updateOldMargHessianAndB(){
   if(row_pose_to_be_marginalized==-1)
     return false;
 
-  // // ************* structure of old variables *************
-  //
-  // int points_old_size = 0;
-  // int old_point_block_size = hessian_b_old->point_block_size;
-  // int old_pose_block_size = hessian_b_old->pose_block_size;
-  //
-  //
-  // // iterate through old points (cols)
-  // for(int col=0; col<old_point_block_size; col++){
-  //   // column to save has dimension of old pose block size - 6 for the marginalized cam
-  //   Eigen::VectorXf column(old_pose_block_size-6);
-  //
-  //   int vec_upper_part_size = row_pose_to_be_marginalized;
-  //   int vec_lower_part_size = old_pose_block_size-row_pose_to_be_marginalized-6;
-  //
-  //   column.head(vec_upper_part_size)= hessian_b_old->H_pose_point->block(0,col,vec_upper_part_size,1);
-  //   column.tail(vec_lower_part_size)= hessian_b_old->H_pose_point->block(vec_upper_part_size+6,col,vec_lower_part_size,1);
-  //
-  //   // if col is not zero
-  //   if (!column.isZero()){
-  //     // pose_point_cols.push_back(column);  // push column
-  //     // point_point_vals.push_back(hessian_b_old->H_point_point->diagonal()[col]); // push same old point point diagonal value
-  //     // b_point_vals.push_back((*hessian_b_old->b_point)[col]);
-  //     points_old_size++; // increment n old points size
-  //   }
-  //   // otherwise that marginalized point is automatically removed inside the factor graph
-  // }
-  //
-  // // ************* update old hessian and b *************
-  //
-  // // create new hessiand and b
-  // // hessian_b_old->initHessianAndB(pose_pose_blocks.size(),pose_point_cols.size());
-  // hessian_b_old->initHessianAndB(poses_old_size, points_old_size);
-  //
-  // // // update old pose pose block
-  // // for (int i=0; i<pose_pose_blocks.size(); i++){
-  // //   Matrix6f pose_pose_block = pose_pose_blocks.at(i);
-  // //   hessian_b_old->H_pose_pose->block<6,6>(i*6,i*6);
-  // // }
-  // //
-  // // // update old pose point block
-  // // for (int i=0; i<pose_point_cols.size(); i++){
-  // //   Eigen::VectorXf col = pose_point_cols.at(i);
-  // //   hessian_b_old->H_pose_point->col(i)=col;
-  // // }
-  // //
-  // // // update old point point block
-  // // for (int i=0; i<b_pose_segments.size(); i++){
-  // //   Vector6f b_pose_segment = b_pose_segments.at(i);
-  // //   hessian_b_old->b_pose->segment<6>(i*6)=b_pose_segment;
-  // // }
-  // //
-  // // // update old b pose segment
-  // // for (int i=0; i<b_point_vals.size(); i++){
-  // //   float b_point_val = b_point_vals.at(i);
-  // //   (*hessian_b_old->b_point)[i]=b_point_val;
-  // // }
-  // //
-  // // // update old b point segment
-  // // for (int i=0; i<pose_point_cols.size(); i++){
-  // //   Eigen::VectorXf col = pose_point_cols.at(i);
-  // //   hessian_b_old->H_pose_point->col(i)=col;
-  // // }
+  // ************* structure of old variables *************
 
+  int points_old_size = 0;
+  int old_point_block_size = hessian_b_old->point_block_size;
+  int old_pose_block_size = hessian_b_old->pose_block_size;
+
+
+  // iterate through old points (cols)
+  for(int col=0; col<old_point_block_size; col++){
+    // column to save has dimension of old pose block size - 6 for the marginalized cam
+    Eigen::VectorXf column(old_pose_block_size-6);
+
+    int vec_upper_part_size = row_pose_to_be_marginalized;
+    int vec_lower_part_size = old_pose_block_size-row_pose_to_be_marginalized-6;
+
+    column.head(vec_upper_part_size)= hessian_b_old->H_pose_point->block(0,col,vec_upper_part_size,1);
+    column.tail(vec_lower_part_size)= hessian_b_old->H_pose_point->block(vec_upper_part_size+6,col,vec_lower_part_size,1);
+
+    // if col is not zero
+    if (!column.isZero()){
+      pose_point_cols.push_back(column);  // push column
+      point_point_vals.push_back(hessian_b_old->H_point_point->diagonal()[col]); // push same old point point diagonal value
+      b_point_vals.push_back((*hessian_b_old->b_point)[col]);
+      points_old_size++; // increment n old points size
+    }
+    // otherwise that marginalized point is automatically removed inside the factor graph
+  }
+
+  // ************* update old hessian and b *************
+
+  // create new hessiand and b
+  // hessian_b_old->initHessianAndB(pose_pose_blocks.size(),pose_point_cols.size());
+  hessian_b_old->initHessianAndB(poses_old_size, points_old_size);
+
+  // update old pose pose block
+  for (int i=0; i<pose_pose_blocks.size(); i++){
+    Matrix6f pose_pose_block = pose_pose_blocks.at(i);
+    hessian_b_old->H_pose_pose->block<6,6>(i*6,i*6)=pose_pose_block;
+  }
+
+  // update old pose point block
+  for (int i=0; i<pose_point_cols.size(); i++){
+    Eigen::VectorXf col = pose_point_cols.at(i);
+    hessian_b_old->H_pose_point->col(i)=col;
+  }
+
+  // update old point point block
+  for (int i=0; i<point_point_vals.size(); i++){
+    float point_point_val = point_point_vals.at(i);
+    hessian_b_old->H_point_point->diagonal()[i]=point_point_val;
+  }
+
+  // update old b pose segment
+  for (int i=0; i<b_pose_segments.size(); i++){
+    Vector6f b_pose_segment = b_pose_segments.at(i);
+    hessian_b_old->b_pose->segment<6>(i*6)=b_pose_segment;
+  }
+
+  // update old b point segment
+  for (int i=0; i<b_point_vals.size(); i++){
+    float b_point_val = b_point_vals.at(i);
+    (*hessian_b_old->b_point)[i]=b_point_val;
+  }
+
+
+
+  hessian_b_old->mirrorTriangH(true);
 
   return true;
 }
@@ -1157,6 +1167,8 @@ void BundleAdj::updateMargHessianAndB(int new_points, int poses_new_size, std::v
     hessian_b_marg->updateHessianAndB_marg( jacobians_and_error );
     delete jacobians_and_error;
   }
+  delete jacobians_and_error_vec;
+
   hessian_b_marg->mirrorTriangH(true);
 
 }
@@ -1317,14 +1329,14 @@ void BundleAdj::optimize(){
   for(int i=0; i<6; i++){
     float chi = optimizationStep( );
     if(debug_optimization_){
-      CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-
-      last_keyframe->clearProjectedActivePoints();
-      bool take_fixed_point = 1;
-      projectActivePoints(take_fixed_point);
-      last_keyframe->showProjActivePoints(1);
+      // CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+      //
+      // last_keyframe->clearProjectedActivePoints();
+      // bool take_fixed_point = 1;
+      // projectActivePoints(take_fixed_point);
+      // last_keyframe->showProjActivePoints(1);
       std::cout << "chi: " << chi << std::endl;
-      cv::waitKey(0);
+      // cv::waitKey(0);
     }
   }
   getCoarseActivePoints();
@@ -1372,8 +1384,10 @@ void BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
     if (keyframe->to_be_marginalized_ba_){
       // iterate along all active points
       num_active_points_-=(keyframe->active_points_->size()-keyframe->num_marginalized_active_points_);
-      for (ActivePoint* active_pt : *keyframe->active_points_){
-        active_pt->marginalize();
+
+      for (int j=0; j<keyframe->active_points_->size(); j++){
+        ActivePoint* active_pt_ = keyframe->active_points_->at(j);
+        active_pt_->marginalize();
       }
       // if(!keyframe->active_points_removed_ ){
       //   keyframe->active_points_removed_=true;
