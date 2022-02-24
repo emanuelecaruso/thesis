@@ -187,8 +187,9 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
                  // since |g|, |l| =1 -> cos(angle between g and l)
   float angle_g = cam_couple->cam_m_->wavelet_dec_->vector_wavelets->at(candidate->level_)->phase_cd->evalPixelBilinear(pixel_m);
 
-
   float angle_l =ep_line->slope2angle();
+  if (angle_l<0)
+    angle_l+=2*PI;
 
   float a = radiansSub(angle_g,angle_l);
 

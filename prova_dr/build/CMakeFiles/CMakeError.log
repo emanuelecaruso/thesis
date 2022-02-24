@@ -1,22 +1,22 @@
 Determining if the pthread_create exist failed with the following output:
 Change Dir: /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_e7198/fast"
-/usr/bin/make -f CMakeFiles/cmTC_e7198.dir/build.make CMakeFiles/cmTC_e7198.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_99d3b/fast"
+/usr/bin/make -f CMakeFiles/cmTC_99d3b.dir/build.make CMakeFiles/cmTC_99d3b.dir/build
 make[1]: ingresso nella directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Building C object CMakeFiles/cmTC_e7198.dir/CheckSymbolExists.c.o
-/usr/bin/cc   -fPIC    -o CMakeFiles/cmTC_e7198.dir/CheckSymbolExists.c.o   -c /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
-Linking C executable cmTC_e7198
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e7198.dir/link.txt --verbose=1
-/usr/bin/cc -fPIC     -rdynamic CMakeFiles/cmTC_e7198.dir/CheckSymbolExists.c.o  -o cmTC_e7198 
-CMakeFiles/cmTC_e7198.dir/CheckSymbolExists.c.o: nella funzione "main":
+Building C object CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o
+/usr/bin/cc   -fPIC    -o CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o   -c /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_99d3b
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_99d3b.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC     -rdynamic CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o  -o cmTC_99d3b 
+CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o: nella funzione "main":
 CheckSymbolExists.c:(.text+0x1b): riferimento non definito a "pthread_create"
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_e7198.dir/build.make:86: recipe for target 'cmTC_e7198' failed
-make[1]: *** [cmTC_e7198] Error 1
+CMakeFiles/cmTC_99d3b.dir/build.make:86: recipe for target 'cmTC_99d3b' failed
+make[1]: *** [cmTC_99d3b] Error 1
 make[1]: uscita dalla directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Makefile:121: recipe for target 'cmTC_e7198/fast' failed
-make: *** [cmTC_e7198/fast] Error 2
+Makefile:121: recipe for target 'cmTC_99d3b/fast' failed
+make: *** [cmTC_99d3b/fast] Error 2
 
 File /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
 /* */
@@ -36,20 +36,20 @@ int main(int argc, char** argv)
 Determining if the function pthread_create exists in the pthreads failed with the following output:
 Change Dir: /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_3f8ef/fast"
-/usr/bin/make -f CMakeFiles/cmTC_3f8ef.dir/build.make CMakeFiles/cmTC_3f8ef.dir/build
+Run Build Command:"/usr/bin/make" "cmTC_eaa06/fast"
+/usr/bin/make -f CMakeFiles/cmTC_eaa06.dir/build.make CMakeFiles/cmTC_eaa06.dir/build
 make[1]: ingresso nella directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Building C object CMakeFiles/cmTC_3f8ef.dir/CheckFunctionExists.c.o
-/usr/bin/cc   -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_3f8ef.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.12/Modules/CheckFunctionExists.c
-Linking C executable cmTC_3f8ef
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_3f8ef.dir/link.txt --verbose=1
-/usr/bin/cc -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_3f8ef.dir/CheckFunctionExists.c.o  -o cmTC_3f8ef -lpthreads 
+Building C object CMakeFiles/cmTC_eaa06.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_eaa06.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.12/Modules/CheckFunctionExists.c
+Linking C executable cmTC_eaa06
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_eaa06.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_eaa06.dir/CheckFunctionExists.c.o  -o cmTC_eaa06 -lpthreads 
 /usr/bin/ld: impossibile trovare -lpthreads
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_3f8ef.dir/build.make:86: recipe for target 'cmTC_3f8ef' failed
-make[1]: *** [cmTC_3f8ef] Error 1
+CMakeFiles/cmTC_eaa06.dir/build.make:86: recipe for target 'cmTC_eaa06' failed
+make[1]: *** [cmTC_eaa06] Error 1
 make[1]: uscita dalla directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Makefile:121: recipe for target 'cmTC_3f8ef/fast' failed
-make: *** [cmTC_3f8ef/fast] Error 2
+Makefile:121: recipe for target 'cmTC_eaa06/fast' failed
+make: *** [cmTC_eaa06/fast] Error 2
 
 

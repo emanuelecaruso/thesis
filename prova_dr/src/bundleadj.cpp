@@ -610,6 +610,7 @@ Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint
   //
   // float thresh = 2.858*sv_average;
   float thresh = getPinvThreshold(H_point_point->diagonal());
+  // float thresh = 100;
 
   for(int i=0; i<point_block_size; i++){
     float val = H_point_point->diagonal()(i);
@@ -1168,18 +1169,18 @@ bool BundleAdj::marginalize( ){
   int poses_new_size = 0;
   std::vector<JacobiansAndError*>* jacobians_and_error_vec = new std::vector<JacobiansAndError*>;
 
-  // getJacobiansForNewUpdate(new_points,poses_new_size,jacobians_and_error_vec);
-  //
-  // updateMargHessianAndB(new_points, poses_new_size, jacobians_and_error_vec);
-  //
-  // deleteMarginalizedPoints();
-  // removeMarginalizedKeyframe();
+  getJacobiansForNewUpdate(new_points,poses_new_size,jacobians_and_error_vec);
+
+  updateMargHessianAndB(new_points, poses_new_size, jacobians_and_error_vec);
+
+  deleteMarginalizedPoints();
+  removeMarginalizedKeyframe();
 
   // debug
   if(debug_optimization_){
-    // hessian_b_marg->visualizeHMarg("Hessian marginalization");
-    // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
-    // cv::waitKey(0);
+    hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
+    cv::waitKey(0);
   }
 
   return true;
@@ -1309,7 +1310,7 @@ void BundleAdj::optimize(){
   double t_start=getTime();
 
   // marginalize
-  // marginalize();
+  marginalize();
 
   // optimize
   // while(true){

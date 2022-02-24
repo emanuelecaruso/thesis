@@ -184,8 +184,8 @@ float EpipolarLine::getCostPhase( Candidate* cand, Eigen::Vector2f& uv_m, float 
 
   if (phase_m_<0)
     phase_m_+=2*PI;
-  if (phase_m_<0)
-    phase_m_+=2*PI;
+  if (phase_m<0)
+    phase_m+=2*PI;
 
   // if( (phase_far < phase_m && phase_m < phase_close) || (phase_far > phase_m && phase_m > phase_close) ){
   if(abs(phase_m_)>10){
@@ -223,8 +223,8 @@ bool EpipolarLine::checkPhaseInRange( Candidate* cand, Eigen::Vector2f& uv_m, fl
 
   if (phase_m_<0)
     phase_m_+=2*PI;
-  if (phase_m_<0)
-    phase_m_+=2*PI;
+  if (phase_m<0)
+    phase_m+=2*PI;
 
   // if( (phase_far < phase_m && phase_m < phase_close) || (phase_far > phase_m && phase_m > phase_close) ){
   if( (abs(radiansSub(phase_m_,phase_m))) < 0.1 ){
@@ -379,7 +379,12 @@ bool EpipolarLine::searchMin(Candidate* candidate, Params* parameters, CamCouple
 }
 
 float EpipolarLine::slope2angle(){
-  return std::atan2(slope,1);
+  float angle = std::atan2(slope,1);
+  if (angle>PI || angle<-PI){
+    std::cout << "AOOOCHECAZZ " << angle << " " << slope << std::endl;
+    exit(1);
+  }
+  return angle;
 }
 
 // show

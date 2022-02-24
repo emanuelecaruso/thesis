@@ -318,6 +318,10 @@ namespace pr {
   const colorRGB magenta_ = colorRGB(colorRGB_maxval,colorRGB_maxval/2,colorRGB_maxval);
 
   inline float radiansSub(float rad1, float rad2){
+
+    assert(rad1>=0 && rad1<2*PI);
+    assert(rad2>=0 && rad2<=2*PI);
+
     float sub = rad1-rad2;
     int i=0;
     while(true){
@@ -328,7 +332,7 @@ namespace pr {
       }else break;
       i++;
       if(i>1){
-        std::cout << "WHYYYYYYYYYYYYYYYY " << rad1 <<  std::endl;
+        std::cout << "WHYYYYYYYYYYYYYYYY " << rad1 << " " << rad2 <<  std::endl;
         exit(1);
         // break;
       }
