@@ -84,6 +84,6 @@ void KeyframeHandler::pushKeyframeFrontend(){
 
 void KeyframeHandler::pushKeyframeBundleadj(){
   dtam_->bundle_adj_->addKeyframe(dtam_->frame_current_);
-  dtam_->camera_vector_->at(dtam_->frame_current_)->added_ba_=true;
+  dtam_->camera_vector_->at(dtam_->frame_current_)->keyframe_=true;
 
 }

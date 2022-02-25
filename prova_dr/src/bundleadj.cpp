@@ -1346,7 +1346,7 @@ bool BundleAdj::updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta){
 
 }
 
-float BundleAdj::optimizationStep( ){
+float BundleAdj::optimizationStep(bool with_marg){
 
   float chi = 0;
 
@@ -1385,7 +1385,8 @@ float BundleAdj::optimizationStep( ){
   deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
   // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_Slow();
 
-  // updateDeltaUpdateIncrementsMarg(delta);
+  if(with_marg)
+    updateDeltaUpdateIncrementsMarg(delta);
 
   // update x in each cam and active point
   updateDeltaUpdates(delta);
@@ -1403,11 +1404,12 @@ void BundleAdj::optimize(){
 
   // marginalize
   marginalize();
+  bool with_marg = false ;
 
   // optimize
   // while(true){
   for(int i=0; i<6; i++){
-    float chi = optimizationStep( );
+    float chi = optimizationStep(with_marg );
     if(debug_optimization_){
       CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
 
@@ -1415,7 +1417,10 @@ void BundleAdj::optimize(){
       bool take_fixed_point = 1;
       projectActivePoints(take_fixed_point);
       last_keyframe->showProjActivePoints(1);
-      std::cout << "chi: " << chi << std::endl;
+
+      PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
+      std::cout << "\nchi: " << chi << std::endl;
+      poses_norm_error_tot->print();
       cv::waitKey(0);
     }
   }

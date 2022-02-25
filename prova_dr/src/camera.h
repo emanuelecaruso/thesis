@@ -604,6 +604,40 @@ class RegionsWithProjActivePoints : public RegionsWithCandidatesBase{
     }
 };
 
+
+class PoseNormError{
+  public:
+    float angle;
+    float position_norm;
+
+    // default constructor
+    PoseNormError():
+    angle(0),
+    position_norm(0)
+    {  }
+
+    // assignment constructor
+    PoseNormError(float angle_, float position_error_norm):
+    angle(angle_),
+    position_norm(position_error_norm)
+    {  }
+
+    // += operator
+    PoseNormError& operator+=(const PoseNormError& rhs){
+      /* addition of rhs to *this */
+      this->angle += rhs.angle;
+      this->position_norm += rhs.position_norm;
+
+      return *this; // return the result by reference
+    }
+
+    inline void print(){
+      std::cout << "angle error: " << angle << std::endl;
+      std::cout << "position error norm: " << position_norm << std::endl;
+    }
+
+};
+
 class CameraForMapping: public Camera{
 
   public:
@@ -626,7 +660,7 @@ class CameraForMapping: public Camera{
     int num_marginalized_active_points_;
     bool to_be_marginalized_ba_;
     bool active_points_removed_;
-    bool added_ba_;
+    bool keyframe_;
     bool first_keyframe_;
     bool pose_updated_;
     int n_candidates_;
@@ -659,7 +693,7 @@ class CameraForMapping: public Camera{
            num_marginalized_active_points_(0),
            to_be_marginalized_ba_(false),
            active_points_removed_(false),
-           added_ba_(false),
+           keyframe_(false),
            first_keyframe_(false),
            pose_updated_(true),
            n_candidates_(0),
@@ -705,6 +739,8 @@ class CameraForMapping: public Camera{
     void clearProjectedActivePoints();
     void showProjActivePoints(float size);
     void assignPose0(Eigen::Isometry3f& frame_camera_wrt_world);
+
+    PoseNormError getPoseNormError();
 
   private:
     // void collectRegions(float grad_threshold);

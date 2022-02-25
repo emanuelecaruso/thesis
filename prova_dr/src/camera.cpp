@@ -809,3 +809,17 @@ void CameraForMapping::assignPose0(Eigen::Isometry3f& frame_camera_wrt_world){
   *frame_camera_wrt_world_0_=frame_camera_wrt_world;
   *frame_world_wrt_camera_0_=frame_camera_wrt_world.inverse();
 }
+
+PoseNormError CameraForMapping::getPoseNormError(){
+  // get relative transformation matrix wrt groundtruth
+  Eigen::Isometry3f relative_transf = (*(grountruth_camera_->frame_world_wrt_camera_))*(*(frame_camera_wrt_world_));
+
+  // get angle from rotation matrix
+  float angle = rotation2angle(relative_transf.linear());
+
+  // get norm of translation vector
+  float norm_transl = relative_transf.translation().norm();
+
+  PoseNormError pose_norm_error(angle,norm_transl);
+  return pose_norm_error;
+}

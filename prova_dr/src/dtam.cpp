@@ -42,6 +42,19 @@ CameraForMapping* Dtam::getLastKeyframe() {
   return camera_vector_->at(keyframe_vector_->back());
 }
 
+PoseNormError* Dtam::getTotalPosesNormError(){
+
+  PoseNormError* poses_norm_error_tot = new PoseNormError;
+  for (int i=0; i<camera_vector_->size(); i++){
+    CameraForMapping* cam = camera_vector_->at(i);
+    if (cam->keyframe_){
+      PoseNormError cam_pose_norm_error = cam->getPoseNormError();
+      (*poses_norm_error_tot)+=cam_pose_norm_error;
+    }
+  }
+  return poses_norm_error_tot;
+}
+
 void Dtam::addCamera(int counter){
 
   // CameraForStudy* env_cam=environment_->camera_vector_->at(counter);

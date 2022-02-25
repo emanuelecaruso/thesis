@@ -11,7 +11,7 @@
 #include <mutex>
 #include <condition_variable>
 
-
+class PoseNormError;
 
 class Dtam{
   public:
@@ -52,6 +52,7 @@ class Dtam{
     CameraForMapping* getSecondLastCamera();
     CameraForMapping* getLastKeyframe();
 
+    PoseNormError* getTotalPosesNormError();
 
   private:
     const Environment* environment_;

@@ -317,7 +317,7 @@ class BundleAdj{
     bool updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta);
     Eigen::VectorXf* getDeltaForMargFromOpt(deltaUpdateIncrements* delta);
 
-    float optimizationStep();
+    float optimizationStep(bool with_marg=true);
     void optimize();
 
     inline void addKeyframe(int idx){

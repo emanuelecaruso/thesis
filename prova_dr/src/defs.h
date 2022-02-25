@@ -434,7 +434,7 @@ namespace pr {
     float sv_average = sv_sum/size;
 
     // float thresh = 2.858*sv_average;
-    float thresh = 2.858*sv_average;
+    float thresh = sv_average;
     return thresh;
   }
 
@@ -475,5 +475,10 @@ namespace pr {
     // std::cout << V << "\n\n" << EPS_pinv << "\n\n" << U_transp << std::endl;
 
     return A_pinv;
+  }
+
+  inline float rotation2angle(const Eigen::Matrix3f& rot_mat){
+    float angle = acos((rot_mat.trace()-1)*0.5);
+    return angle;
   }
 }
