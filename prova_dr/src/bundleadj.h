@@ -20,31 +20,36 @@ class deltaUpdateIncrements{
 
 class JacobiansAndError{
   public:
-    Eigen::Matrix<float,1,6>* J_r;
-    Eigen::Matrix<float,1,6>* J_m;
-    float J_d;
+    const Eigen::Matrix<float,1,6>* J_r;
+    const Eigen::Matrix<float,1,6>* J_m;
+    const float J_d;
     Eigen::Matrix<float,6,1>* J_r_transp;
     Eigen::Matrix<float,6,1>* J_m_transp;
-    float weight_total;
+    const float weight_total;
 
-    ActivePoint* active_pt;
-    CameraForMapping* cam_m;
+    const ActivePoint* active_pt;
+    const CameraForMapping* cam_m;
 
-    float error;
+    const float error;
+    const float chi;
+    const float omega;
 
     JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, float J_d_,
-                      CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_, float weight_total_ ):
+                      CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_, float chi_,
+                      float weight_total_, float omega_ ):
     J_r(J_r_),
     J_m(J_m_),
     J_d(J_d_),
     J_r_transp(new Eigen::Matrix<float,6,1>),
     J_m_transp(new Eigen::Matrix<float,6,1>),
+    weight_total(weight_total_),
 
     active_pt(active_pt_),
     cam_m(cam_m_),
 
     error(error_),
-    weight_total(weight_total_)
+    chi(chi_),
+    omega(omega_)
     {
       if(J_r==nullptr){
         delete J_r_transp;
@@ -76,6 +81,7 @@ public:
   H_pose_point(nullptr),
   H_point_pose(nullptr),
   H_point_point(nullptr),
+  H_point_point_inv(nullptr),
   b_pose(nullptr),
   b_point(nullptr){}
 
@@ -90,6 +96,7 @@ public:
     H_pose_point(hessiand_and_b_->H_pose_point),
     H_point_pose(hessiand_and_b_->H_point_pose),
     H_point_point(hessiand_and_b_->H_point_point),
+    H_point_point_inv(hessiand_and_b_->H_point_point_inv),
 
     // initialize b blocks
     b_pose(hessiand_and_b_->b_pose),
@@ -107,6 +114,7 @@ public:
   H_pose_point(new Eigen::MatrixXf(pose_block_size_,point_block_size_)),
   H_point_pose(new Eigen::MatrixXf(point_block_size_,pose_block_size_)),
   H_point_point(new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size_) ),
+  H_point_point_inv(nullptr ),
 
   // initialize b blocks
   b_pose(new Eigen::VectorXf(pose_block_size_)),
@@ -202,6 +210,7 @@ public:
   Eigen::MatrixXf* H_pose_point;
   Eigen::MatrixXf* H_point_pose;
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point;
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv;
   Eigen::VectorXf* b_pose;
   Eigen::VectorXf* b_point;
 
@@ -213,9 +222,12 @@ class HessianAndB : public HessianAndB_base{
     HessianAndB(int pose_block_size_, int point_block_size_ ):
     HessianAndB_base(pose_block_size_, point_block_size_){}
 
-    void updateHessianAndB(JacobiansAndError* jacobians_and_error );
+    bool updateHessianAndB(JacobiansAndError* jacobians_and_error );
 
     deltaUpdateIncrements* getDeltaUpdateIncrements();
+    deltaUpdateIncrements* getDeltaUpdateIncrementsProva();
+    deltaUpdateIncrements* getDeltaUpdateIncrementsOnlyPoints();
+    deltaUpdateIncrements* getDeltaUpdateIncrementsOnlyPoses();
     deltaUpdateIncrements* getDeltaUpdateIncrements_Slow();
 
 };
@@ -239,8 +251,6 @@ class HessianAndB_Marg : public HessianAndB_base{
     void curr2old();
     bool visualizeHMarg(const std::string& name);
 
-    // void updateHessianAndB_marg(JacobiansAndError* jacobians_and_error );
-    //
     Eigen::VectorXf* getDeltaUpdateIncrementsMarg();
     // deltaUpdateIncrements* getDeltaUpdateIncrements_Slow();
     //
@@ -278,6 +288,7 @@ class BundleAdj{
     hessian_b_marg(new HessianAndB_Marg),
     frame_current_ba(-1),
     num_active_points_(0),
+    opt_norm_(HUBER),
     min_num_of_active_pts_per_region_(INT_MAX)
     {};
 
@@ -312,12 +323,15 @@ class BundleAdj{
 
     void deleteMarginalizedPoints();
     void removeMarginalizedKeyframe();
-    bool marginalize();
+    bool marginalization();
+    bool detectOutliers();
+
     priorMarg* updateMarginalizationPrior( int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
     bool updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta);
     Eigen::VectorXf* getDeltaForMargFromOpt(deltaUpdateIncrements* delta);
 
     float optimizationStep(bool with_marg=true);
+    float getChi(float error);
     void optimize();
 
     inline void addKeyframe(int idx){
@@ -333,6 +347,7 @@ class BundleAdj{
     std::vector<int>* keyframe_vector_ba_;
     HessianAndB_Marg* hessian_b_marg;
     int frame_current_ba;
+    int opt_norm_;
 
   private:
 
@@ -349,7 +364,8 @@ class BundleAdj{
 
     void updateDeltaUpdates(deltaUpdateIncrements* delta);
     void updateDeltaUpdatesOnlyD(deltaUpdateIncrements* delta);
-    void updateTangentSpace();
+    void updateInvdepthVars(HessianAndB* hessian_and_b);
+    void updateTangentSpace(bool with_marg);
     void fixNewTangentSpaceOnlyD();
 
     Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m);

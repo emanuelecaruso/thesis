@@ -254,8 +254,9 @@ class Candidate : public CandidateBase{
     inline float getInvdepthStandardDeviation() const{
       float d2 = bounds_->at(0).second;
       float d1 = bounds_->at(0).first;
-
-      return ((1.0/d1)-(1.0/d2))/2;
+      float sd = ((1.0/d1)-(1.0/d2))/2;
+      assert(sd!=0);
+      return sd;
     }
 
     void marginalize() const;
@@ -310,6 +311,7 @@ class ActivePoint : public CandidateBase{
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
     state_point_block_marg_idx_(-1),
+    has_occlusion_(false),
     to_marginalize_(false)
     {
       *p_incamframe_=*cand->p_incamframe_;
@@ -353,6 +355,7 @@ class ActivePoint : public CandidateBase{
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
     state_point_block_marg_idx_(-1),
+    has_occlusion_(false),
     to_marginalize_(false)
     { }
 
@@ -380,6 +383,7 @@ class ActivePoint : public CandidateBase{
     int state_point_block_idx_;
     int state_point_block_marg_idx_;
     bool to_marginalize_;
+    bool has_occlusion_;
 
     void marginalize();
     void remove();
@@ -625,6 +629,8 @@ class PoseNormError{
     // += operator
     PoseNormError& operator+=(const PoseNormError& rhs){
       /* addition of rhs to *this */
+      assert(!std::isnan(rhs.angle));
+      assert(!std::isnan(rhs.position_norm));
       this->angle += rhs.angle;
       this->position_norm += rhs.position_norm;
 

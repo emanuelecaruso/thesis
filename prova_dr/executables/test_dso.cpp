@@ -27,6 +27,7 @@ int main (int argc, char * argv[]) {
   //############################################################################
 
   dtam->test_dso();
+  // dtam->test_optimization_pose();
   // dtam->test_mapping();
   // dtam->test_tracking();
 

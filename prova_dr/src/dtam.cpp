@@ -256,13 +256,14 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
 }
 
-void Dtam::setOptimizationFlags( bool debug_optimization){
+void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm){
   bundle_adj_->debug_optimization_=debug_optimization;
+  bundle_adj_->opt_norm_=opt_norm;
 }
 
-void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization){
+void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, bool test_poses_only, int opt_norm){
 
-  setOptimizationFlags(debug_optimization);
+  setOptimizationFlags(debug_optimization,opt_norm);
 
   while( true ){
 
@@ -478,6 +479,48 @@ void Dtam::test_tracking(){
 
 }
 
+
+void Dtam::test_optimization_pose(){
+
+  bool debug_initialization=false;
+  bool debug_mapping=false;
+  bool debug_tracking=false;
+  bool debug_optimization= true;
+
+  bool initialization_loop=false;
+  bool take_gt_poses=false;
+  bool take_gt_points=true;
+
+  bool test_poses_only=true;
+  bool track_candidates=false;
+  // int guess_type=POSE_CONSTANT;
+  int guess_type=VELOCITY_CONSTANT;
+  int opt_norm=HUBER;
+  // int opt_norm=QUADRATIC;
+
+  bool all_keyframes=true;
+  bool wait_for_initialization=true;
+  bool active_all_candidates=true;
+
+  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping, track_candidates, take_gt_points);
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+
+  if(!track_candidates){
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,test_poses_only,opt_norm);
+    optimization_thread.join();
+  }
+
+  initialization_thread_.join();
+  update_cameras_thread_.join();
+  frontend_thread_.join();
+
+  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+
+
+}
+
 void Dtam::test_dso(){
 
   bool debug_initialization=false;
@@ -489,9 +532,12 @@ void Dtam::test_dso(){
   bool take_gt_poses=false;
   bool take_gt_points=false;
 
+  bool test_poses_only=false;
   bool track_candidates=false;
   // int guess_type=POSE_CONSTANT;
   int guess_type=VELOCITY_CONSTANT;
+  int opt_norm=HUBER;
+  // int opt_norm=QUADRATIC;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -502,7 +548,7 @@ void Dtam::test_dso(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization, test_poses_only,opt_norm);
     optimization_thread.join();
   }
 

@@ -355,9 +355,9 @@ namespace pr {
   inline float huberNorm(float a, float b){
     float huber_norm;
     if (abs(a)<=b){
-      huber_norm= (pow(a,2))/(2*b);
+      huber_norm= (pow(a,2))/(2);
     }else{
-      huber_norm= abs(a)-b/2;
+      huber_norm= b*(abs(a)-b/2);
     }
     return huber_norm;
   }
@@ -365,11 +365,11 @@ namespace pr {
   inline float huberNormDerivative(float a, float b){
     float huber_norm_der;
     if (abs(a)<=b){
-      huber_norm_der= a/b;
+      huber_norm_der= a;
     }else if (a>0){
-      huber_norm_der= 1;
+      huber_norm_der= b;
     }else if (a<0){
-      huber_norm_der= -1;
+      huber_norm_der= -b;
     }
     return huber_norm_der;
   }
@@ -409,6 +409,10 @@ namespace pr {
 
   #define POSE_CONSTANT 0
   #define VELOCITY_CONSTANT 1
+  #define HUBER 0
+  #define QUADRATIC 1
+  #define LINEAR 2
+
 
 
   inline int lowerBound(std::vector<int> const& vec, int value) {
@@ -434,7 +438,8 @@ namespace pr {
     float sv_average = sv_sum/size;
 
     // float thresh = 2.858*sv_average;
-    float thresh = sv_average;
+    // float thresh = 0.5*sv_average;
+    float thresh = 1;
     return thresh;
   }
 
@@ -478,7 +483,20 @@ namespace pr {
   }
 
   inline float rotation2angle(const Eigen::Matrix3f& rot_mat){
-    float angle = acos((rot_mat.trace()-1)*0.5);
+    assert(rot_mat.allFinite());
+    float cosine = (rot_mat.trace()-1)*0.5;
+    if (cosine>1){
+      if(cosine<1.001){
+        cosine=1;
+      }
+      else{
+        throw std::invalid_argument( "cosine more than 1" );
+      }
+    }
+    float angle = acos(cosine);
+    if(std::isnan(angle))
+      std::cout << angle << " \n\n" << rot_mat << "\n\n" << rot_mat.trace() << "\n\n" << cosine << std::endl;
+    assert(!std::isnan(angle));
     return angle;
   }
 }

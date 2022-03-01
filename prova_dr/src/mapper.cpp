@@ -203,7 +203,6 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
 
   // standard deviation disparity
   float sd_disparity_geo = sd_epline_geo/(g_dot_l+0.1);
-  // std::cout << "sd: " << sd_disparity_geo << ", ca: " << c_a << ", a: " << a << ", angle g: " << angle_g << ", angle l: " << angle_l << std::endl;
 
 
   // PHOTOMETRIC ERROR
@@ -226,7 +225,6 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
   standard_deviation = 2*(sd_disparity_geo+sd_disparity_photometric);
   // standard_deviation = 2*(sd_disparity_photometric);
   // standard_deviation = 2*(sd_disparity_geo);
-  // std::cout << "sd " << (sd_disparity_photometric+sd_epline_sampling) << ", sd photo: " << sd_disparity_photometric << std::endl;
 
   return standard_deviation;
 
@@ -572,6 +570,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushProjCandidate(projected_cand);
           cand->invdepth_var_=cand->getInvdepthStandardDeviation();
+          assert(cand->invdepth_var_!=0);
           cand->one_min_=true;
 
           if(debug_mapping ){
