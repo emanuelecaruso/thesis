@@ -256,14 +256,15 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
 }
 
-void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm){
+void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm, bool intensity_and_derivative){
   bundle_adj_->debug_optimization_=debug_optimization;
   bundle_adj_->opt_norm_=opt_norm;
+  bundle_adj_->intensity_and_derivative_=intensity_and_derivative;
 }
 
-void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, bool test_poses_only, int opt_norm){
+void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, bool test_poses_only, int opt_norm, bool intensity_and_derivative){
 
-  setOptimizationFlags(debug_optimization,opt_norm);
+  setOptimizationFlags(debug_optimization,opt_norm,intensity_and_derivative);
 
   while( true ){
 
@@ -415,9 +416,7 @@ void Dtam::test_mapping(){
 
   bool all_keyframes=true;
   bool wait_for_initialization=false;
-  // bool active_all_candidates=true;
 
-  // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
@@ -497,6 +496,7 @@ void Dtam::test_optimization_pose(){
   int guess_type=VELOCITY_CONSTANT;
   int opt_norm=HUBER;
   // int opt_norm=QUADRATIC;
+  bool intensity_and_derivative = false;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -507,7 +507,7 @@ void Dtam::test_optimization_pose(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,test_poses_only,opt_norm);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,test_poses_only,opt_norm,intensity_and_derivative);
     optimization_thread.join();
   }
 
@@ -538,6 +538,7 @@ void Dtam::test_dso(){
   int guess_type=VELOCITY_CONSTANT;
   int opt_norm=HUBER;
   // int opt_norm=QUADRATIC;
+  bool intensity_and_derivative = false;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -548,7 +549,7 @@ void Dtam::test_dso(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization, test_poses_only,opt_norm);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization, test_poses_only,opt_norm, intensity_and_derivative);
     optimization_thread.join();
   }
 

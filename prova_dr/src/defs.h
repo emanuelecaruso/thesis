@@ -389,6 +389,9 @@ namespace pr {
   }
 
   inline Eigen::Isometry3f v2t_inv(Vector6f& t){
+
+    assert(t.allFinite());
+
     // t_inv is old_T_new
     Eigen::Isometry3f T;
 

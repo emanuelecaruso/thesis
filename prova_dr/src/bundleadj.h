@@ -34,6 +34,20 @@ class JacobiansAndError{
     const float chi;
     const float omega;
 
+    JacobiansAndError():
+    J_r(nullptr),
+    J_m(nullptr),
+    J_d(-1),
+    J_r_transp(nullptr),
+    J_m_transp(nullptr),
+    weight_total(-1),
+    active_pt(nullptr),
+    cam_m(nullptr),
+    error(-1),
+    chi(-1),
+    omega(-1){}
+
+
     JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, float J_d_,
                       CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_, float chi_,
                       float weight_total_, float omega_ ):
@@ -289,6 +303,7 @@ class BundleAdj{
     frame_current_ba(-1),
     num_active_points_(0),
     opt_norm_(HUBER),
+    intensity_and_derivative_(true),
     min_num_of_active_pts_per_region_(INT_MAX)
     {};
 
@@ -307,7 +322,7 @@ class BundleAdj{
     void collectCoarseActivePoints();
 
     float getWeightTotal(float error);
-    JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool marg=false);
+    JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool marg, JacobiansAndError*& jacobians_grad, bool intensity_and_derivative);
 
     void initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     // void initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
@@ -348,6 +363,7 @@ class BundleAdj{
     HessianAndB_Marg* hessian_b_marg;
     int frame_current_ba;
     int opt_norm_;
+    bool intensity_and_derivative_;
 
   private:
 
@@ -368,11 +384,10 @@ class BundleAdj{
     void updateTangentSpace(bool with_marg);
     void fixNewTangentSpaceOnlyD();
 
-    Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m);
-    Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
-    Eigen::Matrix<float,1,6>* getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m);
-    float getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
-    float getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m);
-    bool getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, float& error);
+    Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m, Eigen::Matrix<float,1,3>* J_first_gradient=nullptr);
+    Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Matrix<float,1,3>* J_first_grad=nullptr, Eigen::Matrix<float,1,6>* J_r_gradient=nullptr);
+    Eigen::Matrix<float,1,6>* getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m , Eigen::Matrix<float,1,3>* J_first_grad=nullptr, Eigen::Matrix<float,1,6>* J_m_gradient=nullptr);
+    float getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Matrix<float,1,3>* J_first_grad, float& J_d_gradient);
+    float getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, bool gradient=false);
 
 };

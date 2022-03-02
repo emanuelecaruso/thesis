@@ -260,7 +260,7 @@ ActivePoint* BundleAdj::activateCandidate(CandidateProjected* cand_proj, RegionW
 }
 
 
-Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m){
+Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m, Eigen::Matrix<float,1,3>* J_first_gradient){
   CameraForMapping* cam_r = active_pt->cam_;
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
@@ -297,13 +297,20 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
   if(!cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_m)){
     return nullptr;}
 
-  Eigen::Matrix<float,1,3>* J_first = new Eigen::Matrix<float,1,3>;
+  Eigen::Matrix<float, 1,2> img_jacobian_gradient;
+  if (J_first_gradient!=nullptr){
+    Eigen::Matrix<float, 1,2> img_jacobian_gradient;
+    img_jacobian_gradient << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dy->evalPixelBilinear(pixel_m);
+    if(img_jacobian_gradient.isZero()){
+      J_first_gradient->setZero();
+    }
+  }
 
-  Eigen::Matrix<float, 1,2> img_jacobian;
-  img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
-  if(img_jacobian.isZero()){
-    J_first->setZero();
-    return J_first;
+  Eigen::Matrix<float,1,3>* J_first_intensity = new Eigen::Matrix<float,1,3>;
+  Eigen::Matrix<float, 1,2> img_jacobian_intensity;
+  img_jacobian_intensity << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
+  if(img_jacobian_intensity.isZero()){
+    J_first_intensity->setZero();
   }
 
   Eigen::Matrix<float, 2,3> proj_jacobian;
@@ -314,16 +321,18 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
                    0, 1./p_proj_0.z(), -p_proj_0.y()/pow(p_proj_0.z(),2);
 
 
-  *J_first = coeff*((img_jacobian*proj_jacobian)*K);
-  assert(J_first->allFinite());
+  *J_first_intensity = coeff*((img_jacobian_intensity*proj_jacobian)*K);
+  if (J_first_gradient!=nullptr){
+    *J_first_gradient = coeff*((img_jacobian_gradient*proj_jacobian)*K);
+    assert(J_first_gradient->allFinite());
+  }
+  assert(J_first_intensity->allFinite());
 
-  // assert(!J_first->isInf());
-
-  return J_first;
+  return J_first_intensity;
 }
 
 
-Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m_0){
+Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m_0, Eigen::Matrix<float,1,3>* J_first_grad, Eigen::Matrix<float,1,6>* J_m_gradient){
 
   Eigen::Matrix<float, 3,6> state_jacobian;
 
@@ -333,15 +342,22 @@ Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapp
 
 
   Eigen::Matrix<float,1,6>* J_m = new Eigen::Matrix<float,1,6>;
-  // *J_m=(coeff*(img_jacobian*jacobian_to_mul))/normalizer;
+
   *J_m=(*J_first)*state_jacobian;
   assert(J_m->allFinite());
 
+  if(J_m_gradient!=nullptr && J_first_grad!=nullptr){
+    *J_m_gradient=(*J_first_grad)*state_jacobian;
+    assert(J_m_gradient->allFinite());
+  }
+  else{
+    assert( (J_m_gradient==nullptr && J_first_grad==nullptr));
+  }
 
   return J_m;
 }
 
-Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
+Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Matrix<float,1,3>* J_first_grad, Eigen::Matrix<float,1,6>* J_r_gradient){
   CameraForMapping* cam_r = active_pt->cam_;
   Eigen::Vector3f point_r_0 = *(active_pt->p_incamframe_0_);
   Eigen::Matrix<float, 3,6> state_jacobian;
@@ -350,17 +366,26 @@ Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePoint* active_pt, CameraForMapp
                       0, -1,  0,  point_r_0.z() ,  0              , -point_r_0.x(),
                       0,  0, -1, -point_r_0.y() ,  point_r_0.x()  ,  0            ;
 
+  Eigen::Matrix<float, 3,6> multiplier = ((cam_m->frame_world_wrt_camera_0_->linear())*(cam_r->frame_camera_wrt_world_0_->linear()))*state_jacobian;
+
 
   Eigen::Matrix<float,1,6>* J_r = new Eigen::Matrix<float,1,6>;
-  // *J_r=((*J_first)*state_jacobian)/normalizer;
-  *J_r=((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear())*(cam_r->frame_camera_wrt_world_0_->linear()))*state_jacobian;
+  *J_r=(*J_first)*multiplier;
+
+  if(J_r_gradient!=nullptr && J_first_grad!=nullptr){
+    *J_r_gradient=(*J_first_grad)*multiplier;
+    assert(J_r_gradient->allFinite());
+  }
+  else{
+    assert( (J_r_gradient==nullptr && J_first_grad==nullptr));
+  }
   assert(J_r->allFinite());
 
 
   return J_r;
 }
 
-float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
+float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Matrix<float,1,3>* J_first_grad, float& J_d_gradient){
   CameraForMapping* cam_r = active_pt->cam_;
   Eigen::Matrix3f Kinv = *(cam_r->Kinv_);
   // float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
@@ -371,11 +396,21 @@ float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::M
                        -active_pt->uv_.y()/pow(active_pt->invdepth_0_,2),
                        -1/pow(active_pt->invdepth_0_,2);
 
-  float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear()))*(cam_r->frame_camera_wrt_world_0_->linear())*Kinv )*invdepth_jacobian;
+  Eigen::Matrix<float, 3,1> multiplier = (cam_m->frame_world_wrt_camera_0_->linear())*((cam_r->frame_camera_wrt_world_0_->linear())*(Kinv*invdepth_jacobian));
+
+  float J_d =(*J_first)*multiplier;
 
   assert(!std::isnan(J_d));
   assert(!std::isinf(J_d));
 
+  if(J_d_gradient!=-1 && J_first_grad!=nullptr){
+    J_d_gradient=(*J_first_grad)*multiplier;
+    assert(!std::isnan(J_d_gradient));
+    assert(!std::isinf(J_d_gradient));
+  }
+  else{
+    assert( (J_d_gradient==-1 && J_first_grad==nullptr));
+  }
   // Eigen::Matrix<float, 3,1> depth_jacobian;
   //
   // depth_jacobian << active_pt->uv_.x(),
@@ -407,7 +442,8 @@ void HessianAndB_base::mirrorTriangH(bool pose_pose_not_diagonal){
 bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
   assert(jacobians_and_error!=nullptr);
-
+  assert(jacobians_and_error->J_m!=nullptr);
+  assert(jacobians_and_error->J_r!=nullptr);
 
   int d = jacobians_and_error->active_pt->state_point_block_idx_;
   int r = jacobians_and_error->active_pt->cam_->state_pose_block_idx_;
@@ -519,38 +555,23 @@ void HessianAndB_Marg::updateHessianAndB_marg(JacobiansAndError* jacobians_and_e
 }
 
 
-float BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m){
-  float z = active_pt->intensity_;
-  float z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_m);
+float BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, bool gradient){
 
+  float z, z_hat, error;
+
+  if(gradient){
+    z = active_pt->grad_magnitude_;
+    z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd->evalPixelBilinear(pixel_m);
+    error = (z_hat-z);
+  }
+  else{
+    z = active_pt->intensity_;
+    z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_m);
+    error = (z_hat-z);
+  }
   // error
   // float error = (z_hat-z)/normalizer;
-  float error = (z_hat-z);
   return error;
-}
-
-bool BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, float& error){
-  float z = active_pt->intensity_;
-  float z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_m);
-
-  // error
-  // float error = (z_hat-z)/normalizer;
-  error = (z_hat-z);
-
-  float error_eps = 0.00001;
-  // // saturate error
-  // if (error<error_eps)
-  //   error=error_eps;
-
-  // // add error eps
-  // error+=error_eps;
-
-  // do not consider measurement
-  if (error<error_eps)
-  // if (error==0)
-    return false;
-
-  return true;
 }
 
 
@@ -593,13 +614,19 @@ float BundleAdj::getWeightTotal(float error){
 }
 
 
-JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool marg){
+JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool marg, JacobiansAndError*& jacobians_grad, bool intensity_and_derivative){
 
 
   Eigen::Matrix<float,1,3>* J_1;
   Eigen::Vector3f point_m_0;
   pxl pixel_m;
-  J_1= getJfirst( active_pt, cam_m,  point_m_0, pixel_m);
+
+  Eigen::Matrix<float,1,3>* J_1_gradient = nullptr;
+  if(intensity_and_derivative){
+    J_1_gradient = new Eigen::Matrix<float,1,3>;
+  }
+
+  J_1= getJfirst( active_pt, cam_m,  point_m_0, pixel_m, J_1_gradient);
   if(debug_optimization_){
     // Image<float>* img_r = active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
     // Image<float>* img_m = cam_m->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
@@ -612,26 +639,75 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
   if (J_1==nullptr)
     return nullptr;
 
+  assert(J_1->allFinite());
+  if(intensity_and_derivative){
+    assert(J_1_gradient->allFinite());
+  }
 
-  float error = getError( active_pt, cam_m ,pixel_m );
-  float chi = getChi(error);
+  // Jr
+  Eigen::Matrix<float,1,6>* J_r_intensity;
+  Eigen::Matrix<float,1,6>* J_r_gradient = nullptr;
+  if(intensity_and_derivative){
+    J_r_gradient = new Eigen::Matrix<float,1,6>;
+  }
+  if (!marg){
+    J_r_intensity = getJr( active_pt, cam_m, J_1, J_1_gradient, J_r_gradient);
+    assert(J_r_intensity->allFinite());
+    if(intensity_and_derivative)
+      assert(J_r_gradient->allFinite());
+  }
 
-  float  weight_total = getWeightTotal(error);
+  // Jm
+  Eigen::Matrix<float,1,6>* J_m_intensity;
+  Eigen::Matrix<float,1,6>* J_m_gradient = nullptr;
+  if(intensity_and_derivative){
+    J_m_gradient = new Eigen::Matrix<float,1,6>;
+  }
+  J_m_intensity = getJm( active_pt, cam_m, J_1, point_m_0, J_1_gradient, J_m_gradient);
+  assert(J_m_intensity->allFinite());
+  if(intensity_and_derivative)
+    assert(J_m_gradient->allFinite());
 
-  Eigen::Matrix<float,1,6>* J_r = nullptr;
-  if (!marg)
-    J_r = getJr( active_pt, cam_m, J_1);
+  // Jd
+  float J_d_gradient = -1;
+  if (intensity_and_derivative){
+    J_d_gradient=0;
+  }
+  float J_d_intensity = getJd(active_pt, cam_m, J_1, J_1_gradient, J_d_gradient);
+  assert(std::isfinite(J_d_intensity));
+  if(intensity_and_derivative)
+    assert(std::isfinite(J_d_gradient));
 
-  Eigen::Matrix<float,1,6>* J_m = getJm( active_pt, cam_m, J_1, point_m_0);
-  float J_d = getJd(active_pt, cam_m, J_1);
+  // error
+  float error_intensity = getError( active_pt, cam_m ,pixel_m, false );
+  float error_grad = -1;
+  if (intensity_and_derivative){
+    error_grad = getError(active_pt, cam_m ,pixel_m, true);
+  }
+
+  // chi
+  float chi_intensity = getChi(error_intensity);
+  float chi_grad = -1;
+  if (intensity_and_derivative){
+    chi_grad = getChi(error_grad);
+  }
+
+  // weight
+  float  weight_total_intensity = getWeightTotal(error_intensity);
+  float  weight_total_grad = getWeightTotal(error_grad);
+
 
   // float var = active_pt->invdepth_var_*J_d*J_d+0.0001;
   // float omega = 1.0/var;
-
   float omega = 1.0;
 
-
-  JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error, chi, weight_total, omega);
+  JacobiansAndError* jacobians = new JacobiansAndError(J_r_intensity,J_m_intensity,J_d_intensity,cam_m,active_pt, error_intensity, chi_intensity, weight_total_intensity, omega);
+  if(intensity_and_derivative){
+    // delete jacobians_grad;
+    jacobians_grad = new JacobiansAndError(J_r_gradient,J_m_gradient,J_d_gradient,cam_m,active_pt, error_grad, chi_grad, weight_total_grad, omega);
+    assert(J_r_gradient!=nullptr);
+    assert(J_m_gradient!=nullptr);
+  }
 
   return jacobians;
 
@@ -699,13 +775,17 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsProva(){
   Eigen::VectorXf* dx_poses = new Eigen::VectorXf(pose_block_size) ;
   Eigen::VectorXf* dx_points = new Eigen::VectorXf(point_block_size) ;
 
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
   // float thresh = getPinvThreshold(H_point_point->diagonal());
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPointDLS(100);
+  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPointDLS(100);
+  assert(H_point_point_inv->diagonal().allFinite());
   // H_point_point_inv->setIdentity();
   // H_pose_pose->setIdentity();
 
   Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
+  assert(H_pose_pose->allFinite());
+  assert(H_pose_point->allFinite());
+  assert(H_point_pose->allFinite());
   // Eigen::MatrixXf Schur_inv=Schur.inverse();
 
   // assert(H_pose_pose->allFinite());
@@ -727,8 +807,8 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsProva(){
   // *dx_points = (*H_point_point_inv)* -(*b_point) ;
   // dx_points->setZero();
 
-  // assert(dx_points->allFinite());
-  // assert(dx_poses->allFinite());
+  assert(dx_poses->allFinite());
+  assert(dx_points->allFinite());
 
   delete H_point_point_inv;
 
@@ -1235,7 +1315,11 @@ void BundleAdj::getJacobiansForNewUpdate(int& new_points, int& poses_new_size, s
           continue;
         }
 
-        JacobiansAndError* jacobians = getJacobiansAndError(pt_to_be_marg, keyframe_proj, true);
+        JacobiansAndError* jacobians_grad;
+        JacobiansAndError* jacobians = getJacobiansAndError(pt_to_be_marg, keyframe_proj, true, jacobians_grad, intensity_and_derivative_ );
+        if(intensity_and_derivative_)
+          assert(jacobians_grad!=nullptr);
+
         if (jacobians==nullptr){
           // n_suppressed_measurement++;
         }
@@ -1387,7 +1471,8 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
           continue;
         }
 
-        JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj);
+        JacobiansAndError* jacobians_grad ;
+        JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj, false, jacobians_grad, intensity_and_derivative_);
         if (jacobians==nullptr){
 
         }
@@ -1409,6 +1494,9 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
             cam_taken=true;
 
           jacobians_and_error_vec->push_back(jacobians);
+          if (intensity_and_derivative_){
+            jacobians_and_error_vec->push_back(jacobians_grad);
+          }
           n_jac_added++;
         }
       }
@@ -1583,8 +1671,8 @@ void BundleAdj::optimize(){
       projectActivePoints(take_fixed_point);
       last_keyframe->showProjActivePoints(1);
 
-      PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
       std::cout << "\nchi: " << chi << std::endl;
+      PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
       poses_norm_error_tot->print();
       cv::waitKey(0);
     }
