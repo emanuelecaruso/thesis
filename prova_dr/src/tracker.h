@@ -16,6 +16,7 @@ class Tracker{
 
     void collectCandidatesInCoarseRegions();
     void collectActivePointsInCoarseRegions();
+    void filterOutOcclusionsGT();
 
   protected:
     Dtam* const dtam_;
@@ -39,7 +40,6 @@ class Tracker{
     Eigen::Isometry3f computeInitialGuessGT( );
     Eigen::Isometry3f poseConstantModel();
     Eigen::Isometry3f velocityConstantModel();
-    void filterOutOcclusionsGT();
 
 
 };

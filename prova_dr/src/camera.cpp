@@ -445,6 +445,14 @@ void ActivePoint::remove(){
 
 }
 
+float ActivePoint::getInvdepthGroundtruth(){
+  pxl pixel;
+  cam_->uv2pixelCoords(uv_, pixel, level_);
+  float invdepth_val = cam_->grountruth_camera_->invdepth_map_->evalPixel(pixel);
+  float invdepth_gt = invdepth_val/cam_->cam_parameters_->min_depth;
+  return invdepth_gt;
+}
+
 
 void CameraForMapping::selectNewCandidates(int max_num_candidates){
   int idx=0;
@@ -826,4 +834,20 @@ PoseNormError CameraForMapping::getPoseNormError(){
 
   PoseNormError pose_norm_error(angle,norm_transl);
   return pose_norm_error;
+}
+
+float CameraForMapping::getPointsNormError(){
+
+  float total_error=0;
+  // iterate along all active points
+  for( int j=0; j<active_points_->size(); j++){
+    ActivePoint* active_pt = active_points_->at(j);
+    float invdepth_val = grountruth_camera_->invdepth_map_->evalPixel(active_pt->pixel_);
+    float invdepth_gt = invdepth_val/cam_parameters_->min_depth;
+    total_error+=pow(invdepth_gt-active_pt->invdepth_0_,2);
+
+  }
+
+
+  return total_error;
 }

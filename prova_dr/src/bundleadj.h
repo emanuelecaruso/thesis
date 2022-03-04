@@ -289,6 +289,7 @@ class BundleAdj{
     frame_current_ba(-1),
     num_active_points_(0),
     opt_norm_(HUBER),
+    test_single_(TEST_ALL),
     min_num_of_active_pts_per_region_(INT_MAX)
     {};
 
@@ -348,6 +349,7 @@ class BundleAdj{
     HessianAndB_Marg* hessian_b_marg;
     int frame_current_ba;
     int opt_norm_;
+    int test_single_;
 
   private:
 
@@ -367,6 +369,7 @@ class BundleAdj{
     void updateInvdepthVars(HessianAndB* hessian_and_b);
     void updateTangentSpace(bool with_marg);
     void fixNewTangentSpaceOnlyD();
+
 
     Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m);
     Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);

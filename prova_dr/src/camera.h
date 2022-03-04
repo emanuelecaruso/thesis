@@ -388,6 +388,8 @@ class ActivePoint : public CandidateBase{
     void marginalize();
     void remove();
 
+    float getInvdepthGroundtruth();
+
 };
 
 class RegionWithActivePoints : public RegionWithCandidatesBase{
@@ -747,6 +749,7 @@ class CameraForMapping: public Camera{
     void assignPose0(Eigen::Isometry3f& frame_camera_wrt_world);
 
     PoseNormError getPoseNormError();
+    float getPointsNormError();
 
   private:
     // void collectRegions(float grad_threshold);

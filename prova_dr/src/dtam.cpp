@@ -55,6 +55,19 @@ PoseNormError* Dtam::getTotalPosesNormError(){
   return poses_norm_error_tot;
 }
 
+float Dtam::getTotalPointsNormError(){
+
+  float points_norm_error_tot = 0;
+  for (int i=0; i<camera_vector_->size(); i++){
+    CameraForMapping* cam = camera_vector_->at(i);
+    if (cam->keyframe_){
+      float cam_point_norm_error = cam->getPointsNormError();
+      points_norm_error_tot+=cam_point_norm_error;
+    }
+  }
+  return points_norm_error_tot;
+}
+
 void Dtam::addCamera(int counter){
 
   // CameraForStudy* env_cam=environment_->camera_vector_->at(counter);
@@ -256,14 +269,49 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
 }
 
-void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm){
+void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single){
   bundle_adj_->debug_optimization_=debug_optimization;
   bundle_adj_->opt_norm_=opt_norm;
+  bundle_adj_->test_single_=test_single;
 }
 
-void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, bool test_poses_only, int opt_norm){
+void Dtam::noiseToPoses(float range_angle, float range_position){
 
-  setOptimizationFlags(debug_optimization,opt_norm);
+  for(int i=0; i<bundle_adj_->keyframe_vector_ba_->size() ; i++){
+    CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
+
+    Vector6f noise;
+    float t0 = randZeroMeanNoise(range_position); float t1 = randZeroMeanNoise(range_position); float t2 = randZeroMeanNoise(range_position);
+    float t3 = randZeroMeanNoise(range_angle); float t4 = randZeroMeanNoise(range_angle); float t5 = randZeroMeanNoise(range_angle);
+    noise << t0, t1, t2, t3, t4, t5;
+    Eigen::Isometry3f frame_camera_wrt_world_noisy = v2t(noise)*(*(keyframe->grountruth_camera_->frame_camera_wrt_world_));
+    keyframe->assignPose0(frame_camera_wrt_world_noisy);
+    keyframe->assignPose(frame_camera_wrt_world_noisy);
+
+  }
+}
+
+void Dtam::noiseToPoints(float range_invdepth){
+
+  for(int i=0; i<bundle_adj_->keyframe_vector_ba_->size() ; i++){
+    CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
+    // iterate through all active points
+    for(int j=0; j<keyframe->active_points_->size() ; j++){
+      ActivePoint* active_pt = keyframe->active_points_->at(j);
+      float invdepth_err = randZeroMeanNoise(range_invdepth);
+      active_pt->invdepth_0_+=invdepth_err;
+      active_pt->invdepth_+=invdepth_err;
+      // since change both poses and invdepths
+      keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
+      *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
+    }
+
+  }
+}
+
+void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, int opt_norm, int test_single){
+
+  setOptimizationFlags(debug_optimization,opt_norm,test_single);
 
   while( true ){
 
@@ -287,6 +335,10 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, b
 
     // std::cout << "OPTIMIZATION 1 " << std::endl;
 
+    // if(bundle_adj_->test_single_==TEST_ONLY_POSES ||
+    //    bundle_adj_->test_single_==TEST_ONLY_POINTS ||
+    //    bundle_adj_->test_single_==TEST_ONLY_POSES_ONLY_M)
+    //   tracker_->filterOutOcclusionsGT();
     // activate new points
     bundle_adj_->activateNewPoints();
 
@@ -316,6 +368,17 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, b
       //   cv::waitKey(0);
       //   cv::destroyAllWindows();
       }
+
+    if(test_single==TEST_ONLY_POSES || test_single==TEST_ONLY_POSES_ONLY_M){
+      // noise on cam poses
+      // noiseToPoses(1/180, 0.01);
+      noiseToPoses(5/180, 0.05);
+      // noiseToPoses(0, 0);
+
+    }
+    else if(test_single==TEST_ONLY_POINTS){
+      // noiseToPoints(0.1);
+    }
 
     // optimize
     bundle_adj_->optimize();
@@ -415,9 +478,7 @@ void Dtam::test_mapping(){
 
   bool all_keyframes=true;
   bool wait_for_initialization=false;
-  // bool active_all_candidates=true;
 
-  // std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates);
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
@@ -488,15 +549,16 @@ void Dtam::test_optimization_pose(){
   bool debug_optimization= true;
 
   bool initialization_loop=false;
-  bool take_gt_poses=false;
+  bool take_gt_poses=true;
   bool take_gt_points=true;
 
-  bool test_poses_only=true;
   bool track_candidates=false;
   // int guess_type=POSE_CONSTANT;
   int guess_type=VELOCITY_CONSTANT;
-  int opt_norm=HUBER;
-  // int opt_norm=QUADRATIC;
+  // int opt_norm=HUBER;
+  int opt_norm=QUADRATIC;
+  int test_single=TEST_ONLY_POSES;
+
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -507,7 +569,49 @@ void Dtam::test_optimization_pose(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,test_poses_only,opt_norm);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single);
+    optimization_thread.join();
+  }
+
+  initialization_thread_.join();
+  update_cameras_thread_.join();
+  frontend_thread_.join();
+
+  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+
+
+}
+
+
+void Dtam::test_optimization_points(){
+
+  bool debug_initialization=false;
+  bool debug_mapping=false;
+  bool debug_tracking=false;
+  bool debug_optimization= true;
+
+  bool initialization_loop=false;
+  bool take_gt_poses=true;
+  bool take_gt_points=true;
+
+  bool track_candidates=false;
+  // int guess_type=POSE_CONSTANT;
+  int guess_type=VELOCITY_CONSTANT;
+  // int opt_norm=HUBER;
+  int opt_norm=QUADRATIC;
+  int test_single=TEST_ONLY_POINTS;
+
+  bool all_keyframes=true;
+  bool wait_for_initialization=true;
+  bool active_all_candidates=true;
+
+  std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
+  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping, track_candidates, take_gt_points);
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+
+  if(!track_candidates){
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single);
     optimization_thread.join();
   }
 
@@ -532,12 +636,12 @@ void Dtam::test_dso(){
   bool take_gt_poses=false;
   bool take_gt_points=false;
 
-  bool test_poses_only=false;
   bool track_candidates=false;
   // int guess_type=POSE_CONSTANT;
   int guess_type=VELOCITY_CONSTANT;
   int opt_norm=HUBER;
   // int opt_norm=QUADRATIC;
+  int test_single=TEST_ALL;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -548,7 +652,7 @@ void Dtam::test_dso(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization, test_poses_only,opt_norm);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single);
     optimization_thread.join();
   }
 

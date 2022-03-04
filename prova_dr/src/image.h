@@ -233,22 +233,22 @@ class Image{
     inline Image< pixelIntensity>* compute_sobel_x(const std::string& name) const{
       Image<  pixelIntensity >* img_sobel_x=new Image< pixelIntensity >(name);
 
-      cv::Mat_<float> kernel(3,3);
-      kernel <<  -1,  0, 1,
-                 -2,  0, 2,
-                 -1,  0, 1;
-      // normalize
-      kernel/=4;
-
-      // cv::Mat_<float> kernel(5,5);
-      // kernel <<  -2, -1,  0, 1, 2,
-      //            -2, -1,  0, 1, 2,
-      //            -4, -2,  0, 2, 4,
-      //            -2, -1,  0, 1; 2,
-      //            -2, -1,  0, 1, 2;
-      //
+      // cv::Mat_<float> kernel(3,3);
+      // kernel <<  -1,  0, 1,
+      //            -2,  0, 2,
+      //            -1,  0, 1;
       // // normalize
-      // kernel/=18;
+      // kernel/=4;
+
+      cv::Mat_<float> kernel(5,5);
+      kernel <<  -2, -1,  0, 1, 2,
+                 -2, -1,  0, 1, 2,
+                 -4, -2,  0, 2, 4,
+                 -2, -1,  0, 1; 2,
+                 -2, -1,  0, 1, 2;
+
+      // normalize
+      kernel/=18;
 
       // kernel <<  -1,  0, 1,
       //            -1,  0, 1,
@@ -268,21 +268,21 @@ class Image{
     inline Image<pixelIntensity>* compute_sobel_y(const std::string& name) const{
       Image< pixelIntensity >* img_sobel_y =new Image< pixelIntensity >(name);
 
-      cv::Mat_<float> kernel(3,3);
-      kernel <<  -1, -2, -1,
-                  0,  0,  0,
-                  1,  2,  1;
-      // normalize
-      kernel/=4;
-
-      // cv::Mat_<float> kernel(5,5);
-      // kernel <<  -2, -2, -4, -2, -2,
-      //            -1, -1, -2, -1, -1,
-      //             0,  0,  0,  0,  0,
-      //             1,  1,  2,  1,  1,
-      //             2,  2,  4,  2,  2;
+      // cv::Mat_<float> kernel(3,3);
+      // kernel <<  -1, -2, -1,
+      //             0,  0,  0,
+      //             1,  2,  1;
       // // normalize
-      // kernel/=18;
+      // kernel/=4;
+
+      cv::Mat_<float> kernel(5,5);
+      kernel <<  -2, -2, -4, -2, -2,
+                 -1, -1, -2, -1, -1,
+                  0,  0,  0,  0,  0,
+                  1,  1,  2,  1,  1,
+                  2,  2,  4,  2,  2;
+      // normalize
+      kernel/=18;
 
       // kernel <<  -1, -1, -1,
       //             0,  0,  0,

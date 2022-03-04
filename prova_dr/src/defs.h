@@ -133,12 +133,12 @@ namespace pr {
   }
 
 
-  inline Eigen::Isometry3f v2tEuler(const Vector6f& v){
-    Eigen::Isometry3f T;
-    T.linear()=Rx(v[3])*Ry(v[4])*Rz(v[5]);
-    T.translation()=v.head<3>();
-    return T;
-  }
+  // inline Eigen::Isometry3f v2tEuler(const Vector6f& v){
+  //   Eigen::Isometry3f T;
+  //   T.linear()=Rx(v[3])*Ry(v[4])*Rz(v[5]);
+  //   T.translation()=v.head<3>();
+  //   return T;
+  // }
 
 
   inline Eigen::Matrix3f skew(const Eigen::Vector3f& v){
@@ -412,6 +412,10 @@ namespace pr {
   #define HUBER 0
   #define QUADRATIC 1
   #define LINEAR 2
+  #define TEST_ALL 0
+  #define TEST_ONLY_POSES 1
+  #define TEST_ONLY_POINTS 2
+  #define TEST_ONLY_POSES_ONLY_M 3
 
 
 
@@ -431,15 +435,25 @@ namespace pr {
 
 
   inline float getPinvThreshold(Eigen::VectorXf& singular_values){
-    float sv_sum = 0;
+    // float sv_sum = 0;
+    float max = 0;
+    int idx = -1;
     int size = singular_values.size();
-    for(int i=0; i<size; i++)
-      sv_sum += singular_values[i];
-    float sv_average = sv_sum/size;
+    for(int i=0; i<size; i++){
+      // sv_sum += singular_values[i];
+      if(singular_values[i]>max){
+        max=singular_values[i];
+        idx=i;
+      }
+    }
+    // float sv_average = sv_sum/size;
 
     // float thresh = 2.858*sv_average;
     // float thresh = 0.5*sv_average;
-    float thresh = 1;
+    float thresh = max*7.15256e-07*size;
+    std::cout << "max " << max << " i " << idx << std::endl;
+
+    thresh = 0.01;
     return thresh;
   }
 
@@ -484,19 +498,14 @@ namespace pr {
 
   inline float rotation2angle(const Eigen::Matrix3f& rot_mat){
     assert(rot_mat.allFinite());
-    float cosine = (rot_mat.trace()-1)*0.5;
-    if (cosine>1){
-      if(cosine<1.001){
-        cosine=1;
-      }
-      else{
-        throw std::invalid_argument( "cosine more than 1" );
-      }
-    }
-    float angle = acos(cosine);
-    if(std::isnan(angle))
-      std::cout << angle << " \n\n" << rot_mat << "\n\n" << rot_mat.trace() << "\n\n" << cosine << std::endl;
-    assert(!std::isnan(angle));
-    return angle;
+
+    Eigen::AngleAxisf angle_axis(rot_mat);
+
+    return angle_axis.angle();
+  }
+
+  inline float randZeroMeanNoise(float range){
+    float out = range/2 - ((float)rand()/RAND_MAX) * range;
+    return out;
   }
 }

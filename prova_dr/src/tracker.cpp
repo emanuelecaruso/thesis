@@ -489,7 +489,6 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
 
 void Tracker::filterOutOcclusionsGT(){
 
-
     CameraForMapping* frame_new = dtam_->getCurrentCamera();
     Eigen::Isometry3f* framenew_grountruth_pose = frame_new->grountruth_camera_->frame_world_wrt_camera_;
 
@@ -723,10 +722,13 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
 
   Eigen::Isometry3f current_guess = initial_guess;
 
+  // if(dtam_->bundle_adj_->test_single_==TEST_ONLY_POSES ||
+  //    dtam_->bundle_adj_->test_single_==TEST_ONLY_POINTS ||
+  //    dtam_->bundle_adj_->test_single_==TEST_ONLY_POSES_ONLY_M)
+  //   filterOutOcclusionsGT();
 
   if(track_candidates){
 
-    // filterOutOcclusionsGT();
     for(int keyframe_idx : *(dtam_->keyframe_vector_)){
       CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
       collectCoarseCandidates(keyframe);
