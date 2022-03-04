@@ -269,10 +269,11 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
 }
 
-void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single){
+void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single, int image_id){
   bundle_adj_->debug_optimization_=debug_optimization;
   bundle_adj_->opt_norm_=opt_norm;
   bundle_adj_->test_single_=test_single;
+  bundle_adj_->image_id_=image_id;
 }
 
 void Dtam::noiseToPoses(float range_angle, float range_position){
@@ -309,9 +310,9 @@ void Dtam::noiseToPoints(float range_invdepth){
   }
 }
 
-void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, int opt_norm, int test_single){
+void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, int opt_norm, int test_single, int image_id){
 
-  setOptimizationFlags(debug_optimization,opt_norm,test_single);
+  setOptimizationFlags(debug_optimization,opt_norm,test_single,image_id);
 
   while( true ){
 
@@ -377,7 +378,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
 
     }
     else if(test_single==TEST_ONLY_POINTS){
-      // noiseToPoints(0.1);
+      noiseToPoints(0.2);
     }
 
     // optimize
@@ -558,7 +559,8 @@ void Dtam::test_optimization_pose(){
   // int opt_norm=HUBER;
   int opt_norm=QUADRATIC;
   int test_single=TEST_ONLY_POSES;
-
+  // int image_id=INTENSITY_ID;
+  int image_id=GRADIENT_ID;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -569,7 +571,7 @@ void Dtam::test_optimization_pose(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id);
     optimization_thread.join();
   }
 
@@ -601,6 +603,8 @@ void Dtam::test_optimization_points(){
   // int opt_norm=HUBER;
   int opt_norm=QUADRATIC;
   int test_single=TEST_ONLY_POINTS;
+  // int image_id=INTENSITY_ID;
+  int image_id=GRADIENT_ID;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -611,7 +615,7 @@ void Dtam::test_optimization_points(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id);
     optimization_thread.join();
   }
 
@@ -642,6 +646,7 @@ void Dtam::test_dso(){
   int opt_norm=HUBER;
   // int opt_norm=QUADRATIC;
   int test_single=TEST_ALL;
+  int image_id=INTENSITY_ID;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -652,7 +657,7 @@ void Dtam::test_dso(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id);
     optimization_thread.join();
   }
 

@@ -290,6 +290,7 @@ class BundleAdj{
     num_active_points_(0),
     opt_norm_(HUBER),
     test_single_(TEST_ALL),
+    image_id_(INTENSITY_ID),
     min_num_of_active_pts_per_region_(INT_MAX)
     {};
 
@@ -308,8 +309,8 @@ class BundleAdj{
     void collectCoarseActivePoints();
 
     float getWeightTotal(float error);
-    JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool marg=false);
-
+    JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool no_r=false);
+    std::vector<int> collectImageIds();
     void initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     // void initializeStateStructure_onlyM( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
     // void initializeStateStructure_onlyR( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
@@ -350,6 +351,7 @@ class BundleAdj{
     int frame_current_ba;
     int opt_norm_;
     int test_single_;
+    int image_id_;
 
   private:
 
@@ -370,12 +372,17 @@ class BundleAdj{
     void updateTangentSpace(bool with_marg);
     void fixNewTangentSpaceOnlyD();
 
+    Eigen::Matrix<float,1,2> getImageJacobian(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, int image_);
+    Eigen::Matrix<float, 2,3>* getJfirst_(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m);
+    Eigen::Matrix<float,1,3> getJfirst(Eigen::Matrix<float, 2,3>* Jfirst_, Eigen::Matrix<float,1,2> img_jacobian );
+    Eigen::Matrix3f getRelativeRotationMatrix(ActivePoint* active_pt, CameraForMapping* cam_m);
+    Eigen::Matrix<float,3,6> getJSecondJr(ActivePoint* active_pt, Eigen::Matrix3f relative_rot_mat );
+    Eigen::Matrix<float,3,6> getJSecondJm( Eigen::Vector3f& point_m_0 );
+    Eigen::Matrix<float,3,1> getJSecondJd( ActivePoint* active_pt, Eigen::Matrix3f relative_rot_mat );
+    Eigen::Matrix<float,1,6> getJr( Eigen::Matrix<float,1,3> J_first, Eigen::Matrix<float,3,6> JSecond_jr );
+    Eigen::Matrix<float,1,6> getJm( Eigen::Matrix<float,1,3> J_first, Eigen::Matrix<float,3,6> JSecond_jm);
+    float getJd( Eigen::Matrix<float,1,3> J_first, Eigen::Matrix<float,3,1> JSecond_jd );
 
-    Eigen::Matrix<float,1,3>* getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m);
-    Eigen::Matrix<float,1,6>* getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
-    Eigen::Matrix<float,1,6>* getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m);
-    float getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first);
-    float getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m);
-    bool getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, float& error);
+    float getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, int image_id);
 
 };

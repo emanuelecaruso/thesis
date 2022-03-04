@@ -259,8 +259,23 @@ ActivePoint* BundleAdj::activateCandidate(CandidateProjected* cand_proj, RegionW
   return nullptr;
 }
 
+Eigen::Matrix<float,1,2> BundleAdj::getImageJacobian(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, int image_id){
 
-Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m){
+  Eigen::Matrix<float, 1,2> img_jacobian;
+
+  if(image_id==INTENSITY_ID)
+    img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
+  else if(image_id==GRADIENT_ID)
+    img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dy->evalPixelBilinear(pixel_m);
+  else if(image_id==PHASE_ID)
+    img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->phase_cd_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->phase_cd_dy->evalPixelBilinear(pixel_m);
+
+  return img_jacobian;
+
+}
+
+
+Eigen::Matrix<float, 2,3>* BundleAdj::getJfirst_(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Vector3f& point_m_0, pxl& pixel_m){
   CameraForMapping* cam_r = active_pt->cam_;
 
   float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
@@ -297,14 +312,7 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
   if(!cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_m)){
     return nullptr;}
 
-  Eigen::Matrix<float,1,3>* J_first = new Eigen::Matrix<float,1,3>;
-
-  Eigen::Matrix<float, 1,2> img_jacobian;
-  img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
-  if(img_jacobian.isZero()){
-    J_first->setZero();
-    return J_first;
-  }
+  Eigen::Matrix<float,2,3>* J_first_ = new Eigen::Matrix<float,2,3>;
 
   Eigen::Matrix<float, 2,3> proj_jacobian;
   Eigen::Matrix<float, 2,6> jacobian_to_mul;
@@ -314,53 +322,79 @@ Eigen::Matrix<float,1,3>* BundleAdj::getJfirst(ActivePoint* active_pt, CameraFor
                    0, 1./p_proj_0.z(), -p_proj_0.y()/pow(p_proj_0.z(),2);
 
 
-  *J_first = coeff*((img_jacobian*proj_jacobian)*K);
-  assert(J_first->allFinite());
+  *J_first_ = coeff*((proj_jacobian)*K);
+  assert(J_first_->allFinite());
 
   // assert(!J_first->isInf());
 
+  return J_first_;
+}
+
+Eigen::Matrix<float,1,3> BundleAdj::getJfirst(Eigen::Matrix<float, 2,3>* Jfirst_, Eigen::Matrix<float,1,2> img_jacobian ){
+
+
+  assert(Jfirst_->allFinite());
+  assert(img_jacobian.allFinite());
+
+  Eigen::Matrix<float,1,3> J_first;
+
+  if(img_jacobian.isZero()){
+    J_first.setZero();
+    return J_first;
+  }
+
+  J_first = (img_jacobian)*(*Jfirst_);
   return J_first;
+
 }
 
 
-Eigen::Matrix<float,1,6>* BundleAdj::getJm(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first, Eigen::Vector3f& point_m_0){
 
+
+Eigen::Matrix<float,1,6> BundleAdj::getJm( Eigen::Matrix<float,1,3> J_first, Eigen::Matrix<float,3,6> JSecond_jm){
+
+  Eigen::Matrix<float,1,6> J_m;
+
+  J_m=(J_first)*(JSecond_jm);
+  assert(J_m.allFinite());
+
+  return J_m;
+}
+
+Eigen::Matrix3f BundleAdj::getRelativeRotationMatrix(ActivePoint* active_pt, CameraForMapping* cam_m){
+  CameraForMapping* cam_r = active_pt->cam_;
+  Eigen::Matrix3f relative_rot_mat;
+  relative_rot_mat = (cam_m->frame_world_wrt_camera_0_->linear())*(cam_r->frame_camera_wrt_world_0_->linear());
+  return relative_rot_mat;
+}
+
+Eigen::Matrix<float,3,6> BundleAdj::getJSecondJr(ActivePoint* active_pt, Eigen::Matrix3f relative_rot_mat ){
+  Eigen::Vector3f point_r_0 = *(active_pt->p_incamframe_0_);
+
+  Eigen::Matrix<float, 3,6> JSecond_jr;
   Eigen::Matrix<float, 3,6> state_jacobian;
+
+  state_jacobian << -1,  0,  0,  0             , -point_r_0.z()  ,  point_r_0.y(),
+                     0, -1,  0,  point_r_0.z() ,  0              , -point_r_0.x(),
+                     0,  0, -1, -point_r_0.y() ,  point_r_0.x()  ,  0            ;
+
+  JSecond_jr = (relative_rot_mat)*(state_jacobian);
+
+  return JSecond_jr;
+}
+
+Eigen::Matrix<float,3,6> BundleAdj::getJSecondJm( Eigen::Vector3f& point_m_0 ){
+  Eigen::Matrix<float, 3,6> state_jacobian ;
 
   state_jacobian << 1, 0, 0,  0             ,  point_m_0.z()  , -point_m_0.y(),
                     0, 1, 0, -point_m_0.z() ,  0              ,  point_m_0.x(),
                     0, 0, 1,  point_m_0.y() , -point_m_0.x()  ,  0         ;
 
-
-  Eigen::Matrix<float,1,6>* J_m = new Eigen::Matrix<float,1,6>;
-  // *J_m=(coeff*(img_jacobian*jacobian_to_mul))/normalizer;
-  *J_m=(*J_first)*state_jacobian;
-  assert(J_m->allFinite());
-
-
-  return J_m;
+  return state_jacobian;
 }
 
-Eigen::Matrix<float,1,6>* BundleAdj::getJr(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
-  CameraForMapping* cam_r = active_pt->cam_;
-  Eigen::Vector3f point_r_0 = *(active_pt->p_incamframe_0_);
-  Eigen::Matrix<float, 3,6> state_jacobian;
+Eigen::Matrix<float,3,1> BundleAdj::getJSecondJd( ActivePoint* active_pt, Eigen::Matrix3f relative_rot_mat ){
 
-  state_jacobian <<  -1,  0,  0,  0             , -point_r_0.z()  ,  point_r_0.y(),
-                      0, -1,  0,  point_r_0.z() ,  0              , -point_r_0.x(),
-                      0,  0, -1, -point_r_0.y() ,  point_r_0.x()  ,  0            ;
-
-
-  Eigen::Matrix<float,1,6>* J_r = new Eigen::Matrix<float,1,6>;
-  // *J_r=((*J_first)*state_jacobian)/normalizer;
-  *J_r=((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear())*(cam_r->frame_camera_wrt_world_0_->linear()))*state_jacobian;
-  assert(J_r->allFinite());
-
-
-  return J_r;
-}
-
-float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::Matrix<float,1,3>* J_first){
   CameraForMapping* cam_r = active_pt->cam_;
   Eigen::Matrix3f Kinv = *(cam_r->Kinv_);
   // float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
@@ -374,16 +408,39 @@ float BundleAdj::getJd(ActivePoint* active_pt, CameraForMapping* cam_m, Eigen::M
   // float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear()))*(cam_r->frame_camera_wrt_world_0_->linear())*Kinv )*invdepth_jacobian;
 
 
-  Eigen::Matrix<float, 3,1> depth_jacobian;
 
+  Eigen::Matrix<float, 3,1> depth_jacobian;
   depth_jacobian << active_pt->uv_.x(),
                     active_pt->uv_.y(),
                     1;
 
-  float J_d =(( (*J_first)*(cam_m->frame_world_wrt_camera_0_->linear()))*(cam_r->frame_camera_wrt_world_0_->linear())*Kinv )*depth_jacobian;
 
-  assert(!std::isnan(J_d));
-  assert(!std::isinf(J_d));
+  Eigen::Matrix<float, 3,1> JSecond_jd;
+  JSecond_jd =(relative_rot_mat)*Kinv*depth_jacobian;
+
+  assert(JSecond_jd.allFinite());
+
+  return JSecond_jd;
+
+}
+
+Eigen::Matrix<float,1,6> BundleAdj::getJr(Eigen::Matrix<float,1,3> J_first, Eigen::Matrix<float,3,6> JSecond_jr){
+
+  Eigen::Matrix<float,1,6> J_r;
+
+  J_r=(J_first)*(JSecond_jr);
+  assert(J_r.allFinite());
+
+  return J_r;
+}
+
+float BundleAdj::getJd( Eigen::Matrix<float,1,3> J_first, Eigen::Matrix<float,3,1> JSecond_jd ){
+
+  float J_d = (J_first)*(JSecond_jd);
+
+  assert((J_first.allFinite()));
+  assert(JSecond_jd.allFinite());
+  assert(std::isfinite(J_d));
 
   return J_d;
 }
@@ -409,16 +466,22 @@ bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
   assert(jacobians_and_error!=nullptr);
 
-
   int d = jacobians_and_error->active_pt->state_point_block_idx_;
   int r = jacobians_and_error->active_pt->cam_->state_pose_block_idx_;
   int m = jacobians_and_error->cam_m->state_pose_block_idx_;
 
-  Eigen::Matrix<float,1,6> J_r = *(jacobians_and_error->J_r);
+  Eigen::Matrix<float,1,6> J_r;
+  Eigen::Matrix<float,6,1> J_r_transp;
+  if(jacobians_and_error->J_r!=nullptr){
+    J_r = *(jacobians_and_error->J_r);
+    J_r_transp = *(jacobians_and_error->J_r_transp);
+  }
+
   Eigen::Matrix<float,1,6> J_m = *(jacobians_and_error->J_m);
-  float J_d = jacobians_and_error->J_d;
-  Eigen::Matrix<float,6,1> J_r_transp = *(jacobians_and_error->J_r_transp);
   Eigen::Matrix<float,6,1> J_m_transp = *(jacobians_and_error->J_m_transp);
+
+  float J_d = jacobians_and_error->J_d;
+
   float error = jacobians_and_error->error;
   float weight_total = jacobians_and_error->weight_total;
   float omega = jacobians_and_error->omega;
@@ -520,38 +583,21 @@ void HessianAndB_Marg::updateHessianAndB_marg(JacobiansAndError* jacobians_and_e
 }
 
 
-float BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m){
-  float z = active_pt->intensity_;
-  float z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_m);
+float BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, int image_id){
+  float z, z_hat;
+  if(image_id==INTENSITY_ID){
+    z = active_pt->intensity_;
+    z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_m);
+  }
+  else if(image_id==GRADIENT_ID){
+    z = active_pt->grad_magnitude_;
+    z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd->evalPixelBilinear(pixel_m);
+  }
 
   // error
   // float error = (z_hat-z)/normalizer;
   float error = (z_hat-z);
   return error;
-}
-
-bool BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, float& error){
-  float z = active_pt->intensity_;
-  float z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_m);
-
-  // error
-  // float error = (z_hat-z)/normalizer;
-  error = (z_hat-z);
-
-  float error_eps = 0.00001;
-  // // saturate error
-  // if (error<error_eps)
-  //   error=error_eps;
-
-  // // add error eps
-  // error+=error_eps;
-
-  // do not consider measurement
-  if (error<error_eps)
-  // if (error==0)
-    return false;
-
-  return true;
 }
 
 
@@ -593,44 +639,80 @@ float BundleAdj::getWeightTotal(float error){
   // return 1;
 }
 
-
-JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool marg){
-
-
-  Eigen::Matrix<float,1,3>* J_1;
-  Eigen::Vector3f point_m_0;
-  pxl pixel_m;
-  J_1= getJfirst( active_pt, cam_m,  point_m_0, pixel_m);
-  if(debug_optimization_){
-    // Image<float>* img_r = active_pt->cam_->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
-    // Image<float>* img_m = cam_m->wavelet_dec_->vector_wavelets->at(active_pt->level_)->c;
-    // img_r->showImgWithColoredPixel(active_pt->pixel_,pow(2,active_pt->level_+1), "img_r");
-    // img_m->showImgWithColoredPixel(pixel_m,pow(2,active_pt->level_+1), "img_m");
-    // cv::waitKey(0);
+std::vector<int> BundleAdj::collectImageIds(){
+  std::vector<int> image_id_vec;
+  if(image_id_==INTENSITY_ID){
+    image_id_vec.push_back(INTENSITY_ID);
+  }
+  else if(image_id_==GRADIENT_ID){
+    image_id_vec.push_back(INTENSITY_ID);
+    image_id_vec.push_back(GRADIENT_ID);
   }
 
-  // if J_1 is nullptr, point is outside the frustum of cam m
-  if (J_1==nullptr)
+  return image_id_vec;
+}
+
+
+JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool no_r){
+
+
+  Eigen::Vector3f point_m_0;
+  pxl pixel_m;
+  Eigen::Matrix<float,2,3>* J_1_;
+  J_1_ = getJfirst_( active_pt, cam_m, point_m_0, pixel_m);
+
+  if (J_1_==nullptr)
     return nullptr;
 
-
-  float error = getError( active_pt, cam_m ,pixel_m );
-  float chi = getChi(error);
-
-  float  weight_total = getWeightTotal(error);
+  Eigen::Matrix3f relative_rot_mat = getRelativeRotationMatrix( active_pt,cam_m);
+  Eigen::Matrix<float,3,6> JSecond_jr = getJSecondJr( active_pt, relative_rot_mat );
+  Eigen::Matrix<float,3,6> JSecond_jm = getJSecondJm( point_m_0 );
+  Eigen::Matrix<float,3,1> JSecond_jd = getJSecondJd( active_pt, relative_rot_mat );
 
   Eigen::Matrix<float,1,6>* J_r = nullptr;
-  if (!marg)
-    J_r = getJr( active_pt, cam_m, J_1);
+  if (!no_r){
+    J_r = new Eigen::Matrix<float,1,6>;
+    J_r->setZero();
+  }
+  Eigen::Matrix<float,1,6>* J_m = new Eigen::Matrix<float,1,6>;
+  J_m->setZero();
+  float J_d = 0;
+  float error = 0;
 
-  Eigen::Matrix<float,1,6>* J_m = getJm( active_pt, cam_m, J_1, point_m_0);
+  // collect list
+  std::vector<int> image_id_vec = collectImageIds();
+  for(int image_id : image_id_vec ){
 
-  float J_d = getJd(active_pt, cam_m, J_1);
+    Eigen::Matrix<float,1,2> img_jacobian = getImageJacobian( active_pt, cam_m, pixel_m, image_id);
+
+    Eigen::Matrix<float,1,3> J_1= getJfirst( J_1_, img_jacobian);
+
+    if (!no_r){
+      Eigen::Matrix<float,1,6> J_r_ = getJr( J_1, JSecond_jr);
+      *J_r+=J_r_;
+    }
+
+    Eigen::Matrix<float,1,6> J_m_ = getJm( J_1, JSecond_jm);
+    *J_m+=J_m_;
+
+    float J_d_ = getJd( J_1, JSecond_jd);
+    J_d+=J_d_;
+
+
+    float error_ = getError( active_pt, cam_m ,pixel_m, image_id );
+    error += error_;
+  }
+
+  float chi = getChi(error);
+  float  weight_total = getWeightTotal(error);
+
+
 
   // float var = active_pt->invdepth_var_;
   // float omega = 1.0/var;
 
-  float omega = 0.02;
+  // float omega = 1;
+  float omega = 0.01;
 
 
   JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error, chi, weight_total, omega);
@@ -1424,7 +1506,7 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
           continue;
         }
 
-        JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj);
+        JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj,keyframe->first_keyframe_ );
         if (jacobians==nullptr){
 
         }

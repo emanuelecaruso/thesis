@@ -188,9 +188,8 @@ float EpipolarLine::getCostPhase( Candidate* cand, Eigen::Vector2f& uv_m, float 
     phase_m+=2*PI;
 
   // if( (phase_far < phase_m && phase_m < phase_close) || (phase_far > phase_m && phase_m > phase_close) ){
-  if(abs(phase_m_)>10){
-    std::cout << "MA COMEEEEEE " << phase_m_ << " " << phase_m << std::endl;
-  }
+  assert(abs(phase_m_)<10);
+
   return abs(radiansSub(phase_m_,phase_m)/(2*PI));
 
 }

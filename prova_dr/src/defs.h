@@ -416,6 +416,9 @@ namespace pr {
   #define TEST_ONLY_POSES 1
   #define TEST_ONLY_POINTS 2
   #define TEST_ONLY_POSES_ONLY_M 3
+  #define INTENSITY_ID 0
+  #define GRADIENT_ID 1
+  #define PHASE_ID 2
 
 
 

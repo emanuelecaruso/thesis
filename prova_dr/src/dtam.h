@@ -94,7 +94,7 @@ class Dtam{
     bool frontend_thread_finished_;
 
 
-    void setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single);
+    void setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single, int image_id);
 
 
     void addCamera(int counter);
@@ -104,7 +104,7 @@ class Dtam{
     void doMapping();
     void doInitialization(bool initialization_loop=false, bool debug_initialization=true, bool debug_mapping=false, bool track_candidates=false, bool take_gt_points=false);
     void doFrontEndPart(bool all_keyframes=false, bool wait_for_initialization=true,  bool take_gt_poses=false, bool take_gt_points=false, bool track_candidates=false, int guess_type=VELOCITY_CONSTANT, bool debug_mapping=false, bool debug_tracking=false);
-    void doOptimization(bool active_all_candidates=false, bool debug_optimization=false, int opt_norm=HUBER, int test_single=TEST_ALL);
+    void doOptimization(bool active_all_candidates=false, bool debug_optimization=false, int opt_norm=HUBER, int test_single=TEST_ALL, int image_id=INTENSITY_ID);
 
     void noiseToPoses(float var_angle, float var_position);
     void noiseToPoints(float var_invdepth);
