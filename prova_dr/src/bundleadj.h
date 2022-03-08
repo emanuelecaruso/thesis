@@ -32,11 +32,13 @@ class JacobiansAndError{
 
     const float error;
     const float chi;
-    const float omega;
+    const float omega_pose_pose;
+    const float omega_pose_point;
+    const float omega_point_point;
 
     JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, float J_d_,
                       CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_, float chi_,
-                      float weight_total_, float omega_ ):
+                      float weight_total_, float omega_pose_pose_, float omega_pose_point_, float omega_point_point_ ):
     J_r(J_r_),
     J_m(J_m_),
     J_d(J_d_),
@@ -49,7 +51,9 @@ class JacobiansAndError{
 
     error(error_),
     chi(chi_),
-    omega(omega_)
+    omega_pose_pose(omega_pose_pose_),
+    omega_pose_point(omega_pose_point_),
+    omega_point_point(omega_point_point_)
     {
       if(J_r==nullptr){
         delete J_r_transp;

@@ -167,13 +167,11 @@ for obj_ in bpy.data.objects:
 
         #Rotate by PI along x axis to make camera pointing
         #to z axis -> r01,r02,r11,r12,r21,r22 has opposite sign
-        pose_=[ R_[0][0], -R_[0][1], -R_[0][2],
-                R_[1][0], -R_[1][1], -R_[1][2],
-                R_[2][0], -R_[2][1], -R_[2][2],
+        pose_=[  R_[0][0], -R_[0][1], -R_[0][2],
+                 R_[1][0], -R_[1][1], -R_[1][2],
+                 R_[2][0], -R_[2][1], -R_[2][2],
                 l_[0], l_[1], l_[2] ]
 
-
-        R_rot = mathutils.Matrix.Rotation(math.radians(180), 3, 'X')
 
         data_['cameras'][name_]={}
         data_['cameras'][name_]['frame']=i

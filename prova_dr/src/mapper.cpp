@@ -569,7 +569,8 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         if( num_mins==1 && projected_cand!=nullptr ){
           // push inside "candidates projected vec" in new keyframe
           cam_couple->cam_m_->regions_projected_cands_->pushProjCandidate(projected_cand);
-          cand->invdepth_var_=cand->getInvdepthStandardDeviation();
+          float sd = cand->getInvdepthStandardDeviation();
+          cand->invdepth_var_= sd*sd;
           assert(cand->invdepth_var_!=0);
           cand->one_min_=true;
 

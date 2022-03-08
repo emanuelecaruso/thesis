@@ -213,7 +213,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     //   break;
     // }
 
-    if (!track_candidates){
+    if (!track_candidates && (wait_for_initialization || frame_current_>1 ) ){
       std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
       waitForOptimization();
       std::cout << "FRONT END OPTIMIZATION DONE " << std::endl;
@@ -300,8 +300,10 @@ void Dtam::noiseToPoints(float range_invdepth){
     for(int j=0; j<keyframe->active_points_->size() ; j++){
       ActivePoint* active_pt = keyframe->active_points_->at(j);
       float invdepth_err = randZeroMeanNoise(range_invdepth);
-      active_pt->invdepth_0_+=invdepth_err;
-      active_pt->invdepth_+=invdepth_err;
+      float invdepth_gt = active_pt->getInvdepthGroundtruth();
+      active_pt->invdepth_0_=invdepth_gt+invdepth_err;
+      active_pt->invdepth_=invdepth_gt+invdepth_err;
+      active_pt->invdepth_var_=(range_invdepth*range_invdepth)+0.001;
       // since change both poses and invdepths
       keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
       *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
@@ -340,8 +342,10 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
     //    bundle_adj_->test_single_==TEST_ONLY_POINTS ||
     //    bundle_adj_->test_single_==TEST_ONLY_POSES_ONLY_M)
     //   tracker_->filterOutOcclusionsGT();
+
     // activate new points
     bundle_adj_->activateNewPoints();
+
 
     // std::cout << "OPTIMIZATION 2 " << std::endl;
 
@@ -368,7 +372,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       // //
       //   cv::waitKey(0);
       //   cv::destroyAllWindows();
-      }
+    }
 
     if(test_single==TEST_ONLY_POSES || test_single==TEST_ONLY_POSES_ONLY_M){
       // noise on cam poses
@@ -378,7 +382,8 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
 
     }
     else if(test_single==TEST_ONLY_POINTS){
-      noiseToPoints(0.2);
+      noiseToPoints(0.25);
+      // noiseToPoints(0);
     }
 
     // optimize
@@ -550,7 +555,7 @@ void Dtam::test_optimization_pose(){
   bool debug_optimization= true;
 
   bool initialization_loop=false;
-  bool take_gt_poses=true;
+  bool take_gt_poses=false;
   bool take_gt_points=true;
 
   bool track_candidates=false;
@@ -563,11 +568,11 @@ void Dtam::test_optimization_pose(){
   int image_id=GRADIENT_ID;
 
   bool all_keyframes=true;
-  bool wait_for_initialization=true;
+  bool wait_for_initialization=false;
   bool active_all_candidates=true;
 
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
-  std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping, track_candidates, take_gt_points);
+  // std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping, track_candidates, take_gt_points);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
@@ -575,12 +580,13 @@ void Dtam::test_optimization_pose(){
     optimization_thread.join();
   }
 
-  initialization_thread_.join();
+  // initialization_thread_.join();
   update_cameras_thread_.join();
   frontend_thread_.join();
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
   makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForCameras("./dataset/"+environment_->dataset_name_+"/state_cameras.json");
 
 
 }
@@ -600,8 +606,8 @@ void Dtam::test_optimization_points(){
   bool track_candidates=false;
   // int guess_type=POSE_CONSTANT;
   int guess_type=VELOCITY_CONSTANT;
-  // int opt_norm=HUBER;
-  int opt_norm=QUADRATIC;
+  int opt_norm=HUBER;
+  // int opt_norm=QUADRATIC;
   int test_single=TEST_ONLY_POINTS;
   // int image_id=INTENSITY_ID;
   int image_id=GRADIENT_ID;
@@ -646,7 +652,8 @@ void Dtam::test_dso(){
   int opt_norm=HUBER;
   // int opt_norm=QUADRATIC;
   int test_single=TEST_ALL;
-  int image_id=INTENSITY_ID;
+  // int image_id=INTENSITY_ID;
+  int image_id=GRADIENT_ID;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -789,6 +796,96 @@ bool Dtam::makeJsonForActivePts(const std::string& path_name, CameraForMapping* 
       }
 
     }
+    // write prettified JSON to another file
+    std::ofstream o(path_name);
+    o << std::setw(4) << j << std::endl;
+    o.close();
+
+    return 1;
+}
+
+
+bool Dtam::makeJsonForCameras(const std::string& path_name){
+
+  std::cout << "creating json (cameras)" << std::endl;
+
+    const char* path_name_ = path_name.c_str(); // dataset name
+    struct stat info;
+    if( stat( path_name_, &info ) != 0 )
+    { }
+    else if( info.st_mode & S_IFDIR )
+    {
+      // isdir
+      return 0;
+    }
+    else
+    {
+      // printf( "%s is not a directory\n", path_name );
+      std::string st = "rm " + path_name;
+      const char *str = st.c_str();
+
+    }
+
+    std::string st = "touch "+path_name;
+    const char *str = st.c_str();
+
+    json j;
+
+    const CamParameters* cam_params = camera_vector_->at(0)->cam_parameters_;
+    j["cam_parameters"] = {
+      {"width", cam_params->width*1000},  // width in millimeters
+      {"lens", cam_params->lens*1000},  // lens in millimeters
+      {"min_depth", cam_params->min_depth},
+      {"max_depth", cam_params->max_depth}
+    };
+
+    for(CameraForMapping* camera : *camera_vector_){
+
+      // Eigen::Matrix3f R=camera->frame_camera_wrt_world_->linear();
+      // Eigen::Vector3f t=camera->frame_camera_wrt_world_->translation();
+      Eigen::Isometry3f T = *(camera->frame_camera_wrt_world_);
+
+      // if(camera->name_=="Camera0000"){
+      //   std::cout << T.linear() << std::endl;
+      //   std::cout << T.translation() << std::endl<< std::endl;
+      // }
+      Eigen::Matrix3f R;
+
+      Eigen::Matrix3f flipper;
+      flipper << 1,0,0, 0,-1,0, 0,0,-1;
+      // T.linear()=(flipper*(T.linear().transpose())).transpose();
+      // R=(flipper*(T.linear().transpose())).transpose();
+      R=(flipper*(T.linear().transpose())).transpose();
+
+      // if(camera->name_=="Camera0000"){
+      //   std::cout << T.linear() << std::endl;
+      //   std::cout << T.translation() << std::endl<< std::endl;
+      // }
+
+
+      // T.linear()=flipper*T.linear();
+      Vector6f v;
+      v.head<3>()=T.translation();
+      v[3]=-std::atan2( -R(2,1) , R(2,2) );
+      v[4]=-std::atan2( R(2,0) , sqrt(1-R(2,0)) );
+      v[5]=-std::atan2( -R(1,0) , R(0,0) );
+
+      // if(camera->name_=="Camera0000"){
+      //   std::cout << R << std::endl;
+      //   std::cout << v.head<3>() << std::endl;
+      //   std::cout << v.tail<3>() << std::endl<< std::endl;
+      // }
+
+      j["cameras"][camera->name_];
+
+      // std::stringstream ss;
+      // ss << std::setw(6) << std::setfill('0') << count;
+      // std::string idx = ss.str();
+      j["cameras"][camera->name_] = {
+        {"pose", {v[0],v[1],v[2],v[3],v[4],v[5]}}
+      };
+    }
+
     // write prettified JSON to another file
     std::ofstream o(path_name);
     o << std::setw(4) << j << std::endl;

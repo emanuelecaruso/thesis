@@ -374,6 +374,17 @@ namespace pr {
     return huber_norm_der;
   }
 
+  // inline Vector6f t2v(Eigen::Isometry3f& T){
+  //   // t_inv is new_T_old
+  //   Vector6f t;
+  //   t.head<3>()=T.translation();
+  //   // Eigen::Vector3f ea = T.linear().eulerAngles(0, 1, 2); //XYZ convention
+  //   // Eigen::Vector3f ea = T.linear().eulerAngles(2, 1, 0); //XYZ convention
+  //   // t.tail<3>()=ea;
+  //   t[3]=
+  //   return t;
+  // }
+
   inline Eigen::Isometry3f v2t(Vector6f& t){
     // t_inv is new_T_old
     Eigen::Isometry3f T;
@@ -442,22 +453,48 @@ namespace pr {
     float max = 0;
     int idx = -1;
     int size = singular_values.size();
+    float sv_sum = 0;
     for(int i=0; i<size; i++){
-      // sv_sum += singular_values[i];
+      sv_sum += singular_values[i];
       if(singular_values[i]>max){
         max=singular_values[i];
         idx=i;
       }
     }
-    // float sv_average = sv_sum/size;
+    float sv_average = sv_sum/size;
 
     // float thresh = 2.858*sv_average;
     // float thresh = 0.5*sv_average;
+    // float thresh = 0;
+    // float thresh = 2.309 *size*(sv_average/1000);
     float thresh = max*7.15256e-07*size;
-    std::cout << "max " << max << " i " << idx << std::endl;
 
-    thresh = 0.01;
+    std::cout << "thresh " << thresh << ", avg: " << sv_average << ", max " << max << " i " << idx << std::endl;
+
+    // thresh = 0.01;
     return thresh;
+  }
+
+  inline Eigen::DiagonalMatrix<float,Eigen::Dynamic> pinvDiagonalMatrix(Eigen::DiagonalMatrix<float,Eigen::Dynamic>& mat_in){
+
+    Eigen::DiagonalMatrix<float,Eigen::Dynamic> mat_out;
+    int size = mat_in.diagonal().size();
+    float thresh = getPinvThreshold(mat_in.diagonal());
+    mat_out.resize(size);
+    int count = 0;
+    for(int i=0; i<size; i++){
+      float val = mat_in.diagonal()(i);
+      if(val>thresh)
+      // if(val!=0)
+        mat_out.diagonal()(i)=(1.0/val);
+      else{
+        mat_out.diagonal()(i)=0;
+        count++;
+      }
+    }
+    std::cout << "discarded: " << count << " out of " << size << std::endl;
+
+    return mat_out;
   }
 
   template<class T>

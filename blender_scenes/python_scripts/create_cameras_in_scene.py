@@ -135,7 +135,7 @@ for obj_ in bpy.data.objects:
 
 
         obj_.location=(x,y,z)
-        obj_.rotation_mode='ZXY'
+        obj_.rotation_mode='XYZ'
 
 
         slide=0.5

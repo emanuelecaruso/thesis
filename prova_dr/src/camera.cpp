@@ -292,7 +292,8 @@ void Candidate::marginalize() const{
 void Candidate::setInvdepthGroundtruth(){
 
   pxl pixel;
-  this->cam_->uv2pixelCoords( this->uv_, pixel);
+  cam_->uv2pixelCoords(uv_, pixel);
+
   float invdepth_val = cam_->grountruth_camera_->invdepth_map_->evalPixel(pixel);
   float invdepth_gt = invdepth_val/cam_->cam_parameters_->min_depth;
   this->invdepth_=invdepth_gt;
@@ -345,10 +346,14 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
         Eigen::Vector2f uv;
         cam_->pixelCoords2uv(pixel_coords, uv, wav_level);
 
-        // check well TODO
-        magnitude*=pow(0.8,wav_level);
+        // // check well TODO
+        // magnitude*=pow(0.8,wav_level);
 
         if(magnitude>grad_threshold_){
+
+          // wvlt_lvl->magn_cd->showImgWithColoredPixel(pixel_coords, 2, "stafava");
+          // cv::waitKey(0);
+
 
           bound bound_(min_depth,max_depth);
           std::vector<bound>* bounds = new std::vector<bound>{ bound_ };
@@ -447,8 +452,8 @@ void ActivePoint::remove(){
 
 float ActivePoint::getInvdepthGroundtruth(){
   pxl pixel;
-  cam_->uv2pixelCoords(uv_, pixel, level_);
-  float invdepth_val = cam_->grountruth_camera_->invdepth_map_->evalPixel(pixel);
+  cam_->uv2pixelCoords(uv_, pixel);
+  float invdepth_val = cam_->grountruth_camera_->invdepth_map_->evalPixelBilinear(pixel);
   float invdepth_gt = invdepth_val/cam_->cam_parameters_->min_depth;
   return invdepth_gt;
 }
@@ -479,19 +484,8 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
 
           Candidate* candidate = cands_vec->at(cand_vec_size-1-idx);
           if(idx==0){
-            // for( int m=0; m<cands_vec->size(); m++){
-            //   if(std::find(candidate->children_->begin(), candidate->children_->end(), cands_vec->at(m)) != candidate->children_->end()) {
-            //       /* children contains candidate */
-            //       cands_vec->erase (cands_vec->begin() + m);
-            //       // delete child_cand;
-            //   }
-            //
-            // }
 
-            // for( Candidate* child_cand : *(candidate->children_)){
-            //   remove(cands_vec->begin(), cands_vec->end(), child_cand);
-            //   // delete child_cand;
-            // }
+
 
             // push back best candidate
             candidates_->push_back(candidate);
@@ -582,7 +576,8 @@ void CameraForMapping::showCandidates(float size){
   Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg(name);
   // Image<colorRGB>* show_img = new Image<colorRGB>(image_intensity_);
 
-  for(Candidate* candidate : *candidates_){
+  for(int i=0; i<candidates_->size(); i++){
+    Candidate* candidate = candidates_->at(i);
     // get level
     int level = candidate->level_;
 
@@ -734,7 +729,7 @@ void CameraForMapping::showActivePoints(float size){
 
   int n_proj_active_pt=0;
 
-  Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg("proj active point temp");
+  Image<colorRGB>* show_img = image_intensity_->returnColoredImgFromIntensityImg("active points temp");
 
   for(ActivePoint* active_pt : *active_points_){
     n_proj_active_pt++;
@@ -757,7 +752,7 @@ void CameraForMapping::showActivePoints(float size){
 
     }
   }
-  show_img->show(size, name_+", n projected active points: "+std::to_string(n_proj_active_pt));
+  show_img->show(size, name_+", n active points: "+std::to_string(n_proj_active_pt));
 
 }
 
@@ -842,10 +837,8 @@ float CameraForMapping::getPointsNormError(){
   // iterate along all active points
   for( int j=0; j<active_points_->size(); j++){
     ActivePoint* active_pt = active_points_->at(j);
-    float invdepth_val = grountruth_camera_->invdepth_map_->evalPixel(active_pt->pixel_);
-    float invdepth_gt = invdepth_val/cam_parameters_->min_depth;
-    total_error+=pow(invdepth_gt-active_pt->invdepth_0_,2);
-
+    float invdepth_gt = active_pt->getInvdepthGroundtruth();
+    total_error+=pow(invdepth_gt-active_pt->invdepth_,2);
   }
 
 

@@ -263,12 +263,18 @@ Eigen::Matrix<float,1,2> BundleAdj::getImageJacobian(ActivePoint* active_pt, Cam
 
   Eigen::Matrix<float, 1,2> img_jacobian;
 
-  if(image_id==INTENSITY_ID)
-    img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
-  else if(image_id==GRADIENT_ID)
-    img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dy->evalPixelBilinear(pixel_m);
-  else if(image_id==PHASE_ID)
-    img_jacobian << cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->phase_cd_dx->evalPixelBilinear(pixel_m), cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->phase_cd_dy->evalPixelBilinear(pixel_m);
+  if(image_id==INTENSITY_ID){
+    float coeff = parameters_->intensity_coeff;
+    img_jacobian << coeff*cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_m), coeff*cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_m);
+  }
+  else if(image_id==GRADIENT_ID){
+    float coeff = parameters_->gradient_coeff;
+    img_jacobian << coeff*cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dx->evalPixelBilinear(pixel_m), coeff*cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd_dy->evalPixelBilinear(pixel_m);
+  }
+  else if(image_id==PHASE_ID){
+    float coeff = parameters_->phase_coeff;
+    img_jacobian << coeff*cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->phase_cd_dx->evalPixelBilinear(pixel_m), coeff*cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->phase_cd_dy->evalPixelBilinear(pixel_m);
+  }
 
   return img_jacobian;
 
@@ -397,24 +403,19 @@ Eigen::Matrix<float,3,1> BundleAdj::getJSecondJd( ActivePoint* active_pt, Eigen:
 
   CameraForMapping* cam_r = active_pt->cam_;
   Eigen::Matrix3f Kinv = *(cam_r->Kinv_);
-  // float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
+
 
   // Eigen::Matrix<float, 3,1> invdepth_jacobian;
-  //
-  // invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_0_,2),
-  //                      -active_pt->uv_.y()/pow(active_pt->invdepth_0_,2),
-  //                      -1/pow(active_pt->invdepth_0_,2);
-  //
-  // float J_d =(((*J_first)*(cam_m->frame_world_wrt_camera_0_->linear()))*(cam_r->frame_camera_wrt_world_0_->linear())*Kinv )*invdepth_jacobian;
-
-
+  // invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_,2),
+  //                      -active_pt->uv_.y()/pow(active_pt->invdepth_,2),
+  //                      -1/pow(active_pt->invdepth_,2);
+  // Eigen::Matrix<float, 3,1> JSecond_jd;
+  // JSecond_jd =(relative_rot_mat)*Kinv*invdepth_jacobian;
 
   Eigen::Matrix<float, 3,1> depth_jacobian;
   depth_jacobian << active_pt->uv_.x(),
                     active_pt->uv_.y(),
                     1;
-
-
   Eigen::Matrix<float, 3,1> JSecond_jd;
   JSecond_jd =(relative_rot_mat)*Kinv*depth_jacobian;
 
@@ -484,7 +485,9 @@ bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
   float error = jacobians_and_error->error;
   float weight_total = jacobians_and_error->weight_total;
-  float omega = jacobians_and_error->omega;
+  float omega_pose_pose = jacobians_and_error->omega_pose_pose;
+  float omega_pose_point = jacobians_and_error->omega_pose_point;
+  float omega_point_point = jacobians_and_error->omega_point_point;
 
 
   assert(d>-1 && d<point_block_size);
@@ -501,11 +504,11 @@ bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   // O-
   // --
   if(m_flag)
-    H_pose_pose->block(m,m,6,6)+=J_m_transp*(omega*weight_total)*J_m;
+    H_pose_pose->block(m,m,6,6)+=J_m_transp*(omega_pose_pose*weight_total)*J_m;
   if(r_flag)
-    H_pose_pose->block(r,r,6,6)+=J_r_transp*(omega*weight_total)*J_r;
+    H_pose_pose->block(r,r,6,6)+=J_r_transp*(omega_pose_pose*weight_total)*J_r;
   if(m_flag && r_flag){
-    H_pose_pose->block(m,r,6,6)+=J_m_transp*(omega*weight_total)*J_r;
+    H_pose_pose->block(m,r,6,6)+=J_m_transp*(omega_pose_pose*weight_total)*J_r;
     // H_pose_pose->block(r,m,6,6)+=J_r_transp*weight_total*J_m;
   }
 
@@ -514,25 +517,25 @@ bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   // -O
   // --
   if(m_flag)
-    H_pose_point->block(m,d,6,1)+=J_m_transp*(omega*weight_total*J_d);
+    H_pose_point->block(m,d,6,1)+=J_m_transp*(omega_pose_point*weight_total*J_d);
   if(r_flag)
-    H_pose_point->block(r,d,6,1)+=J_r_transp*(omega*weight_total*J_d);
+    H_pose_point->block(r,d,6,1)+=J_r_transp*(omega_pose_point*weight_total*J_d);
 
 
   // point point block
   // --
   // -O
-  H_point_point->diagonal()[d]+=J_d*(omega*weight_total)*J_d;
+  H_point_point->diagonal()[d]+=J_d*(omega_point_point*weight_total)*J_d;
 
   // ********** update b **********
   // pose block
   if(m_flag)
-    b_pose->segment(m,6)+=J_m_transp*(omega*weight_total*error);
+    b_pose->segment(m,6)+=J_m_transp*(omega_pose_pose*weight_total*error);
   if(r_flag)
-    b_pose->segment(r,6)+=J_r_transp*(omega*weight_total*error);
+    b_pose->segment(r,6)+=J_r_transp*(omega_pose_pose*weight_total*error);
 
   // point block
-  (*b_point)(d)+=J_d*(omega*weight_total*error);
+  (*b_point)(d)+=J_d*(omega_point_point*weight_total*error);
 
   return true;
 }
@@ -585,18 +588,20 @@ void HessianAndB_Marg::updateHessianAndB_marg(JacobiansAndError* jacobians_and_e
 
 float BundleAdj::getError(ActivePoint* active_pt, CameraForMapping* cam_m, pxl& pixel_m, int image_id){
   float z, z_hat;
+  float error;
   if(image_id==INTENSITY_ID){
     z = active_pt->intensity_;
     z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_m);
+    error = parameters_->intensity_coeff*(z_hat-z);
   }
   else if(image_id==GRADIENT_ID){
     z = active_pt->grad_magnitude_;
     z_hat = cam_m->wavelet_dec_->getWavLevel(active_pt->level_)->magn_cd->evalPixelBilinear(pixel_m);
+    error = parameters_->gradient_coeff*(z_hat-z);
   }
 
   // error
   // float error = (z_hat-z)/normalizer;
-  float error = (z_hat-z);
   return error;
 }
 
@@ -708,14 +713,42 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
 
 
-  // float var = active_pt->invdepth_var_;
+  float var = active_pt->invdepth_var_;
   // float omega = 1.0/var;
+  float omega = (1.0/((J_d*J_d*var)+1));
+  if(!std::isfinite(omega) || omega==0 ){
+    std::cout << ((J_d*J_d*var)+1) << " " << ((J_d*J_d*var)) << " " << ((var)) << " " << J_d << std::endl;
+  }
 
-  // float omega = 1;
-  float omega = 0.01;
+  float omega_pose_pose = omega;
+  float omega_point_point = omega;
+  float omega_pose_point = omega;
+
+  // float omega_pose_pose = parameters_->omega_pose_pose;
+  // float omega_point_point = parameters_->omega_point_point;
+  // float omega_pose_point = 1/((sqrt(1/omega_pose_pose_))*(sqrt(1/omega_point_point_)));
+
+  // float omega = 0.01;
+  // float omega = 0.001;  float sd_p = parameters_->sd_pose_position;
+
+  // float omega_point_point = 1.0/(parameters_->sd_invdepth_*parameters_->sd_invdepth_);
+  // // Eigen::Matrix6f sd_pose_pose;
+  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>sd_pose_pose;
+  //
+  // float p = parameters_->sd_pose_position;
+  // float a = parameters_->sd_pose_angles_;
+  // sd_pose_pose << p,0,0,0,0,0,
+  //                 0,p,0,0,0,0,
+  //                 0,0,p,0,0,0,
+  //                 0,0,0,a,0,0,
+  //                 0,0,0,0,a,0
+  //                 0,0,0,0,0,a;
+  //
+  // Eigen::Matrix6f omega_pose_pose;
+  // omega_pose_pose << (sd_pose_pose*sd_pose_pose).inverse()
 
 
-  JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error, chi, weight_total, omega);
+  JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error, chi, weight_total, omega_pose_pose,omega_pose_point,omega_point_point);
 
   return jacobians;
 
@@ -809,8 +842,8 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsProva(){
   Eigen::MatrixXf Schur_inv = Schur.completeOrthogonalDecomposition().pseudoInverse();
 
 
-  // *dx_poses =  (Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-  *dx_poses =  (H_pose_pose->completeOrthogonalDecomposition().pseudoInverse()) * ( -(*b_pose) );
+  *dx_poses =  (Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
+  // *dx_poses =  (H_pose_pose->completeOrthogonalDecomposition().pseudoInverse()) * ( -(*b_pose) );
 
   // std::cout << "\n" << *dx_poses << std::endl;
   // std::cout << "\n" << *H_pose_pose << std::endl;
@@ -1167,7 +1200,12 @@ void BundleAdj::updateInvdepthVars(HessianAndB* hessian_and_b){
         if(active_pt->state_point_block_idx_==-1)
           continue;
 
-        active_pt->invdepth_var_=hessian_and_b->H_point_point->diagonal()[active_pt->state_point_block_idx_]+0.0001;
+        float certainty = hessian_and_b->H_point_point->diagonal()[active_pt->state_point_block_idx_];
+        if(certainty!=0){  // if val in H_point_point is 0, there is no variance propagation
+          active_pt->invdepth_var_=(1.0/(certainty))+0.001;
+          // if certainty very close to 0 (variance very high), variance saturate close to
+          // if certainty is very large, variance saturate close to 0.001
+        }
       }
     }
   }

@@ -26,9 +26,9 @@ int main (int argc, char * argv[]) {
   // compute depth map
   //############################################################################
 
-  // dtam->test_dso();
+  dtam->test_dso();
   // dtam->test_optimization_pose();
-  dtam->test_optimization_points();
+  // dtam->test_optimization_points();
   // dtam->test_mapping();
   // dtam->test_tracking();
 

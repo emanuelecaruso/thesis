@@ -1,5 +1,6 @@
 #pragma once
 #include "camera.h"
+#include "defs.h"
 #include "parameters.h"
 #include "keyframe.h"
 #include "mapper.h"
@@ -111,5 +112,6 @@ class Dtam{
 
     bool makeJsonForCands(const std::string& path_name, CameraForMapping* camera);
     bool makeJsonForActivePts(const std::string& path_name, CameraForMapping* camera);
+    bool makeJsonForCameras(const std::string& path_name);
 
 };

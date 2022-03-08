@@ -1,10 +1,6 @@
 - move CameraForMapping in mapper
 - cv::Mat pointer in image.h
 - synchronize better threads
-- better class distribution
-- check well TODO (camera.cpp)
-- multiscale searching
-- regions separate
 - TODO remove (dtam.cpp)
 
 - return on rotational invariance
@@ -17,40 +13,16 @@
 
 - warp function for tracking and opt can be optimized
 
+- compare cameras in blender with invdepth groundtruth
+- check optimization with only poses
+- find solution for invdepths
+- check that also with marginalization
+- keyframe management
+- final viewer
+- delete pointers
 
 
-TODO
-in tracker
-mark active points which are no more observed during tracking
-NEW MEMBER OF ACTIVE POINT: bool point not observed in last frame
+POSSIBLE REFACTORING
 
-in keyframe handler
-if keyframe is added:
-  margnalize keyframe: add flag to keyframe
-  NEW MEMBER OF CAMERA -> bool camera has to be marginalized
-  marginalize all points of that camera
-  NEW MEMBER OF ACTIVE POINT: bool to be marginalized,
-  increase counter of number of marginalized points
-
-  check not observed marks -> set counter
-  NEW MEMBER OF ACTIVE POINT: int number of consecutive keyframes for which the point is not observed
-  if the counter == 2,
-  increase counter of number of marginalized points and mark the active point
-
-
-IN ORDER
--propagate uncertainty in the right way!! (seems done)
--think way for activating points in a sparse way (seems done)
-- tracking with active points (seems done)
-
-
-bundleadj.cpp
-
-
-in bundle adj
-after SIGNAL (after tracked candidates)..
-2) START BUNDLE ADJUSTMENT! by considering active points and cameras with marginalize flag
-
-// propagate uncertainty TODO (bundleadj.cpp)
-
-- good json for blender
+- remove multiresolution candidate selection
+- better class distribution
