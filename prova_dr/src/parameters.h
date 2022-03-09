@@ -26,13 +26,11 @@ static int max_num_mins_ = 3;
 // optimization
 static int max_num_active_points_=2*num_candidates_;
 static int num_active_keyframes_=6;
-static float huber_threshold_=0.01;
-static float chi_occlusion_threshold_=1000;
+static float huber_threshold_=0.02;
+static float chi_occlusion_threshold_=(0.1-huber_threshold_/2);
 static float intensity_coeff_ = 1;
 static float gradient_coeff_ = 1;
 static float phase_coeff_ = 1;
-static float omega_pose_pose_ = 1;
-static float omega_point_point_ = 1;
 
 // tracking
 static int max_iterations_ls_=20;
@@ -74,9 +72,6 @@ struct Params{
   float intensity_coeff=intensity_coeff_;
   float gradient_coeff=gradient_coeff_;
   float phase_coeff=phase_coeff_;
-
-  float omega_pose_pose=omega_pose_pose_;
-  float omega_point_point=omega_point_point_;
 
   int max_iterations_ls=max_iterations_ls_;
   float variance=variance_;

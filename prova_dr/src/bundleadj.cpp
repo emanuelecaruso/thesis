@@ -234,6 +234,7 @@ void BundleAdj::collectCoarseActivePoints(){
 ActivePoint* BundleAdj::activateCandidate(CandidateProjected* cand_proj, RegionWithProjCandidates* reg, RegionsWithProjActivePoints* regs){
 
   Candidate* cand = cand_proj->cand_;
+
   std::vector<Candidate*>* cands_vec = cand->region_sampling_->cands_vec_;
 
   int num_proj_active_points = regs->getNumOfActivePointsInReg( reg );
@@ -485,10 +486,7 @@ bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
 
   float error = jacobians_and_error->error;
   float weight_total = jacobians_and_error->weight_total;
-  float omega_pose_pose = jacobians_and_error->omega_pose_pose;
-  float omega_pose_point = jacobians_and_error->omega_pose_point;
-  float omega_point_point = jacobians_and_error->omega_point_point;
-
+  float omega = jacobians_and_error->omega;
 
   assert(d>-1 && d<point_block_size);
   assert(m>=-1 && m<pose_block_size);
@@ -504,11 +502,11 @@ bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   // O-
   // --
   if(m_flag)
-    H_pose_pose->block(m,m,6,6)+=J_m_transp*(omega_pose_pose*weight_total)*J_m;
+    H_pose_pose->block(m,m,6,6)+=J_m_transp*(omega*weight_total)*J_m;
   if(r_flag)
-    H_pose_pose->block(r,r,6,6)+=J_r_transp*(omega_pose_pose*weight_total)*J_r;
+    H_pose_pose->block(r,r,6,6)+=J_r_transp*(omega*weight_total)*J_r;
   if(m_flag && r_flag){
-    H_pose_pose->block(m,r,6,6)+=J_m_transp*(omega_pose_pose*weight_total)*J_r;
+    H_pose_pose->block(m,r,6,6)+=J_m_transp*(omega*weight_total)*J_r;
     // H_pose_pose->block(r,m,6,6)+=J_r_transp*weight_total*J_m;
   }
 
@@ -517,25 +515,26 @@ bool HessianAndB::updateHessianAndB(JacobiansAndError* jacobians_and_error ){
   // -O
   // --
   if(m_flag)
-    H_pose_point->block(m,d,6,1)+=J_m_transp*(omega_pose_point*weight_total*J_d);
+    H_pose_point->block(m,d,6,1)+=J_m_transp*(omega*weight_total*J_d);
   if(r_flag)
-    H_pose_point->block(r,d,6,1)+=J_r_transp*(omega_pose_point*weight_total*J_d);
+    H_pose_point->block(r,d,6,1)+=J_r_transp*(omega*weight_total*J_d);
 
 
   // point point block
   // --
   // -O
-  H_point_point->diagonal()[d]+=J_d*(omega_point_point*weight_total)*J_d;
+  H_point_point->diagonal()[d]+=J_d*(omega*weight_total)*J_d;
+
 
   // ********** update b **********
   // pose block
   if(m_flag)
-    b_pose->segment(m,6)+=J_m_transp*(omega_pose_pose*weight_total*error);
+    b_pose->segment(m,6)+=J_m_transp*(omega*weight_total*error);
   if(r_flag)
-    b_pose->segment(r,6)+=J_r_transp*(omega_pose_pose*weight_total*error);
+    b_pose->segment(r,6)+=J_r_transp*(omega*weight_total*error);
 
   // point block
-  (*b_point)(d)+=J_d*(omega_point_point*weight_total*error);
+  (*b_point)(d)+=J_d*(omega*weight_total*error);
 
   return true;
 }
@@ -644,6 +643,7 @@ float BundleAdj::getWeightTotal(float error){
   // return 1;
 }
 
+
 std::vector<int> BundleAdj::collectImageIds(){
   std::vector<int> image_id_vec;
   if(image_id_==INTENSITY_ID){
@@ -708,21 +708,16 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
     error += error_;
   }
 
-  float chi = getChi(error);
-  float  weight_total = getWeightTotal(error);
-
-
 
   float var = active_pt->invdepth_var_;
+  float omega = 1.0;
   // float omega = 1.0/var;
-  float omega = (1.0/((J_d*J_d*var)+1));
-  if(!std::isfinite(omega) || omega==0 ){
-    std::cout << ((J_d*J_d*var)+1) << " " << ((J_d*J_d*var)) << " " << ((var)) << " " << J_d << std::endl;
-  }
+  // float omega = (1.0/((J_d*J_d*var)+1));
 
-  float omega_pose_pose = omega;
-  float omega_point_point = omega;
-  float omega_pose_point = omega;
+  // float chi = getChi(error);
+  float chi = getChi(error,omega);
+  float  weight_total = getWeightTotal(error);
+
 
   // float omega_pose_pose = parameters_->omega_pose_pose;
   // float omega_point_point = parameters_->omega_point_point;
@@ -748,7 +743,7 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
   // omega_pose_pose << (sd_pose_pose*sd_pose_pose).inverse()
 
 
-  JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error, chi, weight_total, omega_pose_pose,omega_pose_point,omega_point_point);
+  JacobiansAndError* jacobians = new JacobiansAndError(J_r,J_m,J_d,cam_m,active_pt, error, chi, weight_total, omega );
 
   return jacobians;
 
@@ -756,22 +751,29 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
 Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint(){
 
-  // if (H_point_point_inv!=nullptr){
-  //   return H_point_point_inv;
-  // }
+  if (H_point_point_inv!=nullptr){
+    return H_point_point_inv;
+  }
 
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
+  H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
+
+
+  H_point_point_inv->setZero();
+  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
+
   float thresh = getPinvThreshold(H_point_point->diagonal());
   int count = 0;
   for(int i=0; i<point_block_size; i++){
-    float val = H_point_point->diagonal()(i);
+    float val = H_point_point->diagonal()[i];
+    assert(val>=0);
     if(val>thresh)
     // if(val!=0)
-      H_point_point_inv->diagonal()(i)=(1.0/val);
+      H_point_point_inv->diagonal()[i]=(1.0/val);
     else{
-      H_point_point_inv->diagonal()(i)=0;
+      H_point_point_inv->diagonal()[i]=0;
       count++;
     }
+
   }
   std::cout << "discarded: " << count << " out of " << point_block_size << std::endl;
 
@@ -781,10 +783,10 @@ Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint
 Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPointDLS(float mu){
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
   for(int i=0; i<point_block_size; i++){
-    float val = H_point_point->diagonal()(i);
+    float val = H_point_point->diagonal()[i];
     float val2 = val*val;
     if(val!=0)
-      H_point_point_inv->diagonal()(i)=val/(val*val+mu);
+      H_point_point_inv->diagonal()[i]=val/(val*val+mu);
   }
   return H_point_point_inv;
 }
@@ -809,7 +811,7 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
 
   *dx_points = (*H_point_point_inv)* ( -(*b_point) -( (*H_point_pose)*(*dx_poses)) );
 
-  delete H_point_point_inv;
+  // delete H_point_point_inv;
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
@@ -881,8 +883,6 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsOnlyPoints(){
   dx_poses->setZero();
   *dx_points = (*H_point_point_inv)* ( -(*b_point) );
 
-  delete H_point_point_inv;
-
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
 }
@@ -898,7 +898,6 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsOnlyPoses(){
   dx_points->setZero();
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
-
 
   return delta;
 }
@@ -1008,7 +1007,7 @@ bool HessianAndB_base::visualizeH( const std::string& name){
 
   // point point block
   for(int i=0; i<point_block_size; i++){
-    if ((H_point_point->diagonal())(i)!=0){
+    if ((H_point_point->diagonal())[i]!=0){
       img_H->setPixel(i+pose_block_size,i+pose_block_size, blue);
     }
     else{
@@ -1081,7 +1080,7 @@ bool HessianAndB_Marg::visualizeHMarg( const std::string& name){
 
   // point point block
   for(int i=0; i<point_block_size; i++){
-    if ((H_point_point->diagonal())(i)!=0){
+    if ((H_point_point->diagonal())[i]!=0){
       colorRGB color = blue;
       if ( i<hessian_b_marg_old->point_block_size)
         color = cyan;
@@ -1200,12 +1199,16 @@ void BundleAdj::updateInvdepthVars(HessianAndB* hessian_and_b){
         if(active_pt->state_point_block_idx_==-1)
           continue;
 
-        float certainty = hessian_and_b->H_point_point->diagonal()[active_pt->state_point_block_idx_];
-        if(certainty!=0){  // if val in H_point_point is 0, there is no variance propagation
-          active_pt->invdepth_var_=(1.0/(certainty))+0.001;
+        assert(hessian_and_b->H_point_point_inv!=nullptr);
+
+        float variance = hessian_and_b->H_point_point_inv->diagonal()[active_pt->state_point_block_idx_];
+
+        if(variance!=0){  // if val in H_point_point_inv is 0, there is no variance propagation
+          active_pt->invdepth_var_=std::max((variance)+0.001,1.0);
           // if certainty very close to 0 (variance very high), variance saturate close to
           // if certainty is very large, variance saturate close to 0.001
         }
+
       }
     }
   }
@@ -1516,6 +1519,8 @@ bool BundleAdj::marginalization( ){
 
 void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
 
+  int occlusions = 0;
+  int active_points = 0;
   // iterate through keyframes with active points (except last)
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
@@ -1524,6 +1529,8 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
       continue;
     }
     bool cam_taken = false;
+
+    active_points+=keyframe->active_points_->size();
     // iterate through active points
     for( int j=0; j<keyframe->active_points_->size(); j++){
       ActivePoint* active_pt = keyframe->active_points_->at(j);
@@ -1550,6 +1557,7 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
         }
         //occlusion detection
         else if (jacobians->chi > parameters_->chi_occlusion_threshold ){
+          occlusions++;
           // active_pt->marginalize();
           // j--;
           // point_taken=false;
@@ -1589,6 +1597,7 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
   CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
   keyframe_last->state_pose_block_idx_=n_cams*6;
   n_cams++;
+  std::cout << "Num occlusions: " << occlusions << " out of " << active_points << " "<< num_active_points_ << std::endl;
 }
 
 Eigen::VectorXf* BundleAdj::getDeltaForMargFromOpt(deltaUpdateIncrements* delta){
@@ -1649,15 +1658,15 @@ bool BundleAdj::updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta){
 
 }
 
-float BundleAdj::getChi(float error){
+float BundleAdj::getChi(float error, float omega){
   assert(!std::isnan(error));
   assert(!std::isinf(error));
   float chi=0;
   if(opt_norm_==HUBER){
-    chi=huberNorm(error,parameters_->huber_threshold);
+    chi=huberNormWithOmega(error,parameters_->huber_threshold,omega);
   }
   else if (opt_norm_==QUADRATIC){
-    chi=error*error;
+    chi=error*omega*error;
   }
   else{
     throw std::invalid_argument( "optimization norm has wrong value" );
@@ -1742,8 +1751,9 @@ void BundleAdj::optimize(){
     last_keyframe->showProjActivePoints(1);
     PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
     float points_norm_error_tot = dtam_->getTotalPointsNormError();
+    std::cout << "\npoints norm error tot: " << points_norm_error_tot <<  std::endl;
     poses_norm_error_tot->print();
-    std::cout << "\npoints norm error tot: " << points_norm_error_tot << std::endl;
+    std::cout << std::endl;
 
     cv::waitKey(0);
   }
@@ -1763,8 +1773,8 @@ void BundleAdj::optimize(){
       PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
       float points_norm_error_tot = dtam_->getTotalPointsNormError();
       std::cout << "\nchi: " << chi << std::endl;
+      std::cout << "points norm error tot: " << points_norm_error_tot << std::endl;
       poses_norm_error_tot->print();
-      std::cout << "\npoints norm error tot: " << points_norm_error_tot << std::endl;
       cv::waitKey(0);
     }
   }

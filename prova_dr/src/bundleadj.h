@@ -32,13 +32,11 @@ class JacobiansAndError{
 
     const float error;
     const float chi;
-    const float omega_pose_pose;
-    const float omega_pose_point;
-    const float omega_point_point;
+    const float omega;
 
     JacobiansAndError(Eigen::Matrix<float,1,6>* J_r_, Eigen::Matrix<float,1,6>* J_m_, float J_d_,
                       CameraForMapping* cam_m_, ActivePoint* active_pt_, float error_, float chi_,
-                      float weight_total_, float omega_pose_pose_, float omega_pose_point_, float omega_point_point_ ):
+                      float weight_total_, float omega_ ):
     J_r(J_r_),
     J_m(J_m_),
     J_d(J_d_),
@@ -51,9 +49,7 @@ class JacobiansAndError{
 
     error(error_),
     chi(chi_),
-    omega_pose_pose(omega_pose_pose_),
-    omega_pose_point(omega_pose_point_),
-    omega_point_point(omega_point_point_)
+    omega(omega_)
     {
       if(J_r==nullptr){
         delete J_r_transp;
@@ -313,6 +309,7 @@ class BundleAdj{
     void collectCoarseActivePoints();
 
     float getWeightTotal(float error);
+
     JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool no_r=false);
     std::vector<int> collectImageIds();
     void initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );
@@ -337,7 +334,7 @@ class BundleAdj{
     Eigen::VectorXf* getDeltaForMargFromOpt(deltaUpdateIncrements* delta);
 
     float optimizationStep(bool with_marg=true);
-    float getChi(float error);
+    float getChi(float error, float omega=1);
     void optimize();
 
     inline void addKeyframe(int idx){

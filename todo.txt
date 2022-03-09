@@ -13,14 +13,12 @@
 
 - warp function for tracking and opt can be optimized
 
-- compare cameras in blender with invdepth groundtruth
-- check optimization with only poses
-- find solution for invdepths
+
 - check that also with marginalization
 - keyframe management
 - final viewer
 - delete pointers
-
+- check performance
 
 POSSIBLE REFACTORING
 

@@ -672,7 +672,7 @@ void Dtam::test_dso(){
   update_cameras_thread_.join();
   frontend_thread_.join();
 
-  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
   makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
 

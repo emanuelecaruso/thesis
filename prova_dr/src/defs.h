@@ -355,9 +355,19 @@ namespace pr {
   inline float huberNorm(float a, float b){
     float huber_norm;
     if (abs(a)<=b){
-      huber_norm= (pow(a,2))/(2);
+      huber_norm= (pow(a,2))/(2*b);
     }else{
-      huber_norm= b*(abs(a)-b/2);
+      huber_norm= (abs(a)-b/2);
+    }
+    return huber_norm;
+  }
+
+  inline float huberNormWithOmega(float a, float b, float omega){
+    float huber_norm;
+    if ((abs(a)*sqrt(omega))<=b){
+      huber_norm= (pow(a,2)*omega)/(2*b);
+    }else{
+      huber_norm= ((abs(a)*sqrt(omega))-b/2);
     }
     return huber_norm;
   }
@@ -365,14 +375,15 @@ namespace pr {
   inline float huberNormDerivative(float a, float b){
     float huber_norm_der;
     if (abs(a)<=b){
-      huber_norm_der= a;
+      huber_norm_der= a/b;
     }else if (a>0){
-      huber_norm_der= b;
+      huber_norm_der= 1;
     }else if (a<0){
-      huber_norm_der= -b;
+      huber_norm_der= -1;
     }
     return huber_norm_der;
   }
+
 
   // inline Vector6f t2v(Eigen::Isometry3f& T){
   //   // t_inv is new_T_old
@@ -483,12 +494,12 @@ namespace pr {
     mat_out.resize(size);
     int count = 0;
     for(int i=0; i<size; i++){
-      float val = mat_in.diagonal()(i);
+      float val = mat_in.diagonal()[i];
       if(val>thresh)
       // if(val!=0)
-        mat_out.diagonal()(i)=(1.0/val);
+        mat_out.diagonal()[i]=(1.0/val);
       else{
-        mat_out.diagonal()(i)=0;
+        mat_out.diagonal()[i]=0;
         count++;
       }
     }
