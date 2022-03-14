@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "defs.h"
+#include "plot_functions.h"
 #include <Eigen/QR>
 
 CameraForMapping* BundleAdj::getFrameCurrentBA(){
@@ -405,20 +406,21 @@ Eigen::Matrix<float,3,1> BundleAdj::getJSecondJd( ActivePoint* active_pt, Eigen:
   CameraForMapping* cam_r = active_pt->cam_;
   Eigen::Matrix3f Kinv = *(cam_r->Kinv_);
 
+  // INVDEPTH_VS_DEPTH
 
-  // Eigen::Matrix<float, 3,1> invdepth_jacobian;
-  // invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_,2),
-  //                      -active_pt->uv_.y()/pow(active_pt->invdepth_,2),
-  //                      -1/pow(active_pt->invdepth_,2);
-  // Eigen::Matrix<float, 3,1> JSecond_jd;
-  // JSecond_jd =(relative_rot_mat)*Kinv*invdepth_jacobian;
-
-  Eigen::Matrix<float, 3,1> depth_jacobian;
-  depth_jacobian << active_pt->uv_.x(),
-                    active_pt->uv_.y(),
-                    1;
+  Eigen::Matrix<float, 3,1> invdepth_jacobian;
+  invdepth_jacobian << -active_pt->uv_.x()/pow(active_pt->invdepth_,2),
+                       -active_pt->uv_.y()/pow(active_pt->invdepth_,2),
+                       -1/pow(active_pt->invdepth_,2);
   Eigen::Matrix<float, 3,1> JSecond_jd;
-  JSecond_jd =(relative_rot_mat)*Kinv*depth_jacobian;
+  JSecond_jd =(relative_rot_mat)*Kinv*invdepth_jacobian;
+
+  // Eigen::Matrix<float, 3,1> depth_jacobian;
+  // depth_jacobian << active_pt->uv_.x(),
+  //                   active_pt->uv_.y(),
+  //                   1;
+  // Eigen::Matrix<float, 3,1> JSecond_jd;
+  // JSecond_jd =(relative_rot_mat)*Kinv*depth_jacobian;
 
   assert(JSecond_jd.allFinite());
 
@@ -712,10 +714,10 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
   float var = active_pt->invdepth_var_;
   float omega = 1.0;
   // float omega = 1.0/var;
-  // float omega = (1.0/((J_d*J_d*var)+1));
+  // float omega = J_d*J_d*(1.0/var);
 
-  // float chi = getChi(error);
-  float chi = getChi(error,omega);
+  float chi = getChi(error);
+  // float chi = getChi(error,omega);
   float  weight_total = getWeightTotal(error);
 
 
@@ -751,9 +753,9 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
 Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint(){
 
-  if (H_point_point_inv!=nullptr){
-    return H_point_point_inv;
-  }
+  // if (H_point_point_inv!=nullptr){
+  //   return H_point_point_inv;
+  // }
 
   H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
 
@@ -805,13 +807,7 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
   Eigen::MatrixXf Schur_inv = Schur.completeOrthogonalDecomposition().pseudoInverse();
 
   *dx_poses =  (Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-
-  // Eigen::MatrixXf* Schur_inv = pinv(Schur);
-  // *dx_poses =  (*Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-
   *dx_points = (*H_point_point_inv)* ( -(*b_point) -( (*H_point_pose)*(*dx_poses)) );
-
-  // delete H_point_point_inv;
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
@@ -866,7 +862,6 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsProva(){
   // assert(dx_points->allFinite());
   // assert(dx_poses->allFinite());
 
-  // delete H_point_point_inv;
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
@@ -916,8 +911,6 @@ Eigen::VectorXf* HessianAndB_Marg::getDeltaUpdateIncrementsMarg(){
 
   // Eigen::MatrixXf* Schur_inv = pinv(Schur);
   // *dx_poses =  (*Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-
-  delete H_point_point_inv;
 
   return dx_poses;
 }
@@ -1103,6 +1096,7 @@ void BundleAdj::updateTangentSpace(bool with_marg){
   for(int i=0; i<keyframe_vector_ba_->size() ; i++){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     if (keyframe->state_pose_block_idx_!=-1 ){
+      assert(!keyframe->first_keyframe_);
       // if active keyframe has link with marginalization prior, do not update tangent space
 
       // if(keyframe->state_pose_block_marg_idx_!=-1 && with_marg){
@@ -1136,6 +1130,8 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
     for(int i=0; i<keyframe_vector_ba_->size() ; i++){
       CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
       if (keyframe->state_pose_block_idx_!=-1 ){
+        assert(!keyframe->first_keyframe_);
+
         // update delta update of keyframe
         // regular sum in tangent space
         // if(!keyframe->first_keyframe_){
@@ -1170,8 +1166,9 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
 
             active_pt->delta_update_x_+=(*(delta->dx_points))(active_pt->state_point_block_idx_);
 
-            // active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
-            active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+active_pt->delta_update_x_);
+            // INVDEPTH_VS_DEPTH
+            active_pt->invdepth_=active_pt->invdepth_0_+active_pt->delta_update_x_;
+            // active_pt->invdepth_=1.0/((1.0/active_pt->invdepth_0_)+active_pt->delta_update_x_);
           }
 
           // since change both poses and invdepths
@@ -1199,16 +1196,15 @@ void BundleAdj::updateInvdepthVars(HessianAndB* hessian_and_b){
         if(active_pt->state_point_block_idx_==-1)
           continue;
 
-        assert(hessian_and_b->H_point_point_inv!=nullptr);
-
-        float variance = hessian_and_b->H_point_point_inv->diagonal()[active_pt->state_point_block_idx_];
-
-        if(variance!=0){  // if val in H_point_point_inv is 0, there is no variance propagation
-          active_pt->invdepth_var_=std::max((variance)+0.001,1.0);
-          // if certainty very close to 0 (variance very high), variance saturate close to
-          // if certainty is very large, variance saturate close to 0.001
+        if(hessian_and_b->H_point_point_inv!=nullptr){
+          float variance = hessian_and_b->H_point_point_inv->diagonal()[active_pt->state_point_block_idx_];
+          if(variance!=0){  // if val in H_point_point_inv is 0, there is no variance propagation
+            active_pt->invdepth_var_=variance+0.01;
+            // active_pt->invdepth_var_=std::max((variance)+0.01,100.0);
+            // if certainty very close to 0 (variance very high), variance saturate close to
+            // if certainty is very large, variance saturate close to 0.001
+          }
         }
-
       }
     }
   }
@@ -1708,9 +1704,9 @@ float BundleAdj::optimizationStep(bool with_marg){
   deltaUpdateIncrements* delta;
   // get delta update
   if(test_single_==TEST_ALL){
-    // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements();
-    delta = hessian_b->getDeltaUpdateIncrementsProva();
-    // deltaUpdateIncrements* delta = hessian_b->getDeltaUpdateIncrements_Slow();
+    delta = hessian_b->getDeltaUpdateIncrements();
+    // delta = hessian_b->getDeltaUpdateIncrementsProva();
+    // delta = hessian_b->getDeltaUpdateIncrements_Slow();
   }
   else if(test_single_==TEST_ONLY_POSES){
     delta = hessian_b->getDeltaUpdateIncrementsOnlyPoses();
@@ -1762,7 +1758,9 @@ void BundleAdj::optimize(){
   // while(true){
   for(int i=0; i<20; i++){
     float chi = optimizationStep(with_marg );
+
     if(debug_optimization_){
+      std::cout << "Iteration " << i << std::endl;
       CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
 
       last_keyframe->clearProjectedActivePoints();
@@ -1775,8 +1773,24 @@ void BundleAdj::optimize(){
       std::cout << "\nchi: " << chi << std::endl;
       std::cout << "points norm error tot: " << points_norm_error_tot << std::endl;
       poses_norm_error_tot->print();
+      std::cout << std::endl;
+
+      chi_history->push_back(chi);
+      pose_angle_error_history->push_back(poses_norm_error_tot->angle);
+      pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
+      points_error_history->push_back(points_norm_error_tot);
       cv::waitKey(0);
     }
+  }
+  if(debug_optimization_){
+    showLine(*chi_history, "chi_history");
+    showLine(*pose_angle_error_history, "pose_angle_error_history");
+    showLine(*pose_position_error_history, "pose_position_error_history");
+    showLine(*points_error_history, "points_error_history");
+    chi_history->clear();
+    pose_angle_error_history->clear();
+    pose_position_error_history->clear();
+    points_error_history->clear();
   }
   getCoarseActivePoints();
 
@@ -1812,8 +1826,10 @@ ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamC
 }
 
 void BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
+  assert(dtam_->camera_vector_->size() > 1);
+  assert(keyframe_vector_ba_->size() > 1);
   CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-  CameraForMapping* prev_last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->size()-2);
+  CameraForMapping* prev_last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(keyframe_vector_ba_->size()-2));
 
   // iterate through all keyframe (except the last)
   for (int i=0; i<keyframe_vector_ba_->size()-1; i++){

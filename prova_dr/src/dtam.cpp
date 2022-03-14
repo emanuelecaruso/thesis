@@ -213,7 +213,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     //   break;
     // }
 
-    if (!track_candidates && (wait_for_initialization || frame_current_>1 ) ){
+    if (!track_candidates && (wait_for_initialization || frame_current_>=1 ) ){
       std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
       waitForOptimization();
       std::cout << "FRONT END OPTIMIZATION DONE " << std::endl;
@@ -227,23 +227,44 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     int frame_delay = camera_vector_->size()-frame_current_-1;
     sharedCoutDebug("\nFRONT END for Frame "+std::to_string(frame_current_)+" ("+camera_vector_->at(frame_current_)->name_+") , frame delay: "+std::to_string(frame_delay));
 
-    if(frame_current_<=1){
+    // if(frame_current_<=1){
 
-
-      tracker_->trackCam(true);
-      keyframe_handler_->addFirstKeyframe();
-      if(frame_current_==1){
+      if(frame_current_==0){
+        tracker_->trackCam(true);
+        keyframe_handler_->addFirstKeyframe();
         mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
-        // mapper_->trackExistingCandidates(true,debug_mapping);
-        cand_tracked_.notify_all(); // after candidates are tracked notify for ba
-      }
-      mapper_->selectNewCandidates();
-
-      if (track_candidates)
+        mapper_->selectNewCandidates();
         tracker_->collectCandidatesInCoarseRegions();
+        continue;
+      }
+    //   else if(frame_current_==1){
+    //     // mapper_->trackExistingCandidates(true,debug_mapping);
+    //     cand_tracked_.notify_all(); // after candidates are tracked notify for ba
+    //   }
+    //
+    //   if (track_candidates)
+    //
+    //   continue;
+    // }
 
-      continue;
-    }
+    // if(frame_current_<=1){
+    //
+    //   if(frame_current_==0){
+    //     tracker_->trackCam(true);
+    //     keyframe_handler_->addFirstKeyframe();
+    //   }
+    //   else if(frame_current_==1){
+    //     mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
+    //     // mapper_->trackExistingCandidates(true,debug_mapping);
+    //     cand_tracked_.notify_all(); // after candidates are tracked notify for ba
+    //   }
+    //   mapper_->selectNewCandidates();
+    //
+    //   if (track_candidates)
+    //     tracker_->collectCandidatesInCoarseRegions();
+    //
+    //   continue;
+    // }
 
 
     tracker_->trackCam(take_gt_poses,track_candidates,guess_type,debug_tracking);
@@ -280,11 +301,16 @@ void Dtam::noiseToPoses(float range_angle, float range_position){
 
   for(int i=0; i<bundle_adj_->keyframe_vector_ba_->size() ; i++){
     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
+    if(keyframe->first_keyframe_){
+      std::cout << keyframe->name_ << " FIRST KEYFRAME " << std::endl;
+      continue;
+    }
 
     Vector6f noise;
     float t0 = randZeroMeanNoise(range_position); float t1 = randZeroMeanNoise(range_position); float t2 = randZeroMeanNoise(range_position);
     float t3 = randZeroMeanNoise(range_angle); float t4 = randZeroMeanNoise(range_angle); float t5 = randZeroMeanNoise(range_angle);
     noise << t0, t1, t2, t3, t4, t5;
+    std::cout << keyframe->name_ << ", NOISE, positions: " << t0 << ", " << t1 << ", " << t2 << " , angles: " << t3 << ", " << t4 << ", " << t5 << std::endl;
     Eigen::Isometry3f frame_camera_wrt_world_noisy = v2t(noise)*(*(keyframe->grountruth_camera_->frame_camera_wrt_world_));
     keyframe->assignPose0(frame_camera_wrt_world_noisy);
     keyframe->assignPose(frame_camera_wrt_world_noisy);
@@ -292,14 +318,56 @@ void Dtam::noiseToPoses(float range_angle, float range_position){
   }
 }
 
+void Dtam::noiseToPosesSame(float range_angle, float range_position){
+
+  // noise
+  Vector6f noise;
+  float t0 = range_position; float t1 = range_position; float t2 = range_position;
+  float t3 = range_angle; float t4 = range_angle; float t5 = range_angle;
+  noise << t0, t1, t2, t3, t4, t5;
+
+
+  // collect relative transformations
+  std::vector<Eigen::Isometry3f> relative_transformations;
+  for(int i=1; i<bundle_adj_->keyframe_vector_ba_->size()-1 ; i++){
+    CameraForMapping* keyframe_prev = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
+    CameraForMapping* keyframe_next = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i+1));
+
+    Eigen::Isometry3f prev_T_next = (*keyframe_prev->frame_world_wrt_camera_)*(*keyframe_next->frame_camera_wrt_world_);
+    relative_transformations.push_back(prev_T_next);
+
+  }
+
+  // noise to first keyframe
+  CameraForMapping* keyframe_first = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(1));
+  assert(!(keyframe_first->first_keyframe_) );
+  assert(!(keyframe_first->to_be_marginalized_ba_) );
+  Eigen::Isometry3f frame_camera_wrt_world_noisy = v2t(noise)*(*(keyframe_first->grountruth_camera_->frame_camera_wrt_world_));
+  keyframe_first->assignPose0(frame_camera_wrt_world_noisy);
+  keyframe_first->assignPose(frame_camera_wrt_world_noisy);
+
+  // match relative transformations
+  for(int i=1; i<bundle_adj_->keyframe_vector_ba_->size()-1 ; i++){
+    CameraForMapping* keyframe_prev = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
+    CameraForMapping* keyframe_next = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i+1));
+    Eigen::Isometry3f prev_T_next = relative_transformations[i-1];
+    //assign to keyframe next
+    keyframe_next->assignPose0((*(keyframe_prev->frame_camera_wrt_world_))*prev_T_next);
+    keyframe_next->assignPose((*(keyframe_prev->frame_camera_wrt_world_))*prev_T_next);
+  }
+
+}
+
 void Dtam::noiseToPoints(float range_invdepth){
+
+  float invdepth_err = range_invdepth;
 
   for(int i=0; i<bundle_adj_->keyframe_vector_ba_->size() ; i++){
     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
     // iterate through all active points
     for(int j=0; j<keyframe->active_points_->size() ; j++){
       ActivePoint* active_pt = keyframe->active_points_->at(j);
-      float invdepth_err = randZeroMeanNoise(range_invdepth);
+      // float invdepth_err = randZeroMeanNoise(range_invdepth);
       float invdepth_gt = active_pt->getInvdepthGroundtruth();
       active_pt->invdepth_0_=invdepth_gt+invdepth_err;
       active_pt->invdepth_=invdepth_gt+invdepth_err;
@@ -376,15 +444,24 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
 
     if(test_single==TEST_ONLY_POSES || test_single==TEST_ONLY_POSES_ONLY_M){
       // noise on cam poses
-      // noiseToPoses(1/180, 0.01);
-      noiseToPoses(5/180, 0.05);
+      // noiseToPoses(1./180., 0.01);
+      noiseToPoses(5./180., 0.05);
       // noiseToPoses(0, 0);
 
     }
     else if(test_single==TEST_ONLY_POINTS){
-      noiseToPoints(0.25);
+      // noiseToPoints(0.25);
+      noiseToPoints(0.05);
       // noiseToPoints(0);
     }
+    // // for testing marginalization
+    // if(frame_current_==parameters_->end_frame){
+    //   std::cout << "NOISE TO ALL POSESSSSSSSSSSSSSSSSSSSS" << std::endl;
+    //   for (int idx : (*(bundle_adj_->keyframe_vector_ba_)) )
+    //     std::cout << idx << " ";
+    //   std::cout << std::endl;
+    //   noiseToPosesSame(7/180, 0.05);
+    // }
 
     // optimize
     bundle_adj_->optimize();
@@ -493,27 +570,7 @@ void Dtam::test_mapping(){
   frontend_thread_.join();
   update_cameras_thread_.join();
 
-  // debugAllCameras();
 
-
-  // camera_vector_->at(0)->image_intensity_->show(2);
-  // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->c->show(2);
-  // camera_vector_->at(0)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(2);
-  // camera_vector_->at(1)->wavelet_dec_->vector_wavelets->at(2)->magnitude_img->show(4,"1");
-  // camera_vector_->at(0)->showCandidates_1(2);
-  // camera_vector_->at(0)->showCandidates(2);
-  // camera_vector_->at(camera_vector_->size()-2)->showProjCandidates(2);
-  // camera_vector_->at(0)->showCandidates(2);
-  // camera_vector_->at(0)->showCandidates(2);
-  // camera_vector_->at(7)->showProjCandidates(2);
-  // camera_vector_->at(1)->showProjCandidates(2);
-  // camera_vector_->at(5)->showProjCandidates(2);
-
-  // camera_vector_->at(keyframe_vector_->back())->regions_sampling_->region_vec_->at(1)->showRegion(2);
-
-  // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
-
-  // testRotationalInvariance();
   cv::waitKey(0);
 
 }
@@ -672,7 +729,7 @@ void Dtam::test_dso(){
   update_cameras_thread_.join();
   frontend_thread_.join();
 
-  makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  makeJsonForCameras("./dataset/"+environment_->dataset_name_+"/state_cameras.json");
   makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
 

@@ -764,7 +764,7 @@ void Tracker::trackCam(bool takeGtPoses, bool track_candidates, int guess_type, 
 Eigen::Isometry3f Tracker::computeInitialGuess( int guess_type){
   Eigen::Isometry3f pose_initial_guess;
 
-  if( guess_type==POSE_CONSTANT)
+  if( guess_type==POSE_CONSTANT || dtam_->camera_vector_->size()==2 )
     pose_initial_guess = poseConstantModel();
   else if ( guess_type==VELOCITY_CONSTANT)
     pose_initial_guess = velocityConstantModel();

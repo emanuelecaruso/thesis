@@ -367,7 +367,7 @@ namespace pr {
     if ((abs(a)*sqrt(omega))<=b){
       huber_norm= (pow(a,2)*omega)/(2*b);
     }else{
-      huber_norm= ((abs(a)*sqrt(omega))-b/2);
+      huber_norm= ((abs(a)*abs(sqrt(omega)))-b/2);
     }
     return huber_norm;
   }

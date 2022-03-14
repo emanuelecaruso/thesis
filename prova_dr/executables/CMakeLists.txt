@@ -71,3 +71,4 @@ add_executable(test_dso test_dso.cpp
 ../src/initializer.cpp
 ../src/wavelet.cpp
 )
+target_link_libraries(test_dso ${PYTHON_LIBRARIES})

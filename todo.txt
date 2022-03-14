@@ -13,12 +13,18 @@
 
 - warp function for tracking and opt can be optimized
 
-- check first keyframe
+
 - check that also with marginalization
+    plot chi, real angle, real position, real points behaviour
+
+- check if dso with only poses works better
 - keyframe management
 - final viewer
 - delete pointers
+- check sync problem
+- check with different datasets
 - check performance
+
 
 POSSIBLE REFACTORING
 

@@ -217,9 +217,6 @@ float Mapper::computeStandardDeviation(Candidate* candidate, EpipolarLine* ep_li
   // standard deviation photometric
   float sd_disparity_photometric = abs(sd_img_noise/(g_p+0.01));
 
-  // SAMPLING ERROR
-  // float sd_epline_sampling = pixel_width/8;
-
 
   // standard_deviation = 2*(sd_disparity_geo+sd_disparity_photometric+sd_epline_sampling);
   standard_deviation = 2*(sd_disparity_geo+sd_disparity_photometric);

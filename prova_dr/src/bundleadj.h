@@ -291,7 +291,11 @@ class BundleAdj{
     opt_norm_(HUBER),
     test_single_(TEST_ALL),
     image_id_(INTENSITY_ID),
-    min_num_of_active_pts_per_region_(INT_MAX)
+    min_num_of_active_pts_per_region_(INT_MAX),
+    chi_history(new std::vector<float>),
+    pose_angle_error_history(new std::vector<float>),
+    pose_position_error_history(new std::vector<float>),
+    points_error_history(new std::vector<float>)
     {};
 
 
@@ -360,7 +364,10 @@ class BundleAdj{
     Params* const parameters_;
     int num_active_points_;
     int min_num_of_active_pts_per_region_;
-
+    std::vector<float>* chi_history;
+    std::vector<float>* pose_angle_error_history;
+    std::vector<float>* pose_position_error_history;
+    std::vector<float>* points_error_history;
 
     ActivePoint* activateCandidate(CandidateProjected* cand_proj, RegionWithProjCandidates* reg, RegionsWithProjActivePoints* regs);
     void addCoarseActivePointInRegion(ActivePoint* active_pt);

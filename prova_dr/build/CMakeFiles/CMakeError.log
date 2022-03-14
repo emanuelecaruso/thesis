@@ -1,55 +1,65 @@
-Determining if the pthread_create exist failed with the following output:
+Performing C SOURCE FILE Test CMAKE_HAVE_LIBC_PTHREAD failed with the following output:
 Change Dir: /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_99d3b/fast"
-/usr/bin/make -f CMakeFiles/cmTC_99d3b.dir/build.make CMakeFiles/cmTC_99d3b.dir/build
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_00288/fast && /usr/bin/make  -f CMakeFiles/cmTC_00288.dir/build.make CMakeFiles/cmTC_00288.dir/build
 make[1]: ingresso nella directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Building C object CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o
-/usr/bin/cc   -fPIC    -o CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o   -c /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c
-Linking C executable cmTC_99d3b
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_99d3b.dir/link.txt --verbose=1
-/usr/bin/cc -fPIC     -rdynamic CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o  -o cmTC_99d3b 
-CMakeFiles/cmTC_99d3b.dir/CheckSymbolExists.c.o: nella funzione "main":
-CheckSymbolExists.c:(.text+0x1b): riferimento non definito a "pthread_create"
+Building C object CMakeFiles/cmTC_00288.dir/src.c.o
+/usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD  -fPIC  -o CMakeFiles/cmTC_00288.dir/src.c.o -c /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/src.c
+Linking C executable cmTC_00288
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_00288.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC  -rdynamic CMakeFiles/cmTC_00288.dir/src.c.o -o cmTC_00288 
+CMakeFiles/cmTC_00288.dir/src.c.o: nella funzione "main":
+src.c:(.text+0x3e): riferimento non definito a "pthread_create"
+src.c:(.text+0x4a): riferimento non definito a "pthread_detach"
+src.c:(.text+0x56): riferimento non definito a "pthread_cancel"
+src.c:(.text+0x67): riferimento non definito a "pthread_join"
+src.c:(.text+0x7b): riferimento non definito a "pthread_atfork"
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_99d3b.dir/build.make:86: recipe for target 'cmTC_99d3b' failed
-make[1]: *** [cmTC_99d3b] Error 1
+CMakeFiles/cmTC_00288.dir/build.make:98: recipe for target 'cmTC_00288' failed
+make[1]: *** [cmTC_00288] Error 1
 make[1]: uscita dalla directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Makefile:121: recipe for target 'cmTC_99d3b/fast' failed
-make: *** [cmTC_99d3b/fast] Error 2
+Makefile:127: recipe for target 'cmTC_00288/fast' failed
+make: *** [cmTC_00288/fast] Error 2
 
-File /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
-/* */
+
+Source file was:
 #include <pthread.h>
 
-int main(int argc, char** argv)
+static void* test_func(void* data)
 {
-  (void)argv;
-#ifndef pthread_create
-  return ((int*)(&pthread_create))[argc];
-#else
-  (void)argc;
+  return data;
+}
+
+int main(void)
+{
+  pthread_t thread;
+  pthread_create(&thread, NULL, test_func, NULL);
+  pthread_detach(thread);
+  pthread_cancel(thread);
+  pthread_join(thread, NULL);
+  pthread_atfork(NULL, NULL, NULL);
+  pthread_exit(NULL);
+
   return 0;
-#endif
 }
 
 Determining if the function pthread_create exists in the pthreads failed with the following output:
 Change Dir: /home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp
 
-Run Build Command:"/usr/bin/make" "cmTC_eaa06/fast"
-/usr/bin/make -f CMakeFiles/cmTC_eaa06.dir/build.make CMakeFiles/cmTC_eaa06.dir/build
+Run Build Command(s):/usr/bin/make -f Makefile cmTC_1caf4/fast && /usr/bin/make  -f CMakeFiles/cmTC_1caf4.dir/build.make CMakeFiles/cmTC_1caf4.dir/build
 make[1]: ingresso nella directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Building C object CMakeFiles/cmTC_eaa06.dir/CheckFunctionExists.c.o
-/usr/bin/cc   -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_eaa06.dir/CheckFunctionExists.c.o   -c /usr/local/share/cmake-3.12/Modules/CheckFunctionExists.c
-Linking C executable cmTC_eaa06
-/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_eaa06.dir/link.txt --verbose=1
-/usr/bin/cc -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create    -rdynamic CMakeFiles/cmTC_eaa06.dir/CheckFunctionExists.c.o  -o cmTC_eaa06 -lpthreads 
+Building C object CMakeFiles/cmTC_1caf4.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create -o CMakeFiles/cmTC_1caf4.dir/CheckFunctionExists.c.o -c /usr/local/share/cmake-3.22/Modules/CheckFunctionExists.c
+Linking C executable cmTC_1caf4
+/usr/local/bin/cmake -E cmake_link_script CMakeFiles/cmTC_1caf4.dir/link.txt --verbose=1
+/usr/bin/cc -fPIC -DCHECK_FUNCTION_EXISTS=pthread_create -rdynamic CMakeFiles/cmTC_1caf4.dir/CheckFunctionExists.c.o -o cmTC_1caf4  -lpthreads 
 /usr/bin/ld: impossibile trovare -lpthreads
 collect2: error: ld returned 1 exit status
-CMakeFiles/cmTC_eaa06.dir/build.make:86: recipe for target 'cmTC_eaa06' failed
-make[1]: *** [cmTC_eaa06] Error 1
+CMakeFiles/cmTC_1caf4.dir/build.make:98: recipe for target 'cmTC_1caf4' failed
+make[1]: *** [cmTC_1caf4] Error 1
 make[1]: uscita dalla directory "/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles/CMakeTmp"
-Makefile:121: recipe for target 'cmTC_eaa06/fast' failed
-make: *** [cmTC_eaa06/fast] Error 2
+Makefile:127: recipe for target 'cmTC_1caf4/fast' failed
+make: *** [cmTC_1caf4/fast] Error 2
+
 
 

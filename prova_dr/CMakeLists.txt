@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.22)
 
 #ds project name
 project(dense3Dtracking LANGUAGES C CXX CUDA)
@@ -24,8 +24,8 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
-
-
+find_package(Python3 REQUIRED COMPONENTS NumPy)
+include_directories(${Python3_NumPy_INCLUDE_DIRS})
 
 
 #ds set internal includes (our files)

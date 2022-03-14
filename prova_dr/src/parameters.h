@@ -19,7 +19,7 @@ static int num_candidates_=2000;
 
 // mapping
 static float cost_threshold_=0.07;
-static float cost_grad_threshold_=0.1;
+static float cost_grad_threshold_=0.08;
 static float cost_grad_threshold_DSO_=0.01; // for DSO
 static int max_num_mins_ = 3;
 
@@ -27,9 +27,11 @@ static int max_num_mins_ = 3;
 static int max_num_active_points_=2*num_candidates_;
 static int num_active_keyframes_=6;
 static float huber_threshold_=0.02;
-static float chi_occlusion_threshold_=(0.1-huber_threshold_/2);
+// static float huber_threshold_=0.05;
+static float chi_occlusion_threshold_=(0.3-huber_threshold_/2);
+// static float chi_occlusion_threshold_=1;
 static float intensity_coeff_ = 1;
-static float gradient_coeff_ = 1;
+static float gradient_coeff_ = 2;
 static float phase_coeff_ = 1;
 
 // tracking
@@ -39,7 +41,7 @@ static int robustifier_dofs_=2;
 static float ratio_for_convergence_ = 0.001;
 
 //  video streaming
-static int end_frame_=5;
+static int end_frame_=6;
 static int fps_=30;
 
 // initializer parameters

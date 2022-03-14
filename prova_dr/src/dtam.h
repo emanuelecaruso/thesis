@@ -108,6 +108,7 @@ class Dtam{
     void doOptimization(bool active_all_candidates=false, bool debug_optimization=false, int opt_norm=HUBER, int test_single=TEST_ALL, int image_id=INTENSITY_ID);
 
     void noiseToPoses(float var_angle, float var_position);
+    void noiseToPosesSame(float var_angle, float var_position);
     void noiseToPoints(float var_invdepth);
 
     bool makeJsonForCands(const std::string& path_name, CameraForMapping* camera);
