@@ -1366,7 +1366,8 @@ void BundleAdj::getJacobiansForNewUpdate(int& new_points, int& poses_new_size, s
       bool point_taken = false;
 
       // iterate through keyframes on which the active point is projected
-      for(int k=0; k<keyframe_vector_ba_->size() ; k++){
+      // exclute last keyframe cause optimization has not been done (it's added just now)
+      for(int k=0; k<keyframe_vector_ba_->size()-1 ; k++){
 
         // avoid self projection
         if(k==i)
@@ -1506,9 +1507,9 @@ bool BundleAdj::marginalization( ){
   //
   // // debug
   if(debug_optimization_){
-    // hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    hessian_b_marg->visualizeHMarg("Hessian marginalization");
     // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
-    // cv::waitKey(0);
+    cv::waitKey(0);
   }
 
   return true;
@@ -1517,6 +1518,7 @@ bool BundleAdj::marginalization( ){
 
 void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec ){
 
+  n_cams=hessian_b_marg->pose_block_size/6;
   int occlusions = 0;
   int active_points = 0;
   // iterate through keyframes with active points (except last)
@@ -1588,13 +1590,32 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
       keyframe->state_pose_block_idx_=-1;
     }
     else{
-      keyframe->state_pose_block_idx_=n_cams*6;
-      n_cams++;
+      if(keyframe->state_pose_block_marg_idx_!=-1){
+        keyframe->state_pose_block_idx_=keyframe->state_pose_block_marg_idx_;
+        std::cout << "FROM MARG " << keyframe->state_pose_block_idx_ << std::endl;
+      }
+      else{
+        keyframe->state_pose_block_idx_=n_cams*6;
+        std::cout << "NEW " << n_cams*6 << std::endl;
+
+        n_cams++;
+      }
     }
   }
+
   CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-  keyframe_last->state_pose_block_idx_=n_cams*6;
-  n_cams++;
+  if(keyframe_last->state_pose_block_marg_idx_!=-1){
+    keyframe_last->state_pose_block_idx_=keyframe_last->state_pose_block_marg_idx_;
+    std::cout << "FROM MARG " << keyframe_last->state_pose_block_idx_ << std::endl;
+  }
+  else{
+    keyframe_last->state_pose_block_idx_=n_cams*6;
+    std::cout << "NEW  " << n_cams*6 << std::endl;
+
+    n_cams++;
+  }
+  // keyframe_last->state_pose_block_idx_=n_cams*6;
+  // n_cams++;
   std::cout << "Num occlusions: " << occlusions << " out of " << active_points << " "<< num_active_points_ << std::endl;
 }
 
@@ -1697,8 +1718,8 @@ float BundleAdj::optimizationStep(bool with_marg){
 
 
   if(debug_optimization_){
-    // hessian_b->visualizeH("Hessian");
-    // cv::waitKey(0);
+    hessian_b->visualizeH("Hessian");
+    cv::waitKey(0);
   }
   delete jacobians_and_error_vec;
 
@@ -1718,8 +1739,6 @@ float BundleAdj::optimizationStep(bool with_marg){
   }
 
 
-  if(with_marg)
-    updateDeltaUpdateIncrementsMarg(delta);
 
   // update x in each cam and active point
   updateDeltaUpdates(delta);

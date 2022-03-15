@@ -484,12 +484,12 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       // noiseToPoses(0, 0);
 
       if(keyframe_marginalized){
-          std::cout << "NOISE FOR CHECKING MARGINALIZATION !!!!!" << std::endl;
-          for (int idx : (*(bundle_adj_->keyframe_vector_ba_)) )
-            std::cout << idx << " ";
-          std::cout << std::endl;
-          Eigen::VectorXf* dx_poses_noise = noiseToPosesSame(3./180., 0.02);
-          bundle_adj_->hessian_b_marg->updateBFromDelta(dx_poses_noise);
+          // std::cout << "NOISE FOR CHECKING MARGINALIZATION !!!!!" << std::endl;
+          // for (int idx : (*(bundle_adj_->keyframe_vector_ba_)) )
+          //   std::cout << idx << " ";
+          // std::cout << std::endl;
+          // Eigen::VectorXf* dx_poses_noise = noiseToPosesSame(3./180., 0.02);
+          // bundle_adj_->hessian_b_marg->updateBFromDelta(dx_poses_noise);
 
         }
     }
