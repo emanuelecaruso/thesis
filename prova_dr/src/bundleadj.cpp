@@ -1434,22 +1434,24 @@ void BundleAdj::deleteMarginalizedPoints(){
 
 void BundleAdj::removeMarginalizedKeyframe(){
 
-  for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
-    // std::cout << keyframe->name_ << " ";
-  }
+  // for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
+  //   CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+  //   // std::cout << keyframe->name_ << " ";
+  // }
   // iterate along active keyframes
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     if (keyframe->to_be_marginalized_ba_){
       keyframe_vector_ba_->erase(keyframe_vector_ba_->begin() + i);
+      std::cout << keyframe->name_ << " erased";
+
     }
   }
 
-  for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
-    // std::cout << keyframe->name_ << " ";
-  }
+  // for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
+  //   CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+  //   // std::cout << keyframe->name_ << " ";
+  // }
 }
 
 
@@ -1503,11 +1505,11 @@ bool BundleAdj::marginalization( ){
   removeMarginalizedKeyframe();
   //
   // // debug
-  // if(debug_optimization_){
-  //   // hessian_b_marg->visualizeHMarg("Hessian marginalization");
-  //   // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
-  //   // cv::waitKey(0);
-  // }
+  if(debug_optimization_){
+    // hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
+    // cv::waitKey(0);
+  }
 
   return true;
 }
@@ -1726,7 +1728,9 @@ float BundleAdj::optimizationStep(bool with_marg){
   // update fixed points
   updateTangentSpace(with_marg);
 
+
   delete hessian_b;
+  // delete delta;
   return chi;
 }
 
@@ -1741,56 +1745,63 @@ void BundleAdj::optimize(){
   bool with_marg = false ;
 
   if(debug_optimization_){
-    CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-    last_keyframe->clearProjectedActivePoints();
-    projectActivePoints(0);
-    last_keyframe->showProjActivePoints(1);
-    PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
-    float points_norm_error_tot = dtam_->getTotalPointsNormError();
-    std::cout << "\npoints norm error tot: " << points_norm_error_tot <<  std::endl;
-    poses_norm_error_tot->print();
-    std::cout << std::endl;
-
-    cv::waitKey(0);
+    // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
+      CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+      last_keyframe->clearProjectedActivePoints();
+      projectActivePoints(0);
+      last_keyframe->showProjActivePoints(1);
+      PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
+      float points_norm_error_tot = dtam_->getTotalPointsNormError();
+      std::cout << "\npoints norm error tot: " << points_norm_error_tot <<  std::endl;
+      poses_norm_error_tot->print();
+      std::cout << std::endl;
+      cv::waitKey(0);
+    // }
   }
 
   // optimize
   // while(true){
-  for(int i=0; i<20; i++){
+  for(int i=0; i<10; i++){
     float chi = optimizationStep(with_marg );
 
     if(debug_optimization_){
-      std::cout << "Iteration " << i << std::endl;
-      CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+      // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
 
-      last_keyframe->clearProjectedActivePoints();
-      bool take_fixed_point = 0;
-      projectActivePoints(take_fixed_point);
-      last_keyframe->showProjActivePoints(1);
+        std::cout << "Iteration " << i << std::endl;
+        CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
 
-      PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
-      float points_norm_error_tot = dtam_->getTotalPointsNormError();
-      std::cout << "\nchi: " << chi << std::endl;
-      std::cout << "points norm error tot: " << points_norm_error_tot << std::endl;
-      poses_norm_error_tot->print();
-      std::cout << std::endl;
+        last_keyframe->clearProjectedActivePoints();
+        bool take_fixed_point = 0;
+        projectActivePoints(take_fixed_point);
+        last_keyframe->showProjActivePoints(1);
 
-      chi_history->push_back(chi);
-      pose_angle_error_history->push_back(poses_norm_error_tot->angle);
-      pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
-      points_error_history->push_back(points_norm_error_tot);
-      cv::waitKey(0);
+        PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
+        float points_norm_error_tot = dtam_->getTotalPointsNormError();
+        std::cout << "\nchi: " << chi << std::endl;
+        std::cout << "points norm error tot: " << points_norm_error_tot << std::endl;
+        poses_norm_error_tot->print();
+        std::cout << std::endl;
+
+        chi_history->push_back(chi);
+        pose_angle_error_history->push_back(poses_norm_error_tot->angle);
+        pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
+        points_error_history->push_back(points_norm_error_tot);
+        cv::waitKey(0);
+      // }
     }
   }
-  if(debug_optimization_){
-    showLine(*chi_history, "chi_history");
-    showLine(*pose_angle_error_history, "pose_angle_error_history");
-    showLine(*pose_position_error_history, "pose_position_error_history");
-    showLine(*points_error_history, "points_error_history");
-    chi_history->clear();
-    pose_angle_error_history->clear();
-    pose_position_error_history->clear();
-    points_error_history->clear();
+  if(debug_optimization_ ){
+    // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
+
+      showLine(*chi_history, "chi_history");
+      showLine(*pose_angle_error_history, "pose_angle_error_history");
+      showLine(*pose_position_error_history, "pose_position_error_history");
+      showLine(*points_error_history, "points_error_history");
+      chi_history->clear();
+      pose_angle_error_history->clear();
+      pose_position_error_history->clear();
+      points_error_history->clear();
+    // }
   }
   getCoarseActivePoints();
 
@@ -1825,18 +1836,21 @@ ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamC
 
 }
 
-void BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
+bool BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
   assert(dtam_->camera_vector_->size() > 1);
   assert(keyframe_vector_ba_->size() > 1);
   CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
   CameraForMapping* prev_last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(keyframe_vector_ba_->size()-2));
 
-  // iterate through all keyframe (except the last)
-  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
+
+  bool keyframe_marginalized = false;
+  // iterate through all keyframe (except the last two )
+  for (int i=0; i<keyframe_vector_ba_->size()-2; i++){
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
 
     if (keyframe->to_be_marginalized_ba_){
+      keyframe_marginalized=true;
       // iterate along all active points
       num_active_points_-=(keyframe->active_points_->size()-keyframe->num_marginalized_active_points_);
 
@@ -1849,6 +1863,10 @@ void BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
       // }
       continue;
     }
+
+    // // avoid self projections
+    // if(i == keyframe_vector_ba_->back() || i == keyframe_vector_ba_->at(keyframe_vector_ba_->size()-2))
+    //   continue;
 
     CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe,take_fixed_point);
     CamCouple* cam_couple_prev = new CamCouple(keyframe,prev_last_keyframe,take_fixed_point);
@@ -1877,6 +1895,8 @@ void BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
 
     }
   }
+
+  return keyframe_marginalized;
 }
 
 

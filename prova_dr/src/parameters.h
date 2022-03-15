@@ -25,7 +25,7 @@ static int max_num_mins_ = 3;
 
 // optimization
 static int max_num_active_points_=2*num_candidates_;
-static int num_active_keyframes_=6;
+static int num_active_keyframes_=5;
 static float huber_threshold_=0.02;
 // static float huber_threshold_=0.05;
 static float chi_occlusion_threshold_=(0.3-huber_threshold_/2);

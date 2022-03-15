@@ -291,6 +291,7 @@ class BundleAdj{
     opt_norm_(HUBER),
     test_single_(TEST_ALL),
     image_id_(INTENSITY_ID),
+    test_marginalization_(false),
     min_num_of_active_pts_per_region_(INT_MAX),
     chi_history(new std::vector<float>),
     pose_angle_error_history(new std::vector<float>),
@@ -299,7 +300,7 @@ class BundleAdj{
     {};
 
 
-    void projectActivePoints_prepMarg(bool take_fixed_point=false);
+    bool projectActivePoints_prepMarg(bool take_fixed_point=false);
     void projectActivePoints(bool take_fixed_point=false);
     void updateCurrentGuess();
     void updateActivePointsAfterNewPose();
@@ -357,6 +358,7 @@ class BundleAdj{
     int opt_norm_;
     int test_single_;
     int image_id_;
+    bool test_marginalization_;
 
   private:
 

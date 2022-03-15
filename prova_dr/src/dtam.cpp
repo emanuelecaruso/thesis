@@ -290,11 +290,12 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
 }
 
-void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single, int image_id){
+void Dtam::setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single, int image_id, bool test_marginalization){
   bundle_adj_->debug_optimization_=debug_optimization;
   bundle_adj_->opt_norm_=opt_norm;
   bundle_adj_->test_single_=test_single;
   bundle_adj_->image_id_=image_id;
+  bundle_adj_->test_marginalization_=test_marginalization;
 }
 
 void Dtam::noiseToPoses(float range_angle, float range_position){
@@ -311,17 +312,19 @@ void Dtam::noiseToPoses(float range_angle, float range_position){
     float t3 = randZeroMeanNoise(range_angle); float t4 = randZeroMeanNoise(range_angle); float t5 = randZeroMeanNoise(range_angle);
     noise << t0, t1, t2, t3, t4, t5;
     std::cout << keyframe->name_ << ", NOISE, positions: " << t0 << ", " << t1 << ", " << t2 << " , angles: " << t3 << ", " << t4 << ", " << t5 << std::endl;
-    Eigen::Isometry3f frame_camera_wrt_world_noisy = v2t(noise)*(*(keyframe->grountruth_camera_->frame_camera_wrt_world_));
+    Eigen::Isometry3f frame_camera_wrt_world_noisy = (*(keyframe->grountruth_camera_->frame_camera_wrt_world_))*v2t_inv(noise);
     keyframe->assignPose0(frame_camera_wrt_world_noisy);
     keyframe->assignPose(frame_camera_wrt_world_noisy);
 
   }
 }
 
-void Dtam::noiseToPosesSame(float range_angle, float range_position){
+Eigen::VectorXf* Dtam::noiseToPosesSame(float range_angle, float range_position){
+
+  Eigen::VectorXf* dx_poses_marg = new Eigen::VectorXf(bundle_adj_->hessian_b_marg->pose_block_size) ;
 
   // noise
-  Vector6f noise;
+  Vector6f noise; // x0 wrt x, x_T_x0
   float t0 = range_position; float t1 = range_position; float t2 = range_position;
   float t3 = range_angle; float t4 = range_angle; float t5 = range_angle;
   noise << t0, t1, t2, t3, t4, t5;
@@ -330,9 +333,10 @@ void Dtam::noiseToPosesSame(float range_angle, float range_position){
   // collect relative transformations
   std::vector<Eigen::Isometry3f> relative_transformations;
   for(int i=1; i<bundle_adj_->keyframe_vector_ba_->size()-1 ; i++){
+
+    // get relative transformations
     CameraForMapping* keyframe_prev = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
     CameraForMapping* keyframe_next = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i+1));
-
     Eigen::Isometry3f prev_T_next = (*keyframe_prev->frame_world_wrt_camera_)*(*keyframe_next->frame_camera_wrt_world_);
     relative_transformations.push_back(prev_T_next);
 
@@ -342,19 +346,37 @@ void Dtam::noiseToPosesSame(float range_angle, float range_position){
   CameraForMapping* keyframe_first = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(1));
   assert(!(keyframe_first->first_keyframe_) );
   assert(!(keyframe_first->to_be_marginalized_ba_) );
-  Eigen::Isometry3f frame_camera_wrt_world_noisy = v2t(noise)*(*(keyframe_first->grountruth_camera_->frame_camera_wrt_world_));
+  Eigen::Isometry3f frame_camera_wrt_world_noisy =  (*(keyframe_first->grountruth_camera_->frame_camera_wrt_world_))*v2t_inv(noise);
   keyframe_first->assignPose0(frame_camera_wrt_world_noisy);
   keyframe_first->assignPose(frame_camera_wrt_world_noisy);
+  // update delta
+  Vector6f segment = noise;
+  int block_idx_marg = keyframe_first->state_pose_block_marg_idx_;
+  if (block_idx_marg!=-1)
+    dx_poses_marg->segment<6>(block_idx_marg)=segment;
 
   // match relative transformations
   for(int i=1; i<bundle_adj_->keyframe_vector_ba_->size()-1 ; i++){
     CameraForMapping* keyframe_prev = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
     CameraForMapping* keyframe_next = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i+1));
     Eigen::Isometry3f prev_T_next = relative_transformations[i-1];
+
+    // update delta
+    int block_idx_marg = keyframe_next->state_pose_block_marg_idx_;
+    if (block_idx_marg!=-1){
+      Eigen::Isometry3f w_T_cam0 = *(keyframe_next->frame_camera_wrt_world_); // current w_T_cam0
+      Eigen::Isometry3f w_T_cam = (*(keyframe_prev->frame_camera_wrt_world_))*prev_T_next; // next w_T_cam
+      Vector6f segment = t2v(w_T_cam.inverse()*w_T_cam0); // noise x_T_x0
+      dx_poses_marg->segment<6>(block_idx_marg)=segment;
+    }
+
     //assign to keyframe next
-    keyframe_next->assignPose0((*(keyframe_prev->frame_camera_wrt_world_))*prev_T_next);
-    keyframe_next->assignPose((*(keyframe_prev->frame_camera_wrt_world_))*prev_T_next);
+    keyframe_next->assignPose0( (*(keyframe_prev->frame_camera_wrt_world_))*prev_T_next );
+    keyframe_next->assignPose( (*(keyframe_prev->frame_camera_wrt_world_))*prev_T_next );
+
   }
+
+  return dx_poses_marg;
 
 }
 
@@ -380,9 +402,9 @@ void Dtam::noiseToPoints(float range_invdepth){
   }
 }
 
-void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, int opt_norm, int test_single, int image_id){
+void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, int opt_norm, int test_single, int image_id, bool test_marginalization){
 
-  setOptimizationFlags(debug_optimization,opt_norm,test_single,image_id);
+  setOptimizationFlags(debug_optimization,opt_norm,test_single,image_id,test_marginalization);
 
   while( true ){
 
@@ -401,7 +423,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
     // take fixed point
     bool take_fixed_point = 1;
     // bundle_adj_->projectActivePoints(take_fixed_point);
-    bundle_adj_->projectActivePoints_prepMarg(take_fixed_point);
+    bool keyframe_marginalized = bundle_adj_->projectActivePoints_prepMarg(take_fixed_point);
 
 
     // std::cout << "OPTIMIZATION 1 " << std::endl;
@@ -445,7 +467,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
     if(test_single==TEST_ONLY_POSES || test_single==TEST_ONLY_POSES_ONLY_M){
       // noise on cam poses
       // noiseToPoses(1./180., 0.01);
-      noiseToPoses(5./180., 0.05);
+      noiseToPoses(3./180., 0.02);
       // noiseToPoses(0, 0);
 
     }
@@ -454,14 +476,23 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       noiseToPoints(0.05);
       // noiseToPoints(0);
     }
-    // // for testing marginalization
-    // if(frame_current_==parameters_->end_frame){
-    //   std::cout << "NOISE TO ALL POSESSSSSSSSSSSSSSSSSSSS" << std::endl;
-    //   for (int idx : (*(bundle_adj_->keyframe_vector_ba_)) )
-    //     std::cout << idx << " ";
-    //   std::cout << std::endl;
-    //   noiseToPosesSame(7/180, 0.05);
-    // }
+
+    // for testing marginalization
+    if(test_marginalization){
+      // take gt poses and points
+      // noiseToPoints(0);
+      // noiseToPoses(0, 0);
+
+      if(keyframe_marginalized){
+          std::cout << "NOISE FOR CHECKING MARGINALIZATION !!!!!" << std::endl;
+          for (int idx : (*(bundle_adj_->keyframe_vector_ba_)) )
+            std::cout << idx << " ";
+          std::cout << std::endl;
+          Eigen::VectorXf* dx_poses_noise = noiseToPosesSame(3./180., 0.02);
+          bundle_adj_->hessian_b_marg->updateBFromDelta(dx_poses_noise);
+
+        }
+    }
 
     // optimize
     bundle_adj_->optimize();
@@ -623,6 +654,7 @@ void Dtam::test_optimization_pose(){
   int test_single=TEST_ONLY_POSES;
   // int image_id=INTENSITY_ID;
   int image_id=GRADIENT_ID;
+  bool test_marginalization=false;
 
   bool all_keyframes=true;
   bool wait_for_initialization=false;
@@ -633,7 +665,7 @@ void Dtam::test_optimization_pose(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id, test_marginalization);
     optimization_thread.join();
   }
 
@@ -668,6 +700,7 @@ void Dtam::test_optimization_points(){
   int test_single=TEST_ONLY_POINTS;
   // int image_id=INTENSITY_ID;
   int image_id=GRADIENT_ID;
+  bool test_marginalization=false;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -678,7 +711,7 @@ void Dtam::test_optimization_points(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id, test_marginalization);
     optimization_thread.join();
   }
 
@@ -711,6 +744,7 @@ void Dtam::test_dso(){
   int test_single=TEST_ALL;
   // int image_id=INTENSITY_ID;
   int image_id=GRADIENT_ID;
+  bool test_marginalization=false;
 
   bool all_keyframes=true;
   bool wait_for_initialization=true;
@@ -721,7 +755,7 @@ void Dtam::test_dso(){
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
 
   if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id);
+    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id, test_marginalization);
     optimization_thread.join();
   }
 

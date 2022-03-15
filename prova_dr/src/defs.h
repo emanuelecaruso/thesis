@@ -385,18 +385,21 @@ namespace pr {
   }
 
 
-  // inline Vector6f t2v(Eigen::Isometry3f& T){
-  //   // t_inv is new_T_old
-  //   Vector6f t;
-  //   t.head<3>()=T.translation();
-  //   // Eigen::Vector3f ea = T.linear().eulerAngles(0, 1, 2); //XYZ convention
-  //   // Eigen::Vector3f ea = T.linear().eulerAngles(2, 1, 0); //XYZ convention
-  //   // t.tail<3>()=ea;
-  //   t[3]=
-  //   return t;
-  // }
+  inline Vector6f t2v(const Eigen::Isometry3f& T){
+    // t_inv is new_T_old
+    Vector6f t;
+    t.head<3>()=T.translation();
+    Eigen::Matrix3f R = T.linear();
+    // Eigen::Vector3f ea = T.linear().eulerAngles(0, 1, 2); //XYZ convention
+    // Eigen::Vector3f ea = T.linear().eulerAngles(2, 1, 0); //XYZ convention
+    // t.tail<3>()=ea;
+    t[3]=std::atan2(-R(1,2) , R(2,2));
+    t[4]=std::atan2(R(0,2) , (sqrt(1-R(0,2)*R(0,2))));
+    t[5]=std::atan2(-R(0,1) , R(0,0));
+    return t;
+  }
 
-  inline Eigen::Isometry3f v2t(Vector6f& t){
+  inline Eigen::Isometry3f v2t(const Vector6f& t){
     // t_inv is new_T_old
     Eigen::Isometry3f T;
     T.translation()=t.head<3>();
