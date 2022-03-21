@@ -14,7 +14,7 @@
 // candidate selection
 static int coarsest_level_= 3; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
-static float grad_threshold_=0.05;
+static float grad_threshold_=0.02;
 static int num_candidates_=2000;
 
 // mapping
@@ -24,15 +24,21 @@ static float cost_grad_threshold_DSO_=0.01; // for DSO
 static int max_num_mins_ = 3;
 
 // optimization
+static int num_active_keyframes_=2;
 static int max_num_active_points_=2*num_candidates_;
-static int num_active_keyframes_=5;
+// static float huber_threshold_=0.02;
 static float huber_threshold_=0.02;
-// static float huber_threshold_=0.05;
-static float chi_occlusion_threshold_=(0.3-huber_threshold_/2);
-// static float chi_occlusion_threshold_=1;
+// static float huber_threshold_=0.5;
+static float chi_occlusion_threshold_=(0.1-huber_threshold_/2);
+// static float chi_occlusion_threshold_=1000;
+// static float chi_occlusion_threshold_=(pow(0.2,2));
+static int max_occlusions_ = num_active_keyframes_/2;
 static float intensity_coeff_ = 1;
-static float gradient_coeff_ = 2;
-static float phase_coeff_ = 1;
+static float gradient_coeff_ = 1;
+static float phase_coeff_ = 1./(8.*PI);
+static float damp_pose_position_ = 0;
+static float damp_pose_orientation_ = 0;
+static float damp_point_invdepth_ = 0;
 
 // tracking
 static int max_iterations_ls_=20;
@@ -41,7 +47,7 @@ static int robustifier_dofs_=2;
 static float ratio_for_convergence_ = 0.001;
 
 //  video streaming
-static int end_frame_=6;
+static int end_frame_=5;
 static int fps_=30;
 
 // initializer parameters
@@ -70,10 +76,14 @@ struct Params{
   int fps=fps_;
   float huber_threshold=huber_threshold_;
   float chi_occlusion_threshold=chi_occlusion_threshold_;
+  float max_occlusions=max_occlusions_;
 
   float intensity_coeff=intensity_coeff_;
   float gradient_coeff=gradient_coeff_;
   float phase_coeff=phase_coeff_;
+  float damp_pose_position=damp_pose_position_;
+  float damp_pose_orientation=damp_pose_orientation_;
+  float damp_point_invdepth=damp_point_invdepth_;
 
   int max_iterations_ls=max_iterations_ls_;
   float variance=variance_;

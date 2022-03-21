@@ -462,28 +462,36 @@ namespace pr {
   }
 
 
-  inline float getPinvThreshold(Eigen::VectorXf& singular_values){
+  inline float getPinvThreshold(const Eigen::VectorXf& singular_values){
     // float sv_sum = 0;
     float max = 0;
-    int idx = -1;
+    float min = FLT_MAX;
+    int idx_max = -1;
+    int idx_min = -1;
     int size = singular_values.size();
     float sv_sum = 0;
     for(int i=0; i<size; i++){
       sv_sum += singular_values[i];
       if(singular_values[i]>max){
         max=singular_values[i];
-        idx=i;
+        idx_max=i;
+      }
+      if(singular_values[i]<min){
+        min=singular_values[i];
+        idx_min=i;
       }
     }
     float sv_average = sv_sum/size;
 
     // float thresh = 2.858*sv_average;
+    // float thresh = sv_average;
     // float thresh = 0.5*sv_average;
-    // float thresh = 0;
+    // float thresh = 50;
     // float thresh = 2.309 *size*(sv_average/1000);
     float thresh = max*7.15256e-07*size;
+    // float thresh = 1000000;
 
-    std::cout << "thresh " << thresh << ", avg: " << sv_average << ", max " << max << " i " << idx << std::endl;
+    std::cout << "thresh " << thresh << ", avg: " << sv_average << ", max " << max << " i " << idx_max << ", min " << min << " i " << idx_min << std::endl;
 
     // thresh = 0.01;
     return thresh;

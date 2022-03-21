@@ -250,6 +250,7 @@ class Image{
       // // normalize
       // kernel/=18;
 
+      // cv::Mat_<float> kernel(3,3);
       // kernel <<  -1,  0, 1,
       //            -1,  0, 1,
       //            -1,  0, 1;
@@ -284,6 +285,7 @@ class Image{
       // // normalize
       // kernel/=18;
 
+      // cv::Mat_<float> kernel(3,3);
       // kernel <<  -1, -1, -1,
       //             0,  0,  0,
       //             1,  1,  1;

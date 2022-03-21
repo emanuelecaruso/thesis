@@ -198,8 +198,10 @@ public:
       delete b_point;
   }
 
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint();
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint(float thres);
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPointDLS(float mu);
+
+  void LMDampening(Params* parameters);
 
   void mirrorTriangH(bool pose_pose_not_diagonal=true);
   bool visualizeH(const std::string& name);
@@ -308,13 +310,13 @@ class BundleAdj{
 
 
     ActivePointProjected* projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple);
-    void marginalizeActivePoints();
     void activateNewPoints();
     void getCoarseActivePoints();
     void collectCoarseActivePoints();
 
     float getWeightTotal(float error);
 
+    // JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool no_r=false);
     JacobiansAndError* getJacobiansAndError(ActivePoint* active_pt, CameraForMapping* cam_m, bool no_r=false);
     std::vector<int> collectImageIds();
     void initializeStateStructure( int& n_cams, int& n_points, std::vector<JacobiansAndError*>* jacobians_and_error_vec );

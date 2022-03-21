@@ -644,4 +644,22 @@ executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/ss_flags.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_sigstack.h \
  /usr/include/x86_64-linux-gnu/bits/sigthread.h \
- /usr/local/include/eigen3/Eigen/QR
+ /usr/local/include/eigen3/Eigen/QR \
+ /usr/local/include/eigen3/Eigen/Eigenvalues \
+ /usr/local/include/eigen3/Eigen/Geometry \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/Tridiagonalization.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/RealSchur.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/./HessenbergDecomposition.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/EigenSolver.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/./RealSchur.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/./Tridiagonalization.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/GeneralizedSelfAdjointEigenSolver.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/HessenbergDecomposition.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/ComplexSchur.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/ComplexEigenSolver.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/./ComplexSchur.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/./RealQZ.h \
+ /usr/local/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h

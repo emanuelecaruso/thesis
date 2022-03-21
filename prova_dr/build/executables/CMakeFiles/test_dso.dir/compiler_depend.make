@@ -743,7 +743,25 @@ executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o: ../src/bundleadj.cpp
   /usr/include/x86_64-linux-gnu/bits/ss_flags.h \
   /usr/include/x86_64-linux-gnu/bits/types/struct_sigstack.h \
   /usr/include/x86_64-linux-gnu/bits/sigthread.h \
-  /usr/local/include/eigen3/Eigen/QR
+  /usr/local/include/eigen3/Eigen/QR \
+  /usr/local/include/eigen3/Eigen/Eigenvalues \
+  /usr/local/include/eigen3/Eigen/Geometry \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/Tridiagonalization.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/RealSchur.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/HessenbergDecomposition.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/EigenSolver.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/RealSchur.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/Tridiagonalization.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/GeneralizedSelfAdjointEigenSolver.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/HessenbergDecomposition.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/ComplexSchur.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/ComplexEigenSolver.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/ComplexSchur.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h \
+  /usr/local/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h
 
 executables/CMakeFiles/test_dso.dir/__/src/camera.cpp.o: ../src/camera.cpp \
   /usr/include/stdc-predef.h \
@@ -7861,6 +7879,16 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 
 ../src/camera.cpp:
 
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/GeneralizedEigenSolver.h:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/RealQZ.h:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/ComplexEigenSolver.h:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/GeneralizedSelfAdjointEigenSolver.h:
+
+/usr/local/include/eigen3/Eigen/Eigenvalues:
+
 /usr/include/x86_64-linux-gnu/sys/ucontext.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/stack_t.h:
@@ -7882,6 +7910,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 /usr/include/c++/7/bits/stl_function.h:
 
 /usr/local/include/eigen3/Eigen/src/Core/products/TriangularMatrixMatrix.h:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/EigenSolver.h:
 
 /usr/local/include/eigen3/Eigen/src/Core/GlobalFunctions.h:
 
@@ -8308,6 +8338,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 /usr/include/x86_64-linux-gnu/bits/sigstack.h:
 
 /usr/local/include/eigen3/Eigen/Core:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/SelfAdjointEigenSolver.h:
 
 ../src/bundleadj.cpp:
 
@@ -8749,6 +8781,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 
 /usr/local/include/eigen3/Eigen/src/QR/ColPivHouseholderQR.h:
 
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/Tridiagonalization.h:
+
 /usr/local/include/eigen3/Eigen/src/QR/CompleteOrthogonalDecomposition.h:
 
 /usr/local/include/eigen3/Eigen/src/misc/RealSvd2x2.h:
@@ -8780,6 +8814,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 /usr/include/python3.6m/floatobject.h:
 
 /usr/local/include/eigen3/Eigen/src/Geometry/OrthoMethods.h:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/HessenbergDecomposition.h:
 
 /usr/local/include/opencv4/opencv2/dnn/dnn.hpp:
 
@@ -9001,6 +9037,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 
 /usr/local/include/opencv4/opencv2/flann/composite_index.h:
 
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/MatrixBaseEigenvalues.h:
+
 /usr/include/python3.6m/warnings.h:
 
 /usr/local/include/opencv4/opencv2/flann/hierarchical_clustering_index.h:
@@ -9018,6 +9056,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 /usr/include/python3.6m/pyerrors.h:
 
 /usr/include/c++/7/bits/locale_facets_nonio.tcc:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/ComplexSchur.h:
 
 /usr/local/include/opencv4/opencv2/videostab/outlier_rejection.hpp:
 
@@ -9228,6 +9268,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 /usr/local/include/eigen3/Eigen/src/Core/Product.h:
 
 /usr/include/python3.6m/Python.h:
+
+/usr/local/include/eigen3/Eigen/src/Eigenvalues/RealSchur.h:
 
 /usr/include/python3.6m/patchlevel.h:
 
