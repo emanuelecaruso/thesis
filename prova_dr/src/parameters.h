@@ -24,17 +24,17 @@ static float cost_grad_threshold_DSO_=0.01; // for DSO
 static int max_num_mins_ = 3;
 
 // optimization
-static int num_active_keyframes_=3;
+static int num_active_keyframes_=6;
 static int max_num_active_points_=2*num_candidates_;
 // static float huber_threshold_=0.02;
-static float huber_threshold_=0.02;
+static float huber_threshold_=0.05;
 // static float huber_threshold_=0.5;
 static float chi_occlusion_threshold_=(0.1-huber_threshold_/2);
 // static float chi_occlusion_threshold_=1000;
 // static float chi_occlusion_threshold_=(pow(0.2,2));
 static int max_occlusions_ = num_active_keyframes_/2;
 static float intensity_coeff_ = 1;
-static float gradient_coeff_ = 1;
+static float gradient_coeff_ = 0.5;
 static float phase_coeff_ = 1./(8.*PI);
 static float damp_pose_position_ = 0;
 static float damp_pose_orientation_ = 0;
@@ -47,7 +47,7 @@ static int robustifier_dofs_=2;
 static float ratio_for_convergence_ = 0.001;
 
 //  video streaming
-static int end_frame_=3;
+static int end_frame_=5;
 static int fps_=30;
 
 // initializer parameters

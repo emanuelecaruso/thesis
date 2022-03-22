@@ -577,16 +577,19 @@ void HessianAndB_base::LMDampening(Params* parameters){
   // // damp point
   // // float damp_coeff = parameters->damp_point_invdepth;
   // float damp_coeff = max_eig*1e-3;
+  // float damp_coeff = max_eig*1e-3;
+  float damp_coeff = 0.05*pose_block_size*point_block_size;
+
   // std::cout << "DAMPCOEFFFFF " << damp_coeff << std::endl;
   // // float damp_coeff = 1000;
-  // for(int i=0; i<point_block_size; i++){
-  //   H_point_point->diagonal()[i]+=damp_coeff;
-  //   // H_point_point->diagonal()[i]+=damp_coeff;
-  // }
-  // for(int i=0; i<pose_block_size; i++){
-  //   H_pose_pose->diagonal()[i]+=damp_coeff;
-  //   // H_point_point->diagonal()[i]+=damp_coeff;
-  // }
+  for(int i=0; i<point_block_size; i++){
+    H_point_point->diagonal()[i]+=damp_coeff;
+    // H_point_point->diagonal()[i]+=damp_coeff;
+  }
+  for(int i=0; i<pose_block_size; i++){
+    H_pose_pose->diagonal()[i]+=damp_coeff;
+    // H_point_point->diagonal()[i]+=damp_coeff;
+  }
 }
 
 void HessianAndB_Marg::updateHessianAndB_marg(JacobiansAndError* jacobians_and_error ){
@@ -827,10 +830,13 @@ Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint
   }
 
   H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
+  //
+  // float damping = 0.05*pose_block_size*point_block_size;
+  // for(int i=0; i<H_point_point->diagonal().size(); i++)
+  //   H_point_point_inv->diagonal()[i]=1.0/(H_point_point->diagonal()[i]+damping);
 
-  float damping = 0.5*pose_block_size*point_block_size;
   for(int i=0; i<H_point_point->diagonal().size(); i++)
-    H_point_point_inv->diagonal()[i]=1.0/(H_point_point->diagonal()[i]+damping);
+    H_point_point_inv->diagonal()[i]=1.0/(H_point_point->diagonal()[i]);
 
   return H_point_point_inv;
 }
@@ -1583,7 +1589,7 @@ bool BundleAdj::marginalization( ){
   //
   // // debug
   if(debug_optimization_){
-    hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    // hessian_b_marg->visualizeHMarg("Hessian marginalization");
     // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
   }
 
@@ -1648,8 +1654,8 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
           n_jac_added++;
         }
       }
-      // if(invalid_projections>(keyframe_vector_ba_->size()+1)/2){
-      if(invalid_projections>0){
+      if(invalid_projections>(keyframe_vector_ba_->size())/2){
+      // if(invalid_projections>0){
         active_pt->state_point_block_idx_=-1;
         active_pt->remove();
         num_active_points_--;
@@ -1786,7 +1792,7 @@ float BundleAdj::optimizationStep(bool with_marg){
     chi+=jacobians_and_error->chi;
     delete jacobians_and_error;
   }
-  // hessian_b->LMDampening(parameters_);
+  hessian_b->LMDampening(parameters_);
   hessian_b->mirrorTriangH();
 
 
