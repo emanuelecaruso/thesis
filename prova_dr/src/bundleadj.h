@@ -198,7 +198,7 @@ public:
       delete b_point;
   }
 
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint(float thres);
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPoint();
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* invertHPointPointDLS(float mu);
 
   void LMDampening(Params* parameters);
@@ -216,7 +216,12 @@ public:
   Eigen::VectorXf* b_pose;
   Eigen::VectorXf* b_point;
 
+  Eigen::MatrixXf* getSchurHposepose();
+  void resetInv();
+
 };
+
+class HessianAndB_Marg;
 
 class HessianAndB : public HessianAndB_base{
   public:
@@ -227,7 +232,7 @@ class HessianAndB : public HessianAndB_base{
     bool updateHessianAndB(JacobiansAndError* jacobians_and_error );
 
     deltaUpdateIncrements* getDeltaUpdateIncrements();
-    deltaUpdateIncrements* getDeltaUpdateIncrementsProva();
+    deltaUpdateIncrements* getDeltaUpdateIncrementsProva(HessianAndB_Marg* hessian_b_marg);
     deltaUpdateIncrements* getDeltaUpdateIncrementsOnlyPoints();
     deltaUpdateIncrements* getDeltaUpdateIncrementsOnlyPoses();
     deltaUpdateIncrements* getDeltaUpdateIncrements_Slow();
@@ -253,10 +258,8 @@ class HessianAndB_Marg : public HessianAndB_base{
     void curr2old();
     bool visualizeHMarg(const std::string& name);
 
-    Eigen::VectorXf* getDeltaUpdateIncrementsMarg();
-    // deltaUpdateIncrements* getDeltaUpdateIncrements_Slow();
-    //
-    // void visualizeH();
+    Eigen::MatrixXf* getSchurB();
+
 
 };
 
@@ -337,7 +340,7 @@ class BundleAdj{
     bool detectOutliers();
 
     priorMarg* updateMarginalizationPrior( int n_cams, int n_points_marg, std::vector<JacobiansAndError*>* jacobians_and_error_vec);
-    bool updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta);
+    bool updateBForMarg(deltaUpdateIncrements* delta);
     Eigen::VectorXf* getDeltaForMargFromOpt(deltaUpdateIncrements* delta);
 
     float optimizationStep(bool with_marg=true);

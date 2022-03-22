@@ -481,23 +481,6 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       // noiseToPoints(0);
     }
 
-    // for testing marginalization
-    if(test_marginalization){
-      // take gt poses and points
-      // noiseToPoints(0);
-      // noiseToPoses(0, 0);
-
-      if(keyframe_marginalized){
-          // std::cout << "NOISE FOR CHECKING MARGINALIZATION !!!!!" << std::endl;
-          // for (int idx : (*(bundle_adj_->keyframe_vector_ba_)) )
-          //   std::cout << idx << " ";
-          // std::cout << std::endl;
-          // Eigen::VectorXf* dx_poses_noise = noiseToPosesSame(3./180., 0.02);
-          // bundle_adj_->hessian_b_marg->updateBFromDelta(dx_poses_noise);
-
-        }
-    }
-
     // optimize
     bundle_adj_->optimize();
 
@@ -678,7 +661,7 @@ void Dtam::test_optimization_pose(){
   frontend_thread_.join();
 
   // makeJsonForCands("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
-  makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+  // makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(3));
   makeJsonForCameras("./dataset/"+environment_->dataset_name_+"/state_cameras.json");
 
 
@@ -737,8 +720,8 @@ void Dtam::test_dso(){
   bool debug_optimization= true;
 
   bool initialization_loop=false;
-  bool take_gt_poses=true;
-  bool take_gt_points=true;
+  bool take_gt_poses=false;
+  bool take_gt_points=false;
 
   bool track_candidates=false;
   // int guess_type=POSE_CONSTANT;
@@ -769,7 +752,7 @@ void Dtam::test_dso(){
   frontend_thread_.join();
 
   makeJsonForCameras("./dataset/"+environment_->dataset_name_+"/state_cameras.json");
-  makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(1));
+  makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
 
 
 }

@@ -572,16 +572,17 @@ void HessianAndB_base::LMDampening(Params* parameters){
   // }
   // float sv_average = (sv_sum_pose+sv_sum_pt)/(H_pose_pose->rows()+point_block_size);
 
-  float max_eig = H_pose_pose->operatorNorm();
-
-  // damp point
-  // float damp_coeff = parameters->damp_point_invdepth;
-  float damp_coeff = max_eig*1e-3;
-  // float damp_coeff = 1000;
-  for(int i=0; i<point_block_size; i++){
-    H_point_point->diagonal()[i]+=damp_coeff;
-    // H_point_point->diagonal()[i]+=damp_coeff;
-  }
+  // float max_eig = H_pose_pose->operatorNorm();
+  //
+  // // damp point
+  // // float damp_coeff = parameters->damp_point_invdepth;
+  // float damp_coeff = max_eig*1e-3;
+  // std::cout << "DAMPCOEFFFFF " << damp_coeff << std::endl;
+  // // float damp_coeff = 1000;
+  // for(int i=0; i<point_block_size; i++){
+  //   H_point_point->diagonal()[i]+=damp_coeff;
+  //   // H_point_point->diagonal()[i]+=damp_coeff;
+  // }
   // for(int i=0; i<pose_block_size; i++){
   //   H_pose_pose->diagonal()[i]+=damp_coeff;
   //   // H_point_point->diagonal()[i]+=damp_coeff;
@@ -819,33 +820,17 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
 }
 
-Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint(float thresh){
+Eigen::DiagonalMatrix<float,Eigen::Dynamic>* HessianAndB_base::invertHPointPoint(){
 
-  // if (H_point_point_inv!=nullptr){
-  //   return H_point_point_inv;
-  // }
+  if (H_point_point_inv!=nullptr){
+    return H_point_point_inv;
+  }
 
   H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
 
-
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = new Eigen::DiagonalMatrix<float,Eigen::Dynamic>(point_block_size);
-
-  int count = 0;
-  for(int i=0; i<point_block_size; i++){
-    float val = H_point_point->diagonal()[i];
-    assert(val>=0);
-    if(val>thresh)
-    // if(val!=0)
-      H_point_point_inv->diagonal()[i]=(1.0/val);
-    else{
-      H_point_point_inv->diagonal()[i]=0;
-      count++;
-    }
-    // std::cout << 1./val << std::endl;
-  }
-  // std::cout << "discarded: " << count << " out of " << point_block_size << std::endl;
-
-  // *H_point_point_inv=H_point_point->inverse();
+  float damping = 0.5*pose_block_size*point_block_size;
+  for(int i=0; i<H_point_point->diagonal().size(); i++)
+    H_point_point_inv->diagonal()[i]=1.0/(H_point_point->diagonal()[i]+damping);
 
   return H_point_point_inv;
 }
@@ -869,7 +854,7 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
   dx_points->setZero();
 
   float thresh = getPinvThreshold(H_point_point->diagonal());
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint(thresh);
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
 
   Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
   // Eigen::MatrixXf Schur_inv=Schur.inverse();
@@ -885,45 +870,47 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements(){
   return delta;
 }
 
-deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsProva(){
+deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsProva(HessianAndB_Marg* hessian_b_marg){
   Eigen::VectorXf* dx_poses = new Eigen::VectorXf(pose_block_size) ;
   Eigen::VectorXf* dx_points = new Eigen::VectorXf(point_block_size) ;
 
-  // std::cout << H_point_point->diagonal() << std::endl;
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+
+  // float damping = 0.5*pose_block_size*point_block_size;
+  //
+  // // invert H_point_point with damping
+  // Eigen::DiagonalMatrix<float,Eigen::Dynamic> H_point_point_inv(point_block_size);
+  // for(int i=0; i<H_point_point->diagonal().size(); i++)
+  //   H_point_point_inv.diagonal()[i]=1.0/(H_point_point->diagonal()[i]+damping);
+
+  // get marg schur
+  Eigen::MatrixXf* Schur_H_Marg=hessian_b_marg->getSchurHposepose();
+  Eigen::MatrixXf* Schur_B_Marg=hessian_b_marg->getSchurB();
+  hessian_b_marg->resetInv();
+
+  // get H pose pose and b pose considering marg terms
+
+  Eigen::MatrixXf H_pose_pose_tot = *H_pose_pose;
+  Eigen::VectorXf b_pose_tot = *b_pose;
+  if(Schur_H_Marg!=nullptr){
+    H_pose_pose_tot.block(0,0,hessian_b_marg->pose_block_size,hessian_b_marg->pose_block_size)+=(*Schur_H_Marg);
+    b_pose_tot.segment(0,hessian_b_marg->pose_block_size)+=(*Schur_B_Marg);
+  }
 
 
-  // float thresh_pt = 400*((pose_block_size/6));
-  // float thresh_pt = 150*((pose_block_size/6));
-  // float thresh_pt = H_point_point->diagonal().maxCoeff()*1e-07;
-  // float thresh_pt = getPinvThreshold(H_point_point->diagonal());
-  // float thresh_pt = 100;
-  // float thresh_pose = H_pose_pose->operatorNorm()*7.15256e-07*(pose_block_size+point_block_size);
-  // float thresh_pose = H_pose_pose->operatorNorm()*1e-07;
-  // float thresh_pose = H_pose_pose->operatorNorm()*1e-06;
-  // float thresh_pose = getPinvThreshold(H_pose_pose->diagonal());
-  // thresh *= (pose_block_size/6)-1;
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint(1);
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv_pt = invertHPointPoint(thresh_pt);
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv_pose = invertHPointPoint(thresh_pose);
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv_pose = invertHPointPoint(thresh_pose);
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv_pt = invertHPointPointDLS(thresh_pt*thresh_pt);
-  // Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv_pose = invertHPointPointDLS(thresh_pt*thresh_pose);
-
-
-  Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
+  // solve the system
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+  Eigen::MatrixXf Schur = (H_pose_pose_tot)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
   Eigen::MatrixXf Schur_inv = Schur.completeOrthogonalDecomposition().pseudoInverse();
-
-
-  *dx_poses =  (Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
+  *dx_poses =  (Schur_inv) * ( -(b_pose_tot) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
   // *dx_poses =  (H_pose_pose->completeOrthogonalDecomposition().pseudoInverse()) * ( -(*b_pose)  );
-
-  // *dx_points = (*H_point_point_inv)* ( -(*b_point) -( (*H_point_pose)*(*dx_poses)) );
-  // *dx_points = (*H_point_point_inv)* (-(*b_point)) ;
-  dx_points->setZero();
+  // dx_poses->setZero();
+  *dx_points = (*H_point_point_inv)* ( -(*b_point) -( (*H_point_pose)*(*dx_poses)) );
+  // *dx_points = (H_point_point_inv)* (-(*b_point)) ;
+  // dx_points->setZero();
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
+
 }
 
 
@@ -932,7 +919,7 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsOnlyPoints(){
   Eigen::VectorXf* dx_points = new Eigen::VectorXf(point_block_size) ;
 
   float thresh = getPinvThreshold(H_point_point->diagonal());
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint(thresh);
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
 
   dx_poses->setZero();
   *dx_points = (*H_point_point_inv)* ( -(*b_point) );
@@ -956,24 +943,35 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsOnlyPoses(){
   return delta;
 }
 
-Eigen::VectorXf* HessianAndB_Marg::getDeltaUpdateIncrementsMarg(){
-  Eigen::VectorXf* dx_poses = new Eigen::VectorXf(pose_block_size) ;
 
-  float thresh = getPinvThreshold(H_point_point->diagonal());
-  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint(thresh);
+Eigen::MatrixXf* HessianAndB_base::getSchurHposepose(){
 
-  Eigen::MatrixXf Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
-  // Eigen::MatrixXf Schur_inv=Schur.inverse();
+  if(point_block_size==0)
+    return nullptr;
 
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+  Eigen::MatrixXf* Schur= new Eigen::MatrixXf(pose_block_size,pose_block_size);
+  *Schur=(*H_pose_pose)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
 
-  Eigen::MatrixXf Schur_inv = Schur.completeOrthogonalDecomposition().pseudoInverse();
-  *dx_poses =  (Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-
-  // Eigen::MatrixXf* Schur_inv = pinv(Schur);
-  // *dx_poses =  (*Schur_inv) * ( -(*b_pose) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-
-  return dx_poses;
+  return Schur;
 }
+
+void HessianAndB_base::resetInv(){
+  delete H_point_point_inv;
+  H_point_point_inv = nullptr;
+}
+Eigen::MatrixXf* HessianAndB_Marg::getSchurB(){
+
+  if(point_block_size==0)
+    return nullptr;
+
+  Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
+  Eigen::MatrixXf* Schur= new Eigen::MatrixXf(pose_block_size,pose_block_size);
+  *Schur=(*b_pose)-((*H_pose_point)*(*H_point_point_inv)*(*b_point));
+
+  return Schur;
+}
+
 
 
 deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrements_Slow(){
@@ -1092,12 +1090,9 @@ bool HessianAndB_Marg::visualizeHMarg( const std::string& name){
       if (i<hessian_b_marg_old->pose_block_size && j<hessian_b_marg_old->pose_block_size)
         color = magenta;
       if ((*H_pose_pose)(i,j)!=0){
-        img_H->setPixel(i,j, color);
+        img_H->setPixel(i+point_block_size,j+point_block_size, color);
       }
-      else{
-        img_H->setPixel(i,j, white);
 
-      }
     }
   }
 
@@ -1108,12 +1103,9 @@ bool HessianAndB_Marg::visualizeHMarg( const std::string& name){
         colorRGB color = green;
         if (i<hessian_b_marg_old->pose_block_size && j<hessian_b_marg_old->point_block_size)
           color = yellow;
-        img_H->setPixel(i,pose_block_size+j, color);
+        img_H->setPixel(i+point_block_size,j, color);
       }
-      else{
-        img_H->setPixel(i,pose_block_size+j, white);
 
-      }
     }
   }
 
@@ -1124,12 +1116,9 @@ bool HessianAndB_Marg::visualizeHMarg( const std::string& name){
         colorRGB color = green;
         if (j<hessian_b_marg_old->pose_block_size && i<hessian_b_marg_old->point_block_size)
           color = yellow;
-        img_H->setPixel(i+pose_block_size,j, color);
+        img_H->setPixel(i,j+point_block_size, color);
       }
-      else{
-        img_H->setPixel(i+pose_block_size,j, white);
 
-      }
     }
   }
 
@@ -1139,10 +1128,10 @@ bool HessianAndB_Marg::visualizeHMarg( const std::string& name){
       colorRGB color = blue;
       if ( i<hessian_b_marg_old->point_block_size)
         color = cyan;
-      img_H->setPixel(i+pose_block_size,i+pose_block_size, color);
+      img_H->setPixel(i,i, color);
     }
     else{
-      img_H->setPixel(i+pose_block_size,i+pose_block_size, white);
+      img_H->setPixel(i,i, white);
 
     }
 
@@ -1163,9 +1152,9 @@ void BundleAdj::updateTangentSpace(bool with_marg){
       assert(!keyframe->first_keyframe_);
       // if active keyframe has link with marginalization prior, do not update tangent space
 
-      // if(keyframe->state_pose_block_marg_idx_!=-1 && with_marg){
-      //   continue;
-      // }
+      if(keyframe->state_pose_block_marg_idx_!=-1 && with_marg){
+        continue;
+      }
       keyframe->assignPose0( *(keyframe->frame_camera_wrt_world_) );
       keyframe->delta_update_x_->setZero();
     }
@@ -1580,12 +1569,21 @@ bool BundleAdj::marginalization( ){
 
   updateMargHessianAndB(new_points, poses_new_size, jacobians_and_error_vec);
 
+  if(test_marginalization_ && keyframe_vector_ba_->size()>parameters_->num_active_keyframes){
+    std::cout << "NOISE FOR CHECKING MARGINALIZATION !!!!!" << std::endl;
+    for (int idx : (*(keyframe_vector_ba_)) )
+      std::cout << idx << " ";
+    std::cout << std::endl;
+    Eigen::VectorXf* dx_poses_noise = dtam_->noiseToPosesSame(3./180., 0.02);
+    hessian_b_marg->updateBFromDelta(dx_poses_noise);
+  }
+
   deleteMarginalizedPoints();
   removeMarginalizedKeyframe();
   //
   // // debug
   if(debug_optimization_){
-    // hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    hessian_b_marg->visualizeHMarg("Hessian marginalization");
     // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
   }
 
@@ -1633,8 +1631,8 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
           continue;
         }
 
-        // JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj,keyframe->first_keyframe_ );
-        JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj );
+        JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj,keyframe->first_keyframe_ );
+        // JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj );
         if (jacobians==nullptr){
           invalid_projections++;
         }
@@ -1681,11 +1679,11 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
     else{
       if(keyframe->state_pose_block_marg_idx_!=-1){
         keyframe->state_pose_block_idx_=keyframe->state_pose_block_marg_idx_;
-        // std::cout << "FROM MARG " << keyframe->state_pose_block_idx_ << " " << keyframe->name_  << std::endl;
+        std::cout << "FROM MARG " << keyframe->state_pose_block_idx_ << " " << keyframe->name_  << std::endl;
       }
       else{
         keyframe->state_pose_block_idx_=n_cams*6;
-        // std::cout << "NEW " << n_cams*6 << " " << keyframe->name_  << std::endl;
+        std::cout << "NEW " << n_cams*6 << " " << keyframe->name_  << std::endl;
 
         n_cams++;
       }
@@ -1695,11 +1693,11 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
   CameraForMapping* keyframe_last = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
   if(keyframe_last->state_pose_block_marg_idx_!=-1){
     keyframe_last->state_pose_block_idx_=keyframe_last->state_pose_block_marg_idx_;
-    // std::cout << "FROM MARG " << keyframe_last->state_pose_block_idx_ << " " << keyframe_last->name_  << std::endl;
+    std::cout << "FROM MARG " << keyframe_last->state_pose_block_idx_ << " " << keyframe_last->name_  << std::endl;
   }
   else{
     keyframe_last->state_pose_block_idx_=n_cams*6;
-    // std::cout << "NEW " << n_cams*6 << " " << keyframe_last->name_  << std::endl;
+    std::cout << "NEW " << n_cams*6 << " " << keyframe_last->name_  << std::endl;
 
     n_cams++;
   }
@@ -1728,12 +1726,13 @@ Eigen::VectorXf* BundleAdj::getDeltaForMargFromOpt(deltaUpdateIncrements* delta)
 }
 
 void HessianAndB_Marg::updateBFromDelta(Eigen::VectorXf* dx_poses_marg){
+
   (*b_pose)+=((*H_pose_pose)*(*dx_poses_marg));
   (*b_point)+=((*H_point_pose)*(*dx_poses_marg));
 }
 
 
-bool BundleAdj::updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta){
+bool BundleAdj::updateBForMarg(deltaUpdateIncrements* delta){
 
   if (hessian_b_marg->pose_block_size==0)
     return false;
@@ -1744,23 +1743,6 @@ bool BundleAdj::updateDeltaUpdateIncrementsMarg(deltaUpdateIncrements* delta){
   // update b
   hessian_b_marg->updateBFromDelta(dx_poses_marg_from_opt);
 
-  // get delta from marginalization (solve the marg linear system)
-  Eigen::VectorXf* dx_poses_marg_new = hessian_b_marg->getDeltaUpdateIncrementsMarg();
-
-  // update b again for next time
-  hessian_b_marg->updateBFromDelta(dx_poses_marg_new);
-
-  // update deltaUpdates
-  // iterate through all keyframes
-  for (int i=0; i<keyframe_vector_ba_->size(); i++){
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
-    int block_idx_marg = keyframe->state_pose_block_marg_idx_;
-    // if keyframe has a link with prior
-    if(block_idx_marg!=-1){
-      // add marg delta inside total delta
-      delta->dx_poses->segment<6>(keyframe->state_pose_block_idx_)+=dx_poses_marg_new->segment<6>(block_idx_marg);
-    }
-  }
 
   return true;
 
@@ -1804,7 +1786,7 @@ float BundleAdj::optimizationStep(bool with_marg){
     chi+=jacobians_and_error->chi;
     delete jacobians_and_error;
   }
-  hessian_b->LMDampening(parameters_);
+  // hessian_b->LMDampening(parameters_);
   hessian_b->mirrorTriangH();
 
 
@@ -1818,7 +1800,7 @@ float BundleAdj::optimizationStep(bool with_marg){
   // get delta update
   if(test_single_==TEST_ALL){
     // delta = hessian_b->getDeltaUpdateIncrements();
-    delta = hessian_b->getDeltaUpdateIncrementsProva();
+    delta = hessian_b->getDeltaUpdateIncrementsProva(hessian_b_marg);
     // delta = hessian_b->getDeltaUpdateIncrements_Slow();
   }
   else if(test_single_==TEST_ONLY_POSES){
@@ -1833,14 +1815,15 @@ float BundleAdj::optimizationStep(bool with_marg){
   // update x in each cam and active point
   updateDeltaUpdates(delta);
   updateInvdepthVars(hessian_b);
+  updateBForMarg(delta);
 
   // update fixed points
   updateTangentSpace(with_marg);
 
 
   delete hessian_b;
-  // delete delta;
-  return chi/n_jacs;
+  delete delta;
+  return (chi/n_jacs);
 }
 
 
@@ -1970,8 +1953,8 @@ bool BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
 
       for (int j=0; j<keyframe->active_points_->size(); j++){
         ActivePoint* active_pt_ = keyframe->active_points_->at(j);
-        // active_pt_->marginalize();
-        active_pt_->remove();
+        active_pt_->marginalize();
+        // active_pt_->remove();
       }
 
       continue;

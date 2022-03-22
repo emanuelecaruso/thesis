@@ -24,7 +24,7 @@ static float cost_grad_threshold_DSO_=0.01; // for DSO
 static int max_num_mins_ = 3;
 
 // optimization
-static int num_active_keyframes_=2;
+static int num_active_keyframes_=3;
 static int max_num_active_points_=2*num_candidates_;
 // static float huber_threshold_=0.02;
 static float huber_threshold_=0.02;
@@ -47,7 +47,7 @@ static int robustifier_dofs_=2;
 static float ratio_for_convergence_ = 0.001;
 
 //  video streaming
-static int end_frame_=5;
+static int end_frame_=3;
 static int fps_=30;
 
 // initializer parameters
