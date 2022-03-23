@@ -220,7 +220,6 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
       waitForOptimization();
       std::cout << "FRONT END OPTIMIZATION DONE " << std::endl;
-
     }
 
     double t_start=getTime();
@@ -734,7 +733,7 @@ void Dtam::test_dso(){
   // int image_id=PHASE_ID;
   bool test_marginalization=false;
 
-  bool all_keyframes=true;
+  bool all_keyframes=false;
   bool wait_for_initialization=true;
   bool active_all_candidates=true;
 

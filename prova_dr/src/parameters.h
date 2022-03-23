@@ -23,8 +23,12 @@ static float cost_grad_threshold_=0.08;
 static float cost_grad_threshold_DSO_=0.01; // for DSO
 static int max_num_mins_ = 3;
 
+// keyframe selection
+static int num_active_keyframes_=3;
+static float flow_dist_threshold_=0.0001;
+static float percentage_marg_pts_threshold_ = 0.05;
+
 // optimization
-static int num_active_keyframes_=6;
 static int max_num_active_points_=2*num_candidates_;
 // static float huber_threshold_=0.02;
 static float huber_threshold_=0.05;
@@ -71,6 +75,9 @@ struct Params{
   float cost_grad_threshold_DSO=cost_grad_threshold_DSO_;
   int max_num_active_points=max_num_active_points_;
   int num_active_keyframes=num_active_keyframes_;
+  int flow_dist_threshold=flow_dist_threshold_;
+  int percentage_marg_pts_threshold=percentage_marg_pts_threshold_;
+
   int max_num_mins=max_num_mins_;
   int end_frame=end_frame_;
   int fps=fps_;

@@ -570,4 +570,8 @@ namespace pr {
     float out = range/2 - ((float)rand()/RAND_MAX) * range;
     return out;
   }
+
+  inline float getEuclideanDistance(Eigen::Vector2f& uv1, Eigen::Vector2f& uv2){
+    return (uv2-uv1).norm();
+  }
 }

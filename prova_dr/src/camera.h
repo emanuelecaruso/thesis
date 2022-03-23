@@ -307,6 +307,8 @@ class ActivePoint : public CandidateBase{
     grad_phase_(cand->grad_phase_),
     // delta update x
     delta_update_x_(0),
+    // optical flow distance
+    opt_flow_distance_(-1),
 
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
@@ -351,6 +353,8 @@ class ActivePoint : public CandidateBase{
     grad_phase_(grad_phase),
     // delta update x
     delta_update_x_(0),
+    // optical flow distance
+    opt_flow_distance_(-1),
 
     not_seen_in_last_keyframe_(false),
     state_point_block_idx_(-1),
@@ -378,6 +382,8 @@ class ActivePoint : public CandidateBase{
     float grad_phase_;
     // delta update x
     float delta_update_x_;
+    // optical flow distance
+    float opt_flow_distance_;
 
     bool not_seen_in_last_keyframe_;
     int state_point_block_idx_;

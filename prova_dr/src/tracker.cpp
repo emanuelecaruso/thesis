@@ -341,11 +341,16 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
 
   Eigen::Vector3f p_proj = K*point_newframe;
   // return false if the projected point is behind the camera
-  if (p_proj.z()<frame_new->cam_parameters_->lens)
+  if (p_proj.z()<frame_new->cam_parameters_->lens){
+    active_pt->opt_flow_distance_=-1;
     return false;
+  }
   uv_newframe = p_proj.head<2>()*(1./p_proj.z());
 
+  active_pt->opt_flow_distance_=-1;
+
   frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
+  
   frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
 
   if(!frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_newframe))

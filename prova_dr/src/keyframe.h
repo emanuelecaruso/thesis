@@ -5,6 +5,7 @@
 #include <condition_variable>
 
 class Dtam;
+class CameraForMapping;
 
 class KeyframeHandler{
   public:
@@ -22,13 +23,17 @@ class KeyframeHandler{
   private:
     void pushKeyframeFrontend();
     void pushKeyframeBundleadj();
-    bool addKeyframe_all();
+    bool pushKF();
 
     void marginalizeKeyframeFrontend(int idx);
     void marginalizeKeyframeBundleadj(int idx);
-    void marginalizeKeyframeAll();
+    void marginalizeKeyframe(int idx);
 
     bool addKeyframe_select();
     void marginalizeKeyframeSelect();
+
+    float getFlowDist();
+    float getPercentuageMarg(CameraForMapping* keyframe);
+    float getScore(CameraForMapping* keyframe);
 
 };
