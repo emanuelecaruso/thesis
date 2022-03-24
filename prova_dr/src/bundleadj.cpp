@@ -1902,11 +1902,11 @@ void BundleAdj::optimize(){
     // }
   }
 
-  CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-  last_keyframe->clearProjectedActivePoints();
-  bool take_fixed_point = 0;
-  projectActivePoints(take_fixed_point);
-  getCoarseActivePoints();
+  // CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+  // last_keyframe->clearProjectedActivePoints();
+  // bool take_fixed_point = 0;
+  // projectActivePoints(take_fixed_point);
+  // getCoarseActivePoints();
 
   // after optimization, remove added_ba_ flag on keyframe
 
@@ -1945,10 +1945,11 @@ bool BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
   CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
   CameraForMapping* prev_last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(keyframe_vector_ba_->size()-2));
 
+  last_keyframe->clearProjectedActivePoints();
 
   bool keyframe_marginalized = false;
-  // iterate through all keyframe (except the last two )
-  for (int i=0; i<keyframe_vector_ba_->size()-2; i++){
+  // iterate through all keyframe (except the last )
+  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
 
@@ -1981,6 +1982,9 @@ bool BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
       }
       // otherwise
       else{
+
+        if(prev_last_keyframe==keyframe)
+          continue;
         // project also in previous keyframe
         ActivePointProjected* active_point_proj_prev = projectActivePoint(active_pt, cam_couple_prev);
         if (active_point_proj==nullptr){
