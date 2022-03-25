@@ -17,6 +17,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o.d"
   "CMakeFiles/test_dso.dir/__/src/mapper.cpp.o"
   "CMakeFiles/test_dso.dir/__/src/mapper.cpp.o.d"
+  "CMakeFiles/test_dso.dir/__/src/spectator.cpp.o"
+  "CMakeFiles/test_dso.dir/__/src/spectator.cpp.o.d"
   "CMakeFiles/test_dso.dir/__/src/tracker.cpp.o"
   "CMakeFiles/test_dso.dir/__/src/tracker.cpp.o.d"
   "CMakeFiles/test_dso.dir/__/src/utils.cpp.o"

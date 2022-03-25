@@ -111,10 +111,24 @@ executables/CMakeFiles/test_dso.dir/__/src/image.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/test_dso.dir/__/src/image.cpp.s"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/emanuele/Scrivania/thesis/prova_dr/src/image.cpp -o CMakeFiles/test_dso.dir/__/src/image.cpp.s
 
+executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
+executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o: ../src/spectator.cpp
+executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o"
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o -MF CMakeFiles/test_dso.dir/__/src/spectator.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/spectator.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/spectator.cpp
+
+executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/test_dso.dir/__/src/spectator.cpp.i"
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/emanuele/Scrivania/thesis/prova_dr/src/spectator.cpp > CMakeFiles/test_dso.dir/__/src/spectator.cpp.i
+
+executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/test_dso.dir/__/src/spectator.cpp.s"
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/emanuele/Scrivania/thesis/prova_dr/src/spectator.cpp -o CMakeFiles/test_dso.dir/__/src/spectator.cpp.s
+
 executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o: ../src/environment.cpp
 executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o -MF CMakeFiles/test_dso.dir/__/src/environment.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/environment.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/environment.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.i: cmake_force
@@ -128,7 +142,7 @@ executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o: ../src/dtam.cpp
 executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o -MF CMakeFiles/test_dso.dir/__/src/dtam.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/dtam.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/dtam.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.i: cmake_force
@@ -142,7 +156,7 @@ executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o: ../src/utils.cpp
 executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o -MF CMakeFiles/test_dso.dir/__/src/utils.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/utils.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/utils.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.i: cmake_force
@@ -156,7 +170,7 @@ executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: ../src/epline.cpp
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.o -MF CMakeFiles/test_dso.dir/__/src/epline.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/epline.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/epline.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.i: cmake_force
@@ -170,7 +184,7 @@ executables/CMakeFiles/test_dso.dir/__/src/epline.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o: ../src/keyframe.cpp
 executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o -MF CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/keyframe.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.i: cmake_force
@@ -184,7 +198,7 @@ executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o: ../src/mapper.cpp
 executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o -MF CMakeFiles/test_dso.dir/__/src/mapper.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/mapper.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/mapper.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.i: cmake_force
@@ -198,7 +212,7 @@ executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o: ../src/tracker.cpp
 executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o -MF CMakeFiles/test_dso.dir/__/src/tracker.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/tracker.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/tracker.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.i: cmake_force
@@ -212,7 +226,7 @@ executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o: ../src/bundleadj.cpp
 executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o -MF CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/bundleadj.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.i: cmake_force
@@ -226,7 +240,7 @@ executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o: ../src/initializer.cpp
 executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o -MF CMakeFiles/test_dso.dir/__/src/initializer.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/initializer.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/initializer.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.i: cmake_force
@@ -240,7 +254,7 @@ executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.s: cmake_force
 executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o: executables/CMakeFiles/test_dso.dir/flags.make
 executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o: ../src/wavelet.cpp
 executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o: executables/CMakeFiles/test_dso.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o -MF CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o.d -o CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o -c /home/emanuele/Scrivania/thesis/prova_dr/src/wavelet.cpp
 
 executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.i: cmake_force
@@ -256,6 +270,7 @@ test_dso_OBJECTS = \
 "CMakeFiles/test_dso.dir/test_dso.cpp.o" \
 "CMakeFiles/test_dso.dir/__/src/camera.cpp.o" \
 "CMakeFiles/test_dso.dir/__/src/image.cpp.o" \
+"CMakeFiles/test_dso.dir/__/src/spectator.cpp.o" \
 "CMakeFiles/test_dso.dir/__/src/environment.cpp.o" \
 "CMakeFiles/test_dso.dir/__/src/dtam.cpp.o" \
 "CMakeFiles/test_dso.dir/__/src/utils.cpp.o" \
@@ -273,6 +288,7 @@ test_dso_EXTERNAL_OBJECTS =
 executables/test_dso: executables/CMakeFiles/test_dso.dir/test_dso.cpp.o
 executables/test_dso: executables/CMakeFiles/test_dso.dir/__/src/camera.cpp.o
 executables/test_dso: executables/CMakeFiles/test_dso.dir/__/src/image.cpp.o
+executables/test_dso: executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o
 executables/test_dso: executables/CMakeFiles/test_dso.dir/__/src/environment.cpp.o
 executables/test_dso: executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o
 executables/test_dso: executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o
@@ -345,7 +361,7 @@ executables/test_dso: /usr/local/lib/libopencv_cudaarithm.so.4.2.0
 executables/test_dso: /usr/local/lib/libopencv_core.so.4.2.0
 executables/test_dso: /usr/local/lib/libopencv_cudev.so.4.2.0
 executables/test_dso: executables/CMakeFiles/test_dso.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Linking CXX executable test_dso"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/emanuele/Scrivania/thesis/prova_dr/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Linking CXX executable test_dso"
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build/executables && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_dso.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

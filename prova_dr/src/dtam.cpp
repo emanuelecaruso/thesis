@@ -295,7 +295,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
       bundle_adj_->activateNewPoints();
       bundle_adj_->collectCoarseActivePoints();
 
-      std::cout << "KF HAND, ADDING KF, STOP OPT!" << bundle_adj_->keyframe_vector_ba_->size() << "\n";
+      std::cout << "NEW DATA INCOMING FOR BA, STOP OPT!" << bundle_adj_->keyframe_vector_ba_->size() << "\n";
       if(bundle_adj_->keyframe_vector_ba_->size()>=2){
         keyframe_added_flag_=true;
       }
@@ -307,7 +307,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
         keyframe_added_flag_=false;
         keyframe_added_.notify_all();
       }
-      std::cout << "KF HAND, KF ADDED, RESTART OPT!" << bundle_adj_->keyframe_vector_ba_->size() << "\n";
+      std::cout << "NEW DATA LOADED, RESTART OPT!" << bundle_adj_->keyframe_vector_ba_->size() << "\n";
 
 
       // cand_tracked_.notify_all(); // after candidates are tracked notify for ba

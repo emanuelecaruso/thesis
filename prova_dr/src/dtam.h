@@ -79,6 +79,7 @@ class Dtam{
     friend class KeyframeHandler;
     friend class Mapper;
     friend class Tracker;
+    friend class Spectator;
 
     mutable std::mutex mu_frame_;
     mutable std::mutex mu_candidate_tracking_;

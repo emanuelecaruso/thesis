@@ -64,6 +64,17 @@ static int size_window_ = 21;
 static float confidence_ = 0.999;
 static float ransacReprojThreshold_ = 1;
 
+// spectator parameters
+const int spec_resolution_x_ = 1366;
+const int spec_resolution_y_ = 768;
+const float spec_width_ = 0.024;
+const float spec_lens_ = 0.035;
+const float spec_min_depth_ = 0.01;
+const float spec_max_depth_ = 1000;
+const float spec_distance_ = 1;
+const float rendered_cams_size_ = 0.01;
+
+
 struct Params{
 
   int coarsest_level=coarsest_level_;
@@ -105,6 +116,15 @@ struct Params{
   float size_window=size_window_;
   float confidence=confidence_;
   float ransacReprojThreshold=ransacReprojThreshold_;
+
+  int spec_resolution_x=spec_resolution_x_;
+  int spec_resolution_y=spec_resolution_y_;
+  float spec_width=spec_width_;
+  float spec_lens=spec_lens_;
+  float spec_min_depth=spec_min_depth_;
+  float spec_max_depth=spec_max_depth_;
+  float spec_distance=spec_distance_;
+  float rendered_cams_size=rendered_cams_size_;
 
   Params(){
     // if (coarsest_level<reg_level){

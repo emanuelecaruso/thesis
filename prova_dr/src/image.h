@@ -328,16 +328,16 @@ class Image{
       return intensity;
     }
 
-    inline void drawCircle(colorRGB color, cv::Point2f point, int radius=2, int thickness=2){
+    inline void drawCircle(const colorRGB& color, const cv::Point2f& point, int radius=2, int thickness=2){
       cv::circle	(	image_,point,radius,color, thickness);
     }
 
-    inline void drawCircle(colorRGB color, pxl point, int radius=2, int thickness=2){
+    inline void drawCircle(const colorRGB& color, const pxl& point, int radius=2, int thickness=2){
       cv::Point2f point_(point.x(),point.y());
       cv::circle	(	image_,point_ ,radius,color, thickness);
     }
 
-    inline void drawRectangle(cv::Rect rect, colorRGB color, int type, float alpha=1){
+    inline void drawRectangle(const cv::Rect& rect, const colorRGB& color, int type, float alpha=1){
       cv::Mat roi = image_(rect);
       cv::Mat clr(roi.size(), colorRGB_CODE, color);
       cv::addWeighted(clr, alpha, roi, 1.0 - alpha , 0.0, roi);
@@ -345,13 +345,13 @@ class Image{
     }
 
 
-    inline void showImgWithColoredPixel(const pxl pixel, float size, const std::string& name) const{
+    inline void showImgWithColoredPixel(const pxl& pixel, float size, const std::string& name) const{
       Image< colorRGB >* show_image = returnColoredImgFromIntensityImg(name);
       show_image->setPixel( pixel, red);
       show_image->show(size, name);
     }
 
-    inline void showImgWithCircledPixel(const pxl pixel, float size, const std::string& name, int radius=2, int thickness=2) const{
+    inline void showImgWithCircledPixel(const pxl& pixel, float size, const std::string& name, int radius=2, int thickness=2) const{
       Image< colorRGB >* show_image = returnColoredImgFromIntensityImg(name);
       // show_image->setPixel( pixel, red);
       show_image->drawCircle(red, pixel, radius, thickness);

@@ -17,6 +17,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/emanuele/Scrivania/thesis/prova_dr/src/initializer.cpp" "executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o" "gcc" "executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o.d"
   "/home/emanuele/Scrivania/thesis/prova_dr/src/keyframe.cpp" "executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o" "gcc" "executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o.d"
   "/home/emanuele/Scrivania/thesis/prova_dr/src/mapper.cpp" "executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o" "gcc" "executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o.d"
+  "/home/emanuele/Scrivania/thesis/prova_dr/src/spectator.cpp" "executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o" "gcc" "executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o.d"
   "/home/emanuele/Scrivania/thesis/prova_dr/src/tracker.cpp" "executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o" "gcc" "executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o.d"
   "/home/emanuele/Scrivania/thesis/prova_dr/src/utils.cpp" "executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o" "gcc" "executables/CMakeFiles/test_dso.dir/__/src/utils.cpp.o.d"
   "/home/emanuele/Scrivania/thesis/prova_dr/src/wavelet.cpp" "executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o" "gcc" "executables/CMakeFiles/test_dso.dir/__/src/wavelet.cpp.o.d"

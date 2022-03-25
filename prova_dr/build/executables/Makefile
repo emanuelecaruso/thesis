@@ -346,6 +346,30 @@ __/src/mapper.cpp.s:
 	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) $(MAKESILENT) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.s
 .PHONY : __/src/mapper.cpp.s
 
+__/src/spectator.o: __/src/spectator.cpp.o
+.PHONY : __/src/spectator.o
+
+# target to build an object file
+__/src/spectator.cpp.o:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) $(MAKESILENT) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.o
+.PHONY : __/src/spectator.cpp.o
+
+__/src/spectator.i: __/src/spectator.cpp.i
+.PHONY : __/src/spectator.i
+
+# target to preprocess a source file
+__/src/spectator.cpp.i:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) $(MAKESILENT) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.i
+.PHONY : __/src/spectator.cpp.i
+
+__/src/spectator.s: __/src/spectator.cpp.s
+.PHONY : __/src/spectator.s
+
+# target to generate assembly for a file
+__/src/spectator.cpp.s:
+	cd /home/emanuele/Scrivania/thesis/prova_dr/build && $(MAKE) $(MAKESILENT) -f executables/CMakeFiles/test_dso.dir/build.make executables/CMakeFiles/test_dso.dir/__/src/spectator.cpp.s
+.PHONY : __/src/spectator.cpp.s
+
 __/src/tracker.o: __/src/tracker.cpp.o
 .PHONY : __/src/tracker.o
 
@@ -478,6 +502,9 @@ help:
 	@echo "... __/src/mapper.o"
 	@echo "... __/src/mapper.i"
 	@echo "... __/src/mapper.s"
+	@echo "... __/src/spectator.o"
+	@echo "... __/src/spectator.i"
+	@echo "... __/src/spectator.s"
 	@echo "... __/src/tracker.o"
 	@echo "... __/src/tracker.i"
 	@echo "... __/src/tracker.s"

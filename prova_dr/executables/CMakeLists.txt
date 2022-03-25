@@ -59,7 +59,7 @@ add_executable(test_dso test_dso.cpp
 ../src/camera.cpp
 ../src/image.cpp
 ../src/camera.cpp
-#../src/renderer.cpp
+../src/spectator.cpp
 ../src/environment.cpp
 ../src/dtam.cpp
 ../src/utils.cpp

@@ -234,18 +234,18 @@ namespace pr {
   struct CamParameters{
     const int resolution_x;
     const int resolution_y;
+    const float aspect;
     const float width;
     const float height;
-    const float aspect;
     const float lens;
     const float min_depth;
     const float max_depth;
     const float pixel_width;
 
     CamParameters(int resolution_x_, int resolution_y_,
-      float width_,float height_,float aspect_,float lens_,float min_depth_,float max_depth_):
-    resolution_x(resolution_x_), resolution_y(resolution_y_), width(width_), height(height_),
-    aspect(aspect_), lens(lens_), min_depth(min_depth_), max_depth(max_depth_),
+     float width_,float lens_,float min_depth_,float max_depth_):
+    resolution_x(resolution_x_), resolution_y(resolution_y_), aspect((float)resolution_x_/(float)resolution_y_),
+    width(width_), height(width_/aspect), lens(lens_), min_depth(min_depth_), max_depth(max_depth_),
     pixel_width(width/(float)resolution_x)
     { };
 

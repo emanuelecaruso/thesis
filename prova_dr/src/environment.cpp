@@ -128,12 +128,10 @@ CamParameters* Environment::loadCamParameters(const std::string& path_name, cons
     const float width = environment.at("width");
     const int resolution_x = environment.at("resolution_x");
     const int resolution_y = environment.at("resolution_y");
-    const float aspect=(float)resolution_x/(float)resolution_y;
-    const float height=width/aspect;
 
     cam_parameters_out = new CamParameters(
-      resolution_x, resolution_y, width, height,
-      aspect, lens, min_depth, max_depth);
+      resolution_x, resolution_y, width,
+      lens, min_depth, max_depth);
 
   } catch (std::exception& e) {
     std::string error = ": missing values in json file for environment";
