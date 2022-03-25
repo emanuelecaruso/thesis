@@ -9,16 +9,18 @@ class CameraForMapping;
 
 class KeyframeHandler{
   public:
-    const Dtam* dtam_;
-    const int num_active_keyframes_;
+    Dtam* dtam_;
 
-    KeyframeHandler(Dtam* dtam, int num_active_keyframes):
-    dtam_(dtam),
-    num_active_keyframes_(num_active_keyframes){};
+    KeyframeHandler(Dtam* dtam):
+    dtam_(dtam)
+    {};
 
     bool addKeyframe(bool all_keyframes=false);
     void addFirstKeyframe();
     bool marginalize_keyframe(bool all_keyframes=false);
+    bool marginalize_keyframe_ba(bool all_keyframes=false);
+
+    void prepareDataForBA();
 
   private:
     void pushKeyframeFrontend();
@@ -31,6 +33,8 @@ class KeyframeHandler{
 
     bool addKeyframe_select();
     void marginalizeKeyframeSelect();
+    void marginalizeKeyframeSelect_ba();
+
 
     float getFlowDist();
     float getPercentuageMarg(CameraForMapping* keyframe);

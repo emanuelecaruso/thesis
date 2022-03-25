@@ -16,24 +16,18 @@ CameraForMapping* BundleAdj::getFrameCurrentBA(){
 }
 
 void BundleAdj::getCoarseActivePoints(){
-  int last_keyframe_idx = keyframe_vector_ba_->back(); // update frame current
-  double t_start=getTime();
+  int last_keyframe_idx = dtam_->keyframe_vector_->back(); // update frame current
 
   CameraForMapping* last_keyframe=dtam_->camera_vector_->at(last_keyframe_idx);
 
   for (ActivePointProjected* active_pt_proj : *(last_keyframe->regions_projected_active_points_->active_points_proj_))
     addCoarseActivePointInRegion(active_pt_proj->active_point_);
 
-  double t_end=getTime();
-  int deltaTime=(t_end-t_start);
-
-  sharedCoutDebug("   - Coarse points generated in frame "+std::to_string(last_keyframe_idx)+", time: "+std::to_string(deltaTime)+" ms");
-
 }
 
 void BundleAdj::activateNewPoints(){
 
-  int last_keyframe_idx = keyframe_vector_ba_->back(); // update frame current
+  int last_keyframe_idx = dtam_->keyframe_vector_->back(); // update frame current
 
 
   double t_start=getTime();
@@ -145,12 +139,14 @@ void BundleAdj::addCoarseActivePointInRegion(ActivePoint* active_pt){
 
 void BundleAdj::collectCoarseActivePoints(){
 
+  double t_start=getTime();
+
   getCoarseActivePoints();
 
   // iterate along all keyframes (except last)
-  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
+  for (int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
 
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(i));
     // clear coarse active point vec
     for(std::vector<ActivePoint*>* v : *(keyframe->active_points_coarse_)){
       for (ActivePoint* active_point : *v)
@@ -231,6 +227,10 @@ void BundleAdj::collectCoarseActivePoints(){
     }
 
   }
+
+  double t_end=getTime();
+  int deltaTime=(t_end-t_start);
+  sharedCoutDebug("   - Coarse active points generated, time: "+std::to_string(deltaTime)+" ms");
 
 }
 
@@ -1166,8 +1166,8 @@ void BundleAdj::updateTangentSpace(bool with_marg){
     }
   }
 
-  // fix tangent space for points
-  for(int i=0; i<keyframe_vector_ba_->size() ; i++){
+  // fix tangent space for points (except last)
+  for(int i=0; i<keyframe_vector_ba_->size()-1 ; i++){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     if (keyframe->state_pose_block_idx_!=-1 || keyframe->first_keyframe_){
 
@@ -1318,7 +1318,7 @@ bool BundleAdj::updateOldMargHessianAndB(){
   int row_pose_to_be_marginalized = -1;
 
 
-  // iterate along active keyframes
+  // iterate along active keyframes (except last)
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     int block_idx = keyframe->state_pose_block_marg_idx_;
@@ -1429,7 +1429,7 @@ void BundleAdj::getJacobiansForNewUpdate(int& new_points, int& poses_new_size, s
 
   // ********** collect Jacobians **********
 
-  // iterate along active keyframes
+  // iterate along active keyframes (except last)
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
 
@@ -1438,7 +1438,7 @@ void BundleAdj::getJacobiansForNewUpdate(int& new_points, int& poses_new_size, s
       ActivePoint* pt_to_be_marg = keyframe->marginalized_points_->at(j);
       bool point_taken = false;
 
-      // iterate through keyframes on which the active point is projected
+      // iterate through keyframes on which the active point is projected (except last)
       // exclute last keyframe cause optimization has not been done (it's added just now)
       for(int k=0; k<keyframe_vector_ba_->size()-1 ; k++){
 
@@ -1494,7 +1494,7 @@ void BundleAdj::getJacobiansForNewUpdate(int& new_points, int& poses_new_size, s
 }
 
 void BundleAdj::deleteMarginalizedPoints(){
-  // iterate along active keyframes
+  // iterate along active keyframes (except last)
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     // iterate through points to be marginalized
@@ -1512,7 +1512,7 @@ void BundleAdj::removeMarginalizedKeyframe(){
   //   CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
   //   // std::cout << keyframe->name_ << " ";
   // }
-  // iterate along active keyframes
+  // iterate along active keyframes(except last)
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     if (keyframe->to_be_marginalized_ba_){
@@ -1602,10 +1602,11 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
   n_cams=hessian_b_marg->pose_block_size/6;
   int occlusions = 0;
   int active_points = 0;
-  // iterate through keyframes with active points (except last)
+  // iterate through keyframes with active points (no last keyframe)
   for(int i=0; i<keyframe_vector_ba_->size()-1; i++ ){
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+
     // std::cout << keyframe->name_ << std::endl;
     // if keyframe is going to be marginalized, this step needs to be performed in marginalization procedure
     if(keyframe->to_be_marginalized_ba_){
@@ -1637,8 +1638,9 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
           continue;
         }
 
+        // JacobiansAndError* jacobians = nullptr;
         JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj,keyframe->first_keyframe_ );
-        // JacobiansAndError* jacobians = getJacobiansAndError(active_pt, keyframe_proj );
+
         if (jacobians==nullptr){
           invalid_projections++;
         }
@@ -1656,6 +1658,7 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
       }
       if(invalid_projections>(keyframe_vector_ba_->size())/2){
       // if(invalid_projections>0){
+      // if(false){
         active_pt->state_point_block_idx_=-1;
         active_pt->remove();
         num_active_points_--;
@@ -1835,6 +1838,8 @@ float BundleAdj::optimizationStep(bool with_marg){
 
 void BundleAdj::optimize(){
 
+  std::unique_lock<std::mutex> locker(dtam_->mu_restart_opt_);
+
   double t_start=getTime();
 
   // // marginalize
@@ -1859,46 +1864,59 @@ void BundleAdj::optimize(){
 
   // optimize
   // while(true){
-  for(int i=0; i<60; i++){
+  for(int i=0; i<dtam_->parameters_->max_iterations_ba; i++){
+
+    locker.unlock();
+    if(dtam_->keyframe_added_flag_){
+      dtam_->keyframe_added_flag_=false;
+      std::cout << "STOP OPTIMIZATION!!\n";
+      break;
+    }
+    locker.lock();
+
     float chi = optimizationStep(with_marg );
+
+    std::cout  << keyframe_vector_ba_->back()<< ", Iteration " << i << std::endl;
+    std::cout << "\nchi: " << chi << std::endl;
 
     if(debug_optimization_){
       // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
 
-        std::cout << "Iteration " << i << std::endl;
-        // CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-        //
-        // last_keyframe->clearProjectedActivePoints();
-        // bool take_fixed_point = 0;
-        // projectActivePoints(take_fixed_point);
-        // last_keyframe->showProjActivePoints(1);
-        //
-        // PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
-        // float points_norm_error_tot = dtam_->getTotalPointsNormError();
-        // std::cout << "\nchi: " << chi << std::endl;
-        // std::cout << "points norm error tot: " << points_norm_error_tot << std::endl;
-        // poses_norm_error_tot->print();
-        // std::cout << std::endl;
-        //
-        // chi_history->push_back(chi);
-        // pose_angle_error_history->push_back(poses_norm_error_tot->angle);
-        // pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
-        // points_error_history->push_back(points_norm_error_tot);
-        // cv::waitKey(0);
+        CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+
+        last_keyframe->clearProjectedActivePoints();
+        bool take_fixed_point = 0;
+        projectActivePoints(take_fixed_point);
+        last_keyframe->showProjActivePoints(1);
+
+        PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
+        float points_norm_error_tot = dtam_->getTotalPointsNormError();
+        std::cout << "\nchi: " << chi << std::endl;
+        std::cout << "points norm error tot: " << points_norm_error_tot << std::endl;
+        poses_norm_error_tot->print();
+        std::cout << std::endl;
+
+        chi_history->push_back(chi);
+        pose_angle_error_history->push_back(poses_norm_error_tot->angle);
+        pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
+        points_error_history->push_back(points_norm_error_tot);
+        cv::waitKey(0);
       // }
     }
   }
+  dtam_->keyframe_added_flag_=false;
+
   if(debug_optimization_ ){
     // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
 
-      // showLine(*chi_history, "chi_history");
-      // showLine(*pose_angle_error_history, "pose_angle_error_history");
-      // showLine(*pose_position_error_history, "pose_position_error_history");
-      // showLine(*points_error_history, "points_error_history");
-      // chi_history->clear();
-      // pose_angle_error_history->clear();
-      // pose_position_error_history->clear();
-      // points_error_history->clear();
+      showLine(*chi_history, "chi_history");
+      showLine(*pose_angle_error_history, "pose_angle_error_history");
+      showLine(*pose_position_error_history, "pose_position_error_history");
+      showLine(*points_error_history, "points_error_history");
+      chi_history->clear();
+      pose_angle_error_history->clear();
+      pose_position_error_history->clear();
+      points_error_history->clear();
     // }
   }
 
@@ -1941,22 +1959,24 @@ ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamC
 
 bool BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
   assert(dtam_->camera_vector_->size() > 1);
-  assert(keyframe_vector_ba_->size() > 1);
-  CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-  CameraForMapping* prev_last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(keyframe_vector_ba_->size()-2));
+  assert(dtam_->keyframe_vector_->size() > 1);
+  CameraForMapping* last_keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->back());
+  CameraForMapping* prev_last_keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(dtam_->keyframe_vector_->size()-2));
 
   last_keyframe->clearProjectedActivePoints();
 
   bool keyframe_marginalized = false;
   // iterate through all keyframe (except the last )
-  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
+  for (int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
 
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(i));
 
-    if (keyframe->to_be_marginalized_ba_){
+    if (keyframe->to_be_marginalized_){
       keyframe_marginalized=true;
       // iterate along all active points
+      // num_active_points_-=(keyframe->active_points_->size());
       num_active_points_-=(keyframe->active_points_->size()-keyframe->num_marginalized_active_points_);
+      keyframe->num_marginalized_active_points_+=keyframe->active_points_->size();
 
       for (int j=0; j<keyframe->active_points_->size(); j++){
         ActivePoint* active_pt_ = keyframe->active_points_->at(j);

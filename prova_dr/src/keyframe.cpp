@@ -9,6 +9,8 @@
 
 bool KeyframeHandler::addKeyframe(bool all_keyframes){
   bool frame_added;
+
+
   if(all_keyframes){
     frame_added=pushKF();
   }else{
@@ -22,13 +24,13 @@ bool KeyframeHandler::addKeyframe(bool all_keyframes){
 void KeyframeHandler::addFirstKeyframe(){
   dtam_->camera_vector_->at(dtam_->frame_current_)->first_keyframe_=true;
   pushKeyframeFrontend();
-  pushKeyframeBundleadj();
+  // pushKeyframeBundleadj();
   sharedCoutDebug("   - First keyframe added ( "+ dtam_->camera_vector_->at(dtam_->frame_current_)->name_ +" )");
 }
 
 bool KeyframeHandler::pushKF(){
   pushKeyframeFrontend();
-  pushKeyframeBundleadj();
+  // pushKeyframeBundleadj();
   sharedCoutDebug("   - Keyframe added ( "+ dtam_->camera_vector_->at(dtam_->frame_current_)->name_ +" )");
   return true;
 }
@@ -92,7 +94,7 @@ float KeyframeHandler::getFlowDist(){
 
 bool KeyframeHandler::marginalize_keyframe(bool all_keyframes){
   bool marginalize=false;
-  if(dtam_->keyframe_vector_->size()>num_active_keyframes_){
+  if(dtam_->keyframe_vector_->size()>dtam_->parameters_->num_active_keyframes){
     marginalize=true;
     if (all_keyframes){
       marginalizeKeyframe(0);
@@ -105,8 +107,9 @@ bool KeyframeHandler::marginalize_keyframe(bool all_keyframes){
 }
 
 void KeyframeHandler::marginalizeKeyframeFrontend(int idx){
-  std::vector<int>* v = dtam_->keyframe_vector_;
-  v->erase(std::remove(v->begin(), v->end(), idx), v->end());
+  dtam_->camera_vector_->at(idx)->to_be_marginalized_=true;
+
+  // v->erase(std::remove(v->begin(), v->end(), idx), v->end());
 }
 
 void KeyframeHandler::marginalizeKeyframeBundleadj(int idx){
@@ -119,7 +122,7 @@ void KeyframeHandler::marginalizeKeyframe(int idx_){
   int idx = dtam_->keyframe_vector_->at(idx_);
   sharedCoutDebug("   - Keyframe marginalized (frame "+ dtam_->camera_vector_->at(idx)->name_ +")");
   marginalizeKeyframeFrontend(idx);
-  marginalizeKeyframeBundleadj(idx);
+  // marginalizeKeyframeBundleadj(idx);
 
 
 }
@@ -193,10 +196,25 @@ float KeyframeHandler::getScore(CameraForMapping* keyframe){
 
 void KeyframeHandler::pushKeyframeFrontend(){
   dtam_->keyframe_vector_->push_back(dtam_->frame_current_);
+  dtam_->camera_vector_->at(dtam_->frame_current_)->keyframe_=true;
+  dtam_->camera_vector_->at(dtam_->frame_current_)->new_=true;
+
 }
 
 void KeyframeHandler::pushKeyframeBundleadj(){
   dtam_->bundle_adj_->addKeyframe(dtam_->frame_current_);
-  dtam_->camera_vector_->at(dtam_->frame_current_)->keyframe_=true;
+}
 
+void KeyframeHandler::prepareDataForBA(){
+  // iterate through all keyframe
+  for (int i=0; i<dtam_->keyframe_vector_->size(); i++){
+    int idx = dtam_->keyframe_vector_->at(i);
+    CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
+    if(keyframe->to_be_marginalized_){
+      keyframe->to_be_marginalized_ba_=true;
+      std::vector<int>* v = dtam_->keyframe_vector_;
+      v->erase(std::remove(v->begin(), v->end(), idx), v->end());
+    }
+  }
+  pushKeyframeBundleadj();
 }

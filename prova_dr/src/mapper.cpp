@@ -375,8 +375,11 @@ void Mapper::trackExistingCandidatesGT(){
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(i));
-    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
 
+    if(keyframe->to_be_marginalized_)
+    continue;
+
+    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe);
 
 
     // iterate through all candidates
@@ -421,12 +424,15 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
 
   std::vector<Image<colorRGB>*> imgs_to_destroy;
 
-  //iterate through active keyframes
+  //iterate through active keyframes (except last)
   for(int i=0; i<dtam_->keyframe_vector_->size()-1; i++){
 
     int idx = dtam_->keyframe_vector_->at(i);
 
     CameraForMapping* keyframe = dtam_->camera_vector_->at(idx);
+
+    if(keyframe->to_be_marginalized_)
+      continue;
 
     sharedCoutDebug("      - Keyframe "+std::to_string(i)+" on "+std::to_string(dtam_->keyframe_vector_->size()-1)+
                     " (frame "+std::to_string(idx)+" on "+std::to_string(dtam_->keyframe_vector_->back())+": "+ keyframe->name_ +" on "+ last_keyframe->name_ +")");

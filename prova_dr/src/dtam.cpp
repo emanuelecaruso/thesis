@@ -105,6 +105,12 @@ void Dtam::waitForPointActivation(){
   locker.unlock();
 }
 
+void Dtam::waitForKeyframeAdded(){
+  std::unique_lock<std::mutex> locker(mu_keyframe_added_);
+  keyframe_added_.wait(locker);
+  locker.unlock();
+}
+
 void Dtam::waitForOptimization(){
   std::unique_lock<std::mutex> locker(mu_optimization_);
   optimization_done_.wait(locker);
@@ -135,6 +141,8 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
     if(frame_current_==0){
       tracker_->trackCam(true);
       keyframe_handler_->addFirstKeyframe();
+      keyframe_handler_->prepareDataForBA();
+
       // keyframe_handler_->addKeyframe(true);
 
       initializer_->extractCorners();
@@ -163,8 +171,13 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
           // mapper_->trackExistingCandidates(false,debug_mapping);
           mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
 
-          cand_tracked_.notify_all(); // after candidates are tracked notify for ba
+          bundle_adj_->projectActivePoints_prepMarg(0);
+          bundle_adj_->activateNewPoints();
 
+          keyframe_handler_->prepareDataForBA();
+          keyframe_added_.notify_all();
+
+          bundle_adj_->collectCoarseActivePoints();
 
           mapper_->selectNewCandidates();
 
@@ -216,7 +229,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     //   break;
     // }
 
-    if (!track_candidates && (wait_for_initialization || frame_current_>=1 ) ){
+    if (!track_candidates && (wait_for_initialization || frame_current_>=1 ) && bundle_adj_->debug_optimization_ ){
       std::cout << "FRONT END WAIT FOR OPTIMIZATION " << std::endl;
       waitForOptimization();
       std::cout << "FRONT END OPTIMIZATION DONE " << std::endl;
@@ -235,6 +248,9 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
         tracker_->trackCam(true);
         keyframe_handler_->addFirstKeyframe();
         mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
+        bundle_adj_->projectActivePoints_prepMarg(0);
+        bundle_adj_->activateNewPoints();
+        bundle_adj_->collectCoarseActivePoints();
         mapper_->selectNewCandidates();
         tracker_->collectCandidatesInCoarseRegions();
         continue;
@@ -268,14 +284,33 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     //   continue;
     // }
 
-
     tracker_->trackCam(take_gt_poses,track_candidates,guess_type,debug_tracking);
+    pts_activated_flag_=false;
 
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
       mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
-      // mapper_->trackExistingCandidates(true,debug_mapping);
-      cand_tracked_.notify_all(); // after candidates are tracked notify for ba
+
+      bundle_adj_->projectActivePoints_prepMarg(0);
+      bundle_adj_->activateNewPoints();
+      bundle_adj_->collectCoarseActivePoints();
+
+      std::cout << "KF HAND, ADDING KF, STOP OPT!" << bundle_adj_->keyframe_vector_ba_->size() << "\n";
+      if(bundle_adj_->keyframe_vector_ba_->size()>=2){
+        keyframe_added_flag_=true;
+      }
+      std::unique_lock<std::mutex> locker(mu_restart_opt_);
+      keyframe_handler_->prepareDataForBA();
+      locker.unlock();
+
+      if(bundle_adj_->keyframe_vector_ba_->size()>=2){
+        keyframe_added_flag_=false;
+        keyframe_added_.notify_all();
+      }
+      std::cout << "KF HAND, KF ADDED, RESTART OPT!" << bundle_adj_->keyframe_vector_ba_->size() << "\n";
+
+
+      // cand_tracked_.notify_all(); // after candidates are tracked notify for ba
       mapper_->selectNewCandidates();
       if (track_candidates)
         tracker_->collectCandidatesInCoarseRegions();
@@ -411,40 +446,12 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
   while( true ){
 
     if(!frontend_thread_finished_){
-      // std::cout << "OPTIMIZATION WAIT, NEW TRACK CANDS " << std::endl;
-      waitForTrackedCandidates();
-      // std::cout << "OPTIMIZATION STARTS " << std::endl;
+      std::cout << "OPTIMIZATION, WAIT NEW POINT ACTIVATION  " << std::endl;
+      waitForKeyframeAdded();
+      std::cout << "OPTIMIZATION, STOP WAITING NEW POINT ACTIVATION " << keyframe_added_flag_ << std::endl;
     }
     else
       break;
-
-
-    bundle_adj_->frame_current_ba=frame_current_;
-
-    // project active points (and marginalize points 2 times outside the frustum)
-    // take fixed point
-    bool take_fixed_point = 1;
-    // bundle_adj_->projectActivePoints(take_fixed_point);
-    bool keyframe_marginalized = bundle_adj_->projectActivePoints_prepMarg(take_fixed_point);
-
-
-    // std::cout << "OPTIMIZATION 1 " << std::endl;
-
-    // if(bundle_adj_->test_single_==TEST_ONLY_POSES ||
-    //    bundle_adj_->test_single_==TEST_ONLY_POINTS ||
-    //    bundle_adj_->test_single_==TEST_ONLY_POSES_ONLY_M)
-    //   tracker_->filterOutOcclusionsGT();
-
-    // activate new points
-    bundle_adj_->activateNewPoints();
-
-
-    // std::cout << "OPTIMIZATION 2 " << std::endl;
-
-    // collect coarse active points
-    bundle_adj_->collectCoarseActivePoints();
-
-    // std::cout << "OPTIMIZATION 3 " << std::endl;
 
     // DEBUG
     if(bundle_adj_->debug_optimization_){
@@ -483,19 +490,21 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
     // optimize
     bundle_adj_->optimize();
 
-    // after optimization
-    // std::cout << "OPTIMIZATION WAIT NEW FRAME " << std::endl;
-    if(!update_cameras_thread_finished_ )
-      waitForNewFrame();
-    // std::cout << "OPTIMIZATION, NEW FRAME ARRIVED " << std::endl;
+    if(debug_optimization){
+      // after optimization
+      // std::cout << "OPTIMIZATION WAIT NEW FRAME " << std::endl;
+      if(!update_cameras_thread_finished_ )
+        waitForNewFrame();
+      // std::cout << "OPTIMIZATION, NEW FRAME ARRIVED " << std::endl;
 
 
-    // time guard
-    std::this_thread::sleep_for(std::chrono::microseconds(10000));
+      // time guard
+      std::this_thread::sleep_for(std::chrono::microseconds(10000));
 
 
-    // notify all threads that optimization has been done
-    optimization_done_.notify_all();
+      // notify all threads that optimization has been done
+      optimization_done_.notify_all();
+    }
 
   }
 }
@@ -716,7 +725,7 @@ void Dtam::test_dso(){
   bool debug_initialization=false;
   bool debug_mapping=false;
   bool debug_tracking=false;
-  bool debug_optimization= true;
+  bool debug_optimization= false;
 
   bool initialization_loop=false;
   bool take_gt_poses=false;

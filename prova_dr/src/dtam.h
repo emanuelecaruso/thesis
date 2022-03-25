@@ -21,7 +21,7 @@ class Dtam{
     // Dtam(Environment* environment, float grad_threshold, float cost_threshold,
     //       int num_candidates, int num_active_keyframes, int wavelet_levels) :
     environment_(environment),
-    keyframe_handler_(new KeyframeHandler(this, parameters->num_active_keyframes)),
+    keyframe_handler_(new KeyframeHandler(this)),
     mapper_(new Mapper(this,parameters)),
     tracker_(new Tracker(this)),
     bundle_adj_(new BundleAdj(this, parameters)),
@@ -31,7 +31,10 @@ class Dtam{
     keyframe_vector_(new std::vector<int>),
     frame_current_(-1),
     update_cameras_thread_finished_(false),
-    frontend_thread_finished_(false)
+    frontend_thread_finished_(false),
+    cand_tracked_flag_(false),
+    pts_activated_flag_(false),
+    keyframe_added_flag_(false)
     { };
 
     void test_mapping();
@@ -46,6 +49,7 @@ class Dtam{
     void waitForTrackedCandidates();
     void waitForInitialization();
     void waitForPointActivation();
+    void waitForKeyframeAdded();
     void waitForOptimization();
 
     int getLastKeyframeIdx();
@@ -60,11 +64,11 @@ class Dtam{
 
   private:
     const Environment* environment_;
-    KeyframeHandler* const keyframe_handler_;
-    Mapper* const mapper_;
-    Tracker* const tracker_;
-    BundleAdj* const bundle_adj_;
-    Initializer* const initializer_;
+    KeyframeHandler* keyframe_handler_;
+    Mapper* mapper_;
+    Tracker* tracker_;
+    BundleAdj* bundle_adj_;
+    Initializer* initializer_;
     Params* const parameters_;
     std::vector<CameraForMapping*>* camera_vector_;
     std::vector<int>* keyframe_vector_;
@@ -76,16 +80,23 @@ class Dtam{
     friend class Mapper;
     friend class Tracker;
 
-    std::mutex mu_frame_;
-    std::mutex mu_candidate_tracking_;
-    std::mutex mu_initialization_;
-    std::mutex mu_point_activation_;
-    std::mutex mu_optimization_;
+    mutable std::mutex mu_frame_;
+    mutable std::mutex mu_candidate_tracking_;
+    mutable std::mutex mu_initialization_;
+    mutable std::mutex mu_point_activation_;
+    mutable std::mutex mu_optimization_;
+    mutable std::mutex mu_restart_opt_;
+    mutable std::mutex mu_keyframe_added_;
+
     std::condition_variable frame_updated_;
-    std::condition_variable cand_tracked_;
     std::condition_variable initialization_done_;
     std::condition_variable points_activated_;
     std::condition_variable optimization_done_;
+
+    std::condition_variable cand_tracked_;
+    std::condition_variable pts_activated_;
+    std::condition_variable keyframe_added_;
+
 
     std::thread update_cameras_thread_;
     std::thread frontend_thread_;
@@ -93,6 +104,11 @@ class Dtam{
     std::thread optimization_thread;
     bool update_cameras_thread_finished_;
     bool frontend_thread_finished_;
+
+    bool cand_tracked_flag_;
+    bool pts_activated_flag_;
+    bool keyframe_added_flag_;
+
 
 
     void setOptimizationFlags( bool debug_optimization, int opt_norm, int test_single, int image_id, bool test_marginalization);

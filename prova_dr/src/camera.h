@@ -673,6 +673,8 @@ class CameraForMapping: public Camera{
     Vector6f* delta_update_x_;
     int num_marginalized_active_points_;
     bool to_be_marginalized_ba_;
+    bool to_be_marginalized_;
+    bool new_;
     bool active_points_removed_;
     bool keyframe_;
     bool first_keyframe_;
@@ -706,6 +708,8 @@ class CameraForMapping: public Camera{
            delta_update_x_(new Vector6f),
            num_marginalized_active_points_(0),
            to_be_marginalized_ba_(false),
+           to_be_marginalized_(false),
+           new_(false),
            active_points_removed_(false),
            keyframe_(false),
            first_keyframe_(false),

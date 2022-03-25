@@ -29,6 +29,7 @@ static float flow_dist_threshold_=0.0001;
 static float percentage_marg_pts_threshold_ = 0.05;
 
 // optimization
+static int max_iterations_ba_=10;
 static int max_num_active_points_=2*num_candidates_;
 // static float huber_threshold_=0.02;
 static float huber_threshold_=0.05;
@@ -73,6 +74,7 @@ struct Params{
   float cost_threshold=cost_threshold_;
   float cost_grad_threshold=cost_grad_threshold_;
   float cost_grad_threshold_DSO=cost_grad_threshold_DSO_;
+  int max_iterations_ba=max_iterations_ba_;
   int max_num_active_points=max_num_active_points_;
   int num_active_keyframes=num_active_keyframes_;
   int flow_dist_threshold=flow_dist_threshold_;
