@@ -556,6 +556,7 @@ executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o: \
  /home/emanuele/Scrivania/thesis/prova_dr/src/environment.h \
  /home/emanuele/Scrivania/thesis/prova_dr/src/bundleadj.h \
  /home/emanuele/Scrivania/thesis/prova_dr/src/initializer.h \
+ /home/emanuele/Scrivania/thesis/prova_dr/src/spectator.h \
  /home/emanuele/Scrivania/thesis/prova_dr/src/utils.h \
  /usr/include/c++/7/future /usr/include/c++/7/atomic \
  /usr/include/c++/7/bits/atomic_futex.h \

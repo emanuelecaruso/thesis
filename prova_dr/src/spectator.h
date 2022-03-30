@@ -2,14 +2,15 @@
 #include "defs.h"
 #include "environment.h"
 #include "image.h"
-#include "dtam.h"
 #include "parameters.h"
 #include "camera.h"
+
+class Dtam;
 
 class Spectator{
   public:
 
-    Spectator(Params* parameters, Dtam* dtam, colorRGB& background_color ):
+    Spectator(Dtam* dtam, Params* parameters, const colorRGB& background_color ):
     dtam_(dtam),
     background_color_(background_color),
     spectator_params_(initCamParams(parameters)),
@@ -18,6 +19,9 @@ class Spectator{
     {};
 
     void spectateDso();
+    void renderState();
+    void showSpectator();
+    
   private:
     Dtam* dtam_;
     colorRGB background_color_;
@@ -29,8 +33,6 @@ class Spectator{
     Camera* initCam(Params* parameters);
     Image<colorRGB>* initImage(Params* parameters);
 
-    void renderState();
-    void showSpectator();
 
     void reinitSpectator();
     void renderPoints();
@@ -40,5 +42,8 @@ class Spectator{
 
     bool plotPt(ActivePoint* pt, const colorRGB& color);
     bool plotPt(Eigen::Vector3f& pt, const colorRGB& color);
-    bool plotCam(CameraForMapping* cam, const colorRGB& color);
+    bool plotPt(ActivePoint* pt, const colorRGB& color, pxl& pixel);
+    bool plotPt(Eigen::Vector3f& pt, const colorRGB& color, pxl& pixel);
+    bool plotLine(pxl& pixel1, pxl& pixel2, const colorRGB& color );
+    bool plotCam(Camera* cam, const colorRGB& color);
 };

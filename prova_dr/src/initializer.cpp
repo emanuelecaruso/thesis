@@ -68,7 +68,7 @@ void Initializer::showCornersRef(){
     show_image->drawCircle(red, corner);
   }
   show_image->show(2);
-  cv::waitKey(0);
+  waitkey(0);
 }
 
 void Initializer::trackCornersLK(){
@@ -341,7 +341,7 @@ void Initializer::showCornersTrackCurr(int i){
     }
   }
   show_image->show(2);
-  cv::waitKey(0);
+  waitkey(0);
 
 }
 

@@ -555,4 +555,5 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: \
  /home/emanuele/Scrivania/thesis/prova_dr/src/tracker.h \
  /home/emanuele/Scrivania/thesis/prova_dr/src/environment.h \
  /home/emanuele/Scrivania/thesis/prova_dr/src/bundleadj.h \
- /home/emanuele/Scrivania/thesis/prova_dr/src/initializer.h
+ /home/emanuele/Scrivania/thesis/prova_dr/src/initializer.h \
+ /home/emanuele/Scrivania/thesis/prova_dr/src/spectator.h

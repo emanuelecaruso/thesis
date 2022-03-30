@@ -315,7 +315,7 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
   // cand->cam_->wavelet_dec_->getWavLevel(cand->level_)->c->showImgWithCircledPixel(cand->pixel_,2*(cand->level_+1),cand->cam_->name_,2,1);
   // frame_new->wavelet_dec_->getWavLevel(cand->level_)->c->showImgWithCircledPixel(pixel_newframe,2*(cand->level_+1),frame_new->name_,2,1);
   // std::cout << "error " << error << std::endl;
-  // cv::waitKey(0);
+  // waitkey(0);
   return true;
 }
 
@@ -350,7 +350,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   active_pt->opt_flow_distance_=-1;
 
   frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
-  
+
   frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
 
   if(!frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_newframe))
@@ -398,7 +398,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   // active_pt->cam_->wavelet_dec_->getWavLevel(active_pt->level_)->c->showImgWithCircledPixel(active_pt->pixel_,2*(active_pt->level_+1),active_pt->cam_->name_,2,1);
   // frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->showImgWithCircledPixel(pixel_newframe,2*(active_pt->level_+1),frame_new->name_,2,1);
   // std::cout << "error " << error << std::endl;
-  // cv::waitKey(0);
+  // waitkey(0);
   return true;
 }
 
@@ -443,7 +443,7 @@ void Tracker::showProjectCandsWithCurrGuess(Eigen::Isometry3f& current_guess, in
   }
 
   show_image->show(2*pow(2,level));
-  cv::waitKey(0);
+  waitkey(0);
 }
 
 
@@ -467,13 +467,24 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
       v= keyframe->active_points_;
 
 
+    // CamCouple* cam_couple = new CamCouple(keyframe,frame_new,0);
+
     // for each active point
     for(ActivePoint* active_pt : *v){
+
+      // Eigen::Vector2f uv;
+      // pxl pixel_newframe;
+      // float depth_m;
+      // float depth_r= 1.0/active_pt->invdepth_;
+      // cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, depth_m );
+      // cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, uv.x(), uv.y() );
+      // cam_couple->cam_m_->uv2pixelCoords( uv, pixel_newframe, active_pt->level_);
+
 
       Eigen::Vector2f uv_newframe;
       pxl pixel_newframe;
       Eigen::Vector3f point_newframe;
-      Eigen::Vector3f* point = active_pt->p_0_;
+      Eigen::Vector3f* point = active_pt->p_;
 
       point_newframe= current_guess*(*point);
       float invdepth_proj = 1.0/point_newframe.z();
@@ -481,6 +492,9 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
       frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
 
       colorRGB color = frame_new->invdepthToRgb(invdepth_proj);
+
+
+      // colorRGB color = frame_new->invdepthToRgb(1.0/depth_m);
       show_image->setPixel( pixel_newframe, color);
 
     }
@@ -488,7 +502,7 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
   }
 
   show_image->show(2*pow(2,level));
-  cv::waitKey(0);
+  waitkey(0);
 }
 
 
@@ -542,6 +556,8 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
   Vector6f b;
   float chi;
 
+  CameraForMapping* curr_cam = dtam_->getCurrentCamera();
+
   // for each coarse level
   for(int i=dtam_->parameters_->coarsest_level; i>=0; i--){
 
@@ -561,7 +577,15 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
 
       //DEBUG
       if(debug_tracking){
+        dtam_->spectator_->renderState();
+        dtam_->spectator_->showSpectator();
+        CameraForMapping* frame_new = dtam_->getCurrentCamera();
+        frame_new->clearProjectedActivePoints();
+        bool take_fixed_point = 0;
+        dtam_->bundle_adj_->projectActivePoints(frame_new,take_fixed_point);
+        frame_new->showProjActivePoints(1);
         showProjectActivePtsWithCurrGuess(current_guess, i);
+        frame_new->clearProjectedActivePoints();
       }
 
 
@@ -616,6 +640,13 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
           break;
         }
         current_guess=new_guess;
+
+        if(debug_tracking){
+          Eigen::Isometry3f pose = current_guess.inverse();
+          curr_cam->assignPose(pose);
+          curr_cam->assignPose0(pose);
+
+        }
       }
 
       iterations++;
@@ -744,7 +775,7 @@ Eigen::Isometry3f Tracker::doLS(Eigen::Isometry3f& initial_guess, bool track_can
       // // filterOutOcclusionsGT();
       // // showProjectCandsWithCurrGuess(initial_guess, 0);
       // // keyframe->showCandidates(2);
-      // cv::waitKey(0);
+      // waitkey(0);
     }
 
     trackWithCandidates(current_guess, debug_tracking, frame_new);

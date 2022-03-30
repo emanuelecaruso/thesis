@@ -155,5 +155,5 @@ void Environment::debugAllCameras(bool show_imgs) const {
       camera->showDepthMap();
     }
   }
-  cv::waitKey(0);
+  waitkey(0);
 }

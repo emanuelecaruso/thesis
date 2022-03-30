@@ -136,7 +136,6 @@ void BundleAdj::addCoarseActivePointInRegion(ActivePoint* active_pt){
 }
 
 
-
 void BundleAdj::collectCoarseActivePoints(){
 
   double t_start=getTime();
@@ -300,7 +299,7 @@ Eigen::Matrix<float, 2,3>* BundleAdj::getJfirst_(ActivePoint* active_pt, CameraF
   Eigen::Vector3f* p_incamframe = active_pt->p_incamframe_;
 
 
-  point_m_0= *(cam_m->frame_world_wrt_camera_0_)*(*active_pt->p_0_);
+  point_m_0= *(cam_m->frame_world_wrt_camera_)*(*active_pt->p_);
   Eigen::Vector3f point_m= (v2t(*(cam_m->delta_update_x_))*((*(cam_m->frame_world_wrt_camera_))*(*active_pt->p_)));
 
   Eigen::Vector3f p_proj_0 = K*point_m_0;
@@ -378,12 +377,12 @@ Eigen::Matrix<float,1,6> BundleAdj::getJm( Eigen::Matrix<float,1,3> J_first, Eig
 Eigen::Matrix3f BundleAdj::getRelativeRotationMatrix(ActivePoint* active_pt, CameraForMapping* cam_m){
   CameraForMapping* cam_r = active_pt->cam_;
   Eigen::Matrix3f relative_rot_mat;
-  relative_rot_mat = (cam_m->frame_world_wrt_camera_0_->linear())*(cam_r->frame_camera_wrt_world_0_->linear());
+  relative_rot_mat = (cam_m->frame_world_wrt_camera_->linear())*(cam_r->frame_camera_wrt_world_->linear());
   return relative_rot_mat;
 }
 
 Eigen::Matrix<float,3,6> BundleAdj::getJSecondJr(ActivePoint* active_pt, Eigen::Matrix3f relative_rot_mat ){
-  Eigen::Vector3f point_r_0 = *(active_pt->p_incamframe_0_);
+  Eigen::Vector3f point_r_0 = *(active_pt->p_incamframe_);
 
   Eigen::Matrix<float, 3,6> JSecond_jr;
   Eigen::Matrix<float, 3,6> state_jacobian;
@@ -578,17 +577,19 @@ void HessianAndB_base::LMDampening(Params* parameters){
   // // float damp_coeff = parameters->damp_point_invdepth;
   // float damp_coeff = max_eig*1e-3;
   // float damp_coeff = max_eig*1e-3;
-  float damp_coeff = 0.05*pose_block_size*point_block_size;
 
-  // std::cout << "DAMPCOEFFFFF " << damp_coeff << std::endl;
-  // // float damp_coeff = 1000;
+
+  float damp_pt_coeff = 100;
+  float damp_pose_coeff = 0.01*pose_block_size*point_block_size;
+
   for(int i=0; i<point_block_size; i++){
-    H_point_point->diagonal()[i]+=damp_coeff;
-    // H_point_point->diagonal()[i]+=damp_coeff;
+    H_point_point->diagonal()[i]+=damp_pt_coeff;
+    // H_point_point->diagonal()[i]+=damp_pt_coeff;
   }
+
   for(int i=0; i<pose_block_size; i++){
-    H_pose_pose->diagonal()[i]+=damp_coeff;
-    // H_point_point->diagonal()[i]+=damp_coeff;
+    H_pose_pose->diagonal()[i]+=damp_pose_coeff;
+    // H_point_point->diagonal()[i]+=damp_pose_coeff;
   }
 }
 
@@ -907,12 +908,12 @@ deltaUpdateIncrements* HessianAndB::getDeltaUpdateIncrementsProva(HessianAndB_Ma
   Eigen::DiagonalMatrix<float,Eigen::Dynamic>* H_point_point_inv = invertHPointPoint();
   Eigen::MatrixXf Schur = (H_pose_pose_tot)-((*H_pose_point)*(*H_point_point_inv)*(*H_point_pose));
   Eigen::MatrixXf Schur_inv = Schur.completeOrthogonalDecomposition().pseudoInverse();
-  *dx_poses =  (Schur_inv) * ( -(b_pose_tot) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
-  // *dx_poses =  (H_pose_pose->completeOrthogonalDecomposition().pseudoInverse()) * ( -(*b_pose)  );
+  // *dx_poses =  (Schur_inv) * ( -(b_pose_tot) + (*H_pose_point)*(*H_point_point_inv)*(*b_point) );
+  *dx_poses =  (H_pose_pose->completeOrthogonalDecomposition().pseudoInverse()) * ( -(*b_pose)  );
   // dx_poses->setZero();
-  *dx_points = (*H_point_point_inv)* ( -(*b_point) -( (*H_point_pose)*(*dx_poses)) );
-  // *dx_points = (H_point_point_inv)* (-(*b_point)) ;
-  // dx_points->setZero();
+  // *dx_points = (*H_point_point_inv)* ( -(*b_point) -( (*H_point_pose)*(*dx_poses)) );
+  // *dx_points = (*H_point_point_inv)* (-(*b_point)) ;
+  dx_points->setZero();
 
   deltaUpdateIncrements* delta = new deltaUpdateIncrements(dx_poses,dx_points);
   return delta;
@@ -1075,7 +1076,7 @@ bool HessianAndB_base::visualizeH( const std::string& name){
   }
 
   img_H->show(1);
-  cv::waitKey(0);
+  waitkey(0);
   delete img_H;
 }
 
@@ -1144,7 +1145,7 @@ bool HessianAndB_Marg::visualizeHMarg( const std::string& name){
   }
 
   img_H->show(0.5);
-  cv::waitKey(0);
+  waitkey(0);
   delete img_H;
 }
 
@@ -1156,11 +1157,12 @@ void BundleAdj::updateTangentSpace(bool with_marg){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
     if (keyframe->state_pose_block_idx_!=-1 ){
       assert(!keyframe->first_keyframe_);
-      // if active keyframe has link with marginalization prior, do not update tangent space
 
-      if(keyframe->state_pose_block_marg_idx_!=-1 && with_marg){
-        continue;
-      }
+      // if active keyframe has link with marginalization prior, do not update tangent space
+      // if(keyframe->state_pose_block_marg_idx_!=-1 && with_marg){
+      //   continue;
+      // }
+
       keyframe->assignPose0( *(keyframe->frame_camera_wrt_world_) );
       keyframe->delta_update_x_->setZero();
     }
@@ -1174,6 +1176,8 @@ void BundleAdj::updateTangentSpace(bool with_marg){
       // iterate through all active points
       for(int j=0; j<keyframe->active_points_->size() ; j++){
         ActivePoint* active_pt = keyframe->active_points_->at(j);
+        (*active_pt->p_incamframe_0_)=(*active_pt->p_incamframe_);
+        (*active_pt->p_0_)=(*active_pt->p_);
         active_pt->invdepth_0_=active_pt->invdepth_;
         active_pt->delta_update_x_=0;
       }
@@ -1238,7 +1242,7 @@ void BundleAdj::updateDeltaUpdates(deltaUpdateIncrements* delta){
               active_pt->invdepth_=new_invdepth;
               // since change both poses and invdepths
               keyframe->pointAtDepthInCamFrame(active_pt->uv_, 1.0/active_pt->invdepth_, *(active_pt->p_incamframe_));
-              *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_0_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
+              *(active_pt->p_)=(*(keyframe->frame_camera_wrt_world_))*v2t_inv(*(keyframe->delta_update_x_))*(*(active_pt->p_incamframe_));
             }
 
           }
@@ -1325,7 +1329,7 @@ bool BundleAdj::updateOldMargHessianAndB(){
     // if keyframe is not the one that is going to be marginalized, and keyframe has link with marg prior
     if (!keyframe->to_be_marginalized_ba_ && block_idx!=-1 ){
       // hessian_b_old->visualizeH("ao=?");
-      // cv::waitKey(0);
+      // waitkey(0);
       Matrix6f pose_pose_block = hessian_b_old->H_pose_pose->block<6,6>(block_idx,block_idx);
       pose_pose_blocks.push_back(pose_pose_block);
       Vector6f b_pose_segment = hessian_b_old->b_pose->segment<6>(block_idx);
@@ -1656,8 +1660,9 @@ void BundleAdj::initializeStateStructure( int& n_cams, int& n_points, std::vecto
           n_jac_added++;
         }
       }
-      if(invalid_projections>(keyframe_vector_ba_->size())/2){
+      // if(invalid_projections>(keyframe_vector_ba_->size())/2){
       // if(invalid_projections>0){
+      if(invalid_projections>1){
       // if(false){
         active_pt->state_point_block_idx_=-1;
         active_pt->remove();
@@ -1842,23 +1847,25 @@ void BundleAdj::optimize(){
 
   double t_start=getTime();
 
-  // // marginalize
+  // marginalize
   marginalization();
 
   bool with_marg = false ;
 
   if(debug_optimization_){
     // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
-      // CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-      // last_keyframe->clearProjectedActivePoints();
-      // projectActivePoints(0);
-      // last_keyframe->showProjActivePoints(1);
-      // PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
-      // float points_norm_error_tot = dtam_->getTotalPointsNormError();
-      // std::cout << "\npoints norm error tot: " << points_norm_error_tot <<  std::endl;
-      // poses_norm_error_tot->print();
-      // std::cout << std::endl;
-      // cv::waitKey(0);
+      CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
+      last_keyframe->clearProjectedActivePoints();
+      projectActivePoints(last_keyframe,0);
+      last_keyframe->showProjActivePoints(1);
+      PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
+      float points_norm_error_tot = dtam_->getTotalPointsNormError();
+      std::cout << "\npoints norm error tot: " << points_norm_error_tot <<  std::endl;
+      poses_norm_error_tot->print();
+      std::cout << std::endl;
+      dtam_->spectator_->renderState();
+      dtam_->spectator_->showSpectator();
+      waitkey(0);
     // }
   }
 
@@ -1874,7 +1881,8 @@ void BundleAdj::optimize(){
     }
     locker.lock();
 
-    float chi = optimizationStep(with_marg );
+    float chi = 0;
+    chi = optimizationStep(with_marg );
 
     std::cout  << keyframe_vector_ba_->back()<< ", Iteration " << i << std::endl;
     std::cout << "\nchi: " << chi << std::endl;
@@ -1886,8 +1894,11 @@ void BundleAdj::optimize(){
 
         last_keyframe->clearProjectedActivePoints();
         bool take_fixed_point = 0;
-        projectActivePoints(take_fixed_point);
+        projectActivePoints(last_keyframe,take_fixed_point);
         last_keyframe->showProjActivePoints(1);
+
+        dtam_->spectator_->renderState();
+        dtam_->spectator_->showSpectator();
 
         PoseNormError* poses_norm_error_tot = dtam_->getTotalPosesNormError();
         float points_norm_error_tot = dtam_->getTotalPointsNormError();
@@ -1896,11 +1907,11 @@ void BundleAdj::optimize(){
         poses_norm_error_tot->print();
         std::cout << std::endl;
 
-        chi_history->push_back(chi);
-        pose_angle_error_history->push_back(poses_norm_error_tot->angle);
-        pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
-        points_error_history->push_back(points_norm_error_tot);
-        cv::waitKey(0);
+        // chi_history->push_back(chi);
+        // pose_angle_error_history->push_back(poses_norm_error_tot->angle);
+        // pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
+        // points_error_history->push_back(points_norm_error_tot);
+        waitkey(0);
       // }
     }
   }
@@ -1909,14 +1920,14 @@ void BundleAdj::optimize(){
   if(debug_optimization_ ){
     // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
 
-      showLine(*chi_history, "chi_history");
-      showLine(*pose_angle_error_history, "pose_angle_error_history");
-      showLine(*pose_position_error_history, "pose_position_error_history");
-      showLine(*points_error_history, "points_error_history");
-      chi_history->clear();
-      pose_angle_error_history->clear();
-      pose_position_error_history->clear();
-      points_error_history->clear();
+      // showLine(*chi_history, "chi_history");
+      // showLine(*pose_angle_error_history, "pose_angle_error_history");
+      // showLine(*pose_position_error_history, "pose_position_error_history");
+      // showLine(*points_error_history, "points_error_history");
+      // chi_history->clear();
+      // pose_angle_error_history->clear();
+      // pose_position_error_history->clear();
+      // points_error_history->clear();
     // }
   }
 
@@ -1932,7 +1943,6 @@ void BundleAdj::optimize(){
 
 ActivePointProjected* BundleAdj::projectActivePoint(ActivePoint* active_pt, CamCouple* cam_couple){
 
-  Eigen::Vector3f p;
   Eigen::Vector2f uv;
   pxl pixel_coords;
   float depth_m;
@@ -2024,38 +2034,34 @@ bool BundleAdj::projectActivePoints_prepMarg(bool take_fixed_point){
   return keyframe_marginalized;
 }
 
+void BundleAdj::projectActivePoints(CameraForMapping* cam, bool take_fixed_point){
 
-void BundleAdj::projectActivePoints(bool take_fixed_point){
+    // iterate through all keyframe (except the last)
+    for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
 
-  CameraForMapping* last_keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->back());
-
-  // iterate through all keyframe (except the last)
-  for (int i=0; i<keyframe_vector_ba_->size()-1; i++){
-
-    CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
+      CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_vector_ba_->at(i));
 
 
-    CamCouple* cam_couple = new CamCouple(keyframe,last_keyframe,take_fixed_point);
+      CamCouple* cam_couple = new CamCouple(keyframe,cam,take_fixed_point);
 
-    // iterate along all active points
-    for (ActivePoint* active_pt : *keyframe->active_points_){
+      // iterate along all active points
+      for (ActivePoint* active_pt : *keyframe->active_points_){
 
-      if(active_pt->to_marginalize_){
-        continue;
+        if(active_pt->to_marginalize_){
+          continue;
+        }
+
+        // project active point in new keyframe
+        ActivePointProjected* active_point_proj = projectActivePoint(active_pt, cam_couple);
+        // if active point is in frustum
+        if (active_point_proj!=nullptr){
+          // push active point projected
+          active_point_proj->cam_->regions_projected_active_points_->pushProjActivePoint(active_point_proj);
+        }
+
+
       }
 
-      // project active point in new keyframe
-      ActivePointProjected* active_point_proj = projectActivePoint(active_pt, cam_couple);
-      // if active point is in frustum
-      if (active_point_proj!=nullptr){
-        // push active point projected
-        active_point_proj->cam_->regions_projected_active_points_->pushProjActivePoint(active_point_proj);
-      }
-
-
+      delete cam_couple;
     }
-
-    delete cam_couple;
-  }
-
 }

@@ -14,8 +14,8 @@
 // candidate selection
 static int coarsest_level_= 3; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
-static float grad_threshold_=0.02;
-static int num_candidates_=2000;
+static float grad_threshold_=0.07;
+static int num_candidates_=1000;
 
 // mapping
 static float cost_threshold_=0.07;
@@ -24,22 +24,22 @@ static float cost_grad_threshold_DSO_=0.01; // for DSO
 static int max_num_mins_ = 3;
 
 // keyframe selection
-static int num_active_keyframes_=3;
+static int num_active_keyframes_=5;
 static float flow_dist_threshold_=0.0001;
 static float percentage_marg_pts_threshold_ = 0.05;
 
 // optimization
-static int max_iterations_ba_=10;
-static int max_num_active_points_=2*num_candidates_;
+static int max_iterations_ba_=30;
+static int max_num_active_points_=4000;
 // static float huber_threshold_=0.02;
-static float huber_threshold_=0.05;
+static float huber_threshold_=0.04;
 // static float huber_threshold_=0.5;
-static float chi_occlusion_threshold_=(0.1-huber_threshold_/2);
+static float chi_occlusion_threshold_=(0.12-huber_threshold_/2);
 // static float chi_occlusion_threshold_=1000;
 // static float chi_occlusion_threshold_=(pow(0.2,2));
 static int max_occlusions_ = num_active_keyframes_/2;
 static float intensity_coeff_ = 1;
-static float gradient_coeff_ = 0.5;
+static float gradient_coeff_ = 0.2;
 static float phase_coeff_ = 1./(8.*PI);
 static float damp_pose_position_ = 0;
 static float damp_pose_orientation_ = 0;
@@ -52,7 +52,7 @@ static int robustifier_dofs_=2;
 static float ratio_for_convergence_ = 0.001;
 
 //  video streaming
-static int end_frame_=5;
+static int end_frame_=100;
 static int fps_=30;
 
 // initializer parameters
@@ -71,7 +71,7 @@ const float spec_width_ = 0.024;
 const float spec_lens_ = 0.035;
 const float spec_min_depth_ = 0.01;
 const float spec_max_depth_ = 1000;
-const float spec_distance_ = 1;
+const float spec_distance_ = 2;
 const float rendered_cams_size_ = 0.01;
 
 

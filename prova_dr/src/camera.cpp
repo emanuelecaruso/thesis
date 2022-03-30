@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <cassert>
 
-using namespace std;
 using namespace pr;
 
 void Camera::printMembers() const {
@@ -53,6 +52,7 @@ float Camera::getPixelWidth(int level) const{
 
 // assign
 void Camera::assignPose(const Eigen::Isometry3f& frame_camera_wrt_world){
+  std::lock_guard<std::mutex> locker(mu_access_pose);
   *frame_camera_wrt_world_=frame_camera_wrt_world;
   *frame_world_wrt_camera_=frame_camera_wrt_world.inverse();
 }
@@ -352,7 +352,7 @@ bool RegionWithCandidates::collectCandidates(int wavelet_levels){
         if(magnitude>grad_threshold_){
 
           // wvlt_lvl->magn_cd->showImgWithColoredPixel(pixel_coords, 2, "stafava");
-          // cv::waitKey(0);
+          // waitkey(0);
 
 
           bound bound_(min_depth,max_depth);
@@ -435,6 +435,11 @@ void ActivePoint::marginalize(){
   std::vector<ActivePoint*>* v2 = cam_->marginalized_points_;
   v2->push_back(this);
 
+  for(RegionWithActivePoints* reg : *regions_coarse_){
+    std::vector<ActivePoint*>* v3 = reg->active_pts_vec_;
+    v3->erase(std::remove(v3->begin(), v3->end(), this), v3->end());
+  }
+
 }
 
 void ActivePoint::remove(){
@@ -445,6 +450,11 @@ void ActivePoint::remove(){
   // add point to marginalized points vector
   std::vector<ActivePoint*>* v2 = cam_->marginalized_points_;
   v2->erase(std::remove(v2->begin(), v2->end(), this), v2->end());
+
+  for(RegionWithActivePoints* reg : *regions_coarse_){
+    std::vector<ActivePoint*>* v3 = reg->active_pts_vec_;
+    v3->erase(std::remove(v3->begin(), v3->end(), this), v3->end());
+  }
 
   delete this;
 

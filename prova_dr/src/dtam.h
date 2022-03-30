@@ -7,6 +7,7 @@
 #include "tracker.h"
 #include "bundleadj.h"
 #include "initializer.h"
+#include "spectator.h"
 #include "environment.h"
 #include <thread>
 #include <mutex>
@@ -26,6 +27,7 @@ class Dtam{
     tracker_(new Tracker(this)),
     bundle_adj_(new BundleAdj(this, parameters)),
     initializer_(new Initializer(this, parameters)),
+    spectator_(new Spectator(this, parameters, white)),
     parameters_(parameters),
     camera_vector_(new std::vector<CameraForMapping*>),
     keyframe_vector_(new std::vector<int>),
@@ -62,6 +64,7 @@ class Dtam{
     PoseNormError* getTotalPosesNormError();
     float getTotalPointsNormError();
 
+
   private:
     const Environment* environment_;
     KeyframeHandler* keyframe_handler_;
@@ -69,6 +72,7 @@ class Dtam{
     Tracker* tracker_;
     BundleAdj* bundle_adj_;
     Initializer* initializer_;
+    Spectator* spectator_;
     Params* const parameters_;
     std::vector<CameraForMapping*>* camera_vector_;
     std::vector<int>* keyframe_vector_;
@@ -123,6 +127,7 @@ class Dtam{
     void doInitialization(bool initialization_loop=false, bool debug_initialization=true, bool debug_mapping=false, bool track_candidates=false, bool take_gt_points=false);
     void doFrontEndPart(bool all_keyframes=false, bool wait_for_initialization=true,  bool take_gt_poses=false, bool take_gt_points=false, bool track_candidates=false, int guess_type=VELOCITY_CONSTANT, bool debug_mapping=false, bool debug_tracking=false);
     void doOptimization(bool active_all_candidates=false, bool debug_optimization=false, int opt_norm=HUBER, int test_single=TEST_ALL, int image_id=INTENSITY_ID, bool test_marginalization=false);
+    void doSpect();
 
     void noiseToPoses(float var_angle, float var_position);
     Eigen::VectorXf* noiseToPosesSame(float var_angle, float var_position);

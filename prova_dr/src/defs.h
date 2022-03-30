@@ -265,6 +265,13 @@ namespace pr {
 
   static bool debug_mode = 1;
   static std::mutex mu_cout;
+  static std::mutex mu_show_img;
+  static std::mutex mu_waitkey;
+
+  inline void waitkey(int num){
+    std::lock_guard<std::mutex> locker(mu_waitkey);
+    cv::waitKey(num);
+  }
 
   typedef cv::Vec3f colorRGB;
   const float colorRGB_maxval = 1;
@@ -301,21 +308,18 @@ namespace pr {
     return abs(vec[0])+abs(vec[1])+abs(vec[2]);
   }
 
+
   const colorRGB black = colorRGB(0,0,0);
   const colorRGB white = colorRGB(colorRGB_maxval,colorRGB_maxval,colorRGB_maxval);
   const colorRGB grey = colorRGB(colorRGB_maxval/2,colorRGB_maxval/2,colorRGB_maxval/2);
   const colorRGB magenta = colorRGB(colorRGB_maxval,0,colorRGB_maxval);
+  const colorRGB orange = colorRGB(0,colorRGB_maxval*0.546875,colorRGB_maxval);
   const colorRGB red = colorRGB(0,0,colorRGB_maxval);
   const colorRGB green = colorRGB(0,colorRGB_maxval,0);
   const colorRGB blue = colorRGB(colorRGB_maxval,0,0);
   const colorRGB cyan = colorRGB(colorRGB_maxval,colorRGB_maxval,0);
   const colorRGB yellow = colorRGB(0,colorRGB_maxval,colorRGB_maxval);
 
-  const colorRGB red_ = colorRGB(colorRGB_maxval/2,colorRGB_maxval/2,colorRGB_maxval);
-  const colorRGB green_ = colorRGB(colorRGB_maxval/2,colorRGB_maxval,colorRGB_maxval/2);
-  const colorRGB blue_ = colorRGB(colorRGB_maxval,colorRGB_maxval/2,colorRGB_maxval/2);
-  const colorRGB cyan_ = colorRGB(colorRGB_maxval,colorRGB_maxval,colorRGB_maxval/2);
-  const colorRGB magenta_ = colorRGB(colorRGB_maxval,colorRGB_maxval/2,colorRGB_maxval);
 
   inline float radiansSub(float rad1, float rad2){
 

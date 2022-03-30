@@ -306,7 +306,8 @@ class BundleAdj{
 
 
     bool projectActivePoints_prepMarg(bool take_fixed_point=false);
-    void projectActivePoints(bool take_fixed_point=false);
+    void projectActivePoints(CameraForMapping* cam, bool take_fixed_point=false);
+
     void updateCurrentGuess();
     void updateActivePointsAfterNewPose();
     void updateActivePointsAfterNewPose(CameraForMapping* keyframe);
@@ -378,6 +379,7 @@ class BundleAdj{
 
     ActivePoint* activateCandidate(CandidateProjected* cand_proj, RegionWithProjCandidates* reg, RegionsWithProjActivePoints* regs);
     void addCoarseActivePointInRegion(ActivePoint* active_pt);
+    void removeCoarseActivePointsInRegion(ActivePoint* active_pt);
 
     // void projectCandidates(CameraForMapping* keyframe, CameraForMapping* new_keyframe);
 

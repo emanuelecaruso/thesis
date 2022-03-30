@@ -32,13 +32,9 @@ class Image{
       image_ = color;
     }
 
-    // inline void show(float image_scale=1, const std::string& name_ext="") const{
-    //   cv::Mat_< T > resized_image;
-    //   cv::resize(image_, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
-    //   cv::imshow(name_+name_ext, resized_image);
-    // }
 
     inline void show(float image_scale, const std::string& name) const{
+      std::lock_guard<std::mutex> locker(mu_show_img);
       cv::Mat_< T > resized_image;
       cv::resize(image_, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
       cv::imshow(name, resized_image);
@@ -49,6 +45,7 @@ class Image{
     }
 
     inline void showWithOtherImage(const Image<T>* image_2, float image_scale=1) const{
+      std::lock_guard<std::mutex> locker(mu_show_img);
       cv::Mat_<T> collage;
       cv::hconcat(image_,image_2->image_,collage);
       cv::Mat_< T > resized_image;
@@ -59,6 +56,7 @@ class Image{
     inline void showWithOtherImage(const Image<T>* image_2,const std::string& name,
                                     float image_scale=1 ) const{
       cv::Mat_<T> collage;
+      std::lock_guard<std::mutex> locker(mu_show_img);
       cv::hconcat(image_,image_2->image_,collage);
       cv::Mat_< T > resized_image;
       cv::resize(collage, resized_image, cv::Size(), image_scale, image_scale, cv::INTER_NEAREST );
@@ -334,7 +332,17 @@ class Image{
 
     inline void drawCircle(const colorRGB& color, const pxl& point, int radius=2, int thickness=2){
       cv::Point2f point_(point.x(),point.y());
-      cv::circle	(	image_,point_ ,radius,color, thickness);
+      drawCircle( color, point_, radius, thickness);
+    }
+
+    inline void drawLine(const colorRGB& color, const cv::Point2f& point1, const cv::Point2f& point2, int thickness=2){
+      cv::line(image_, point1, point2, color, thickness, cv::LINE_4);
+    }
+
+    inline void drawLine(const colorRGB& color, const pxl& point1, const pxl& point2, int thickness=2){
+      cv::Point2f point1_(point1.x(),point1.y());
+      cv::Point2f point2_(point2.x(),point2.y());
+      drawLine( color, point1_, point2_, thickness);
     }
 
     inline void drawRectangle(const cv::Rect& rect, const colorRGB& color, int type, float alpha=1){

@@ -23,7 +23,7 @@ void Dtam::debugAllCameras(bool show_imgs){
       camera->showDepthMap();
     }
   }
-  cv::waitKey(0);
+  waitkey(0);
 }
 
 CameraForMapping* Dtam::getCurrentCamera() {
@@ -44,9 +44,8 @@ CameraForMapping* Dtam::getLastKeyframe() {
 
 PoseNormError* Dtam::getTotalPosesNormError(){
   PoseNormError* poses_norm_error_tot = new PoseNormError;
-  for (int i=0; i<camera_vector_->size(); i++){
+  for (int i=0; i<frame_current_+1; i++){
     CameraForMapping* cam = camera_vector_->at(i);
-    if (cam->name_=="Camera0001")
     if (cam->keyframe_){
       PoseNormError cam_pose_norm_error = cam->getPoseNormError();
       (*poses_norm_error_tot)+=cam_pose_norm_error;
@@ -58,7 +57,7 @@ PoseNormError* Dtam::getTotalPosesNormError(){
 float Dtam::getTotalPointsNormError(){
   int count=0;
   float points_norm_error_tot = 0;
-  for (int i=0; i<camera_vector_->size(); i++){
+  for (int i=0; i<frame_current_+1; i++){
     CameraForMapping* cam = camera_vector_->at(i);
     if (cam->keyframe_){
       float cam_point_norm_error = cam->getPointsNormError();
@@ -173,11 +172,12 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
           bundle_adj_->projectActivePoints_prepMarg(0);
           bundle_adj_->activateNewPoints();
+          bundle_adj_->collectCoarseActivePoints();
 
           keyframe_handler_->prepareDataForBA();
+
           keyframe_added_.notify_all();
 
-          bundle_adj_->collectCoarseActivePoints();
 
           mapper_->selectNewCandidates();
 
@@ -453,6 +453,15 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
     else
       break;
 
+    if(bundle_adj_->keyframe_vector_ba_->size()<=2){
+      if(debug_optimization){
+        std::this_thread::sleep_for(std::chrono::microseconds(10000));
+        optimization_done_.notify_all();
+      }
+
+      continue;
+    }
+
     // DEBUG
     if(bundle_adj_->debug_optimization_){
       // // cam on which active points are projected
@@ -469,7 +478,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       // //         keyframe->showCoarseActivePoints(i,1);}
       // //     }
       // //
-      //   cv::waitKey(0);
+      //   waitkey(0);
       //   cv::destroyAllWindows();
     }
 
@@ -509,7 +518,9 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
   }
 }
 
-
+void Dtam::doSpect(){
+  spectator_->spectateDso();
+}
 
 void Dtam::updateCamerasFromEnvironment(){
 
@@ -570,7 +581,7 @@ void Dtam::eval_initializer(){
   //
   // // initializer_->showCornersRef();
   // initializer_->showCornersTrackSequence();
-  // cv::waitKey(0);
+  // waitkey(0);
 
 }
 
@@ -597,7 +608,7 @@ void Dtam::test_mapping(){
   update_cameras_thread_.join();
 
 
-  cv::waitKey(0);
+  waitkey(0);
 
 }
 
@@ -625,7 +636,7 @@ void Dtam::test_tracking(){
   update_cameras_thread_.join();
 
 
-  cv::waitKey(0);
+  waitkey(0);
 
 }
 
@@ -724,12 +735,12 @@ void Dtam::test_dso(){
 
   bool debug_initialization=false;
   bool debug_mapping=false;
-  bool debug_tracking=false;
-  bool debug_optimization= false;
+  bool debug_tracking=true;
+  bool debug_optimization= true;
 
   bool initialization_loop=false;
   bool take_gt_poses=false;
-  bool take_gt_points=false;
+  bool take_gt_points=true;
 
   bool track_candidates=false;
   // int guess_type=POSE_CONSTANT;
@@ -742,19 +753,20 @@ void Dtam::test_dso(){
   // int image_id=PHASE_ID;
   bool test_marginalization=false;
 
-  bool all_keyframes=false;
+  bool all_keyframes=true;
   bool wait_for_initialization=true;
   bool active_all_candidates=true;
+
+  bool show_spectator=true;
 
   std::thread frontend_thread_(&Dtam::doFrontEndPart, this, all_keyframes, wait_for_initialization, take_gt_poses, take_gt_points, track_candidates, guess_type, debug_mapping, debug_tracking);
   std::thread initialization_thread_(&Dtam::doInitialization, this, initialization_loop, debug_initialization, debug_mapping, track_candidates, take_gt_points);
   std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+  std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id, test_marginalization);
+  // std::thread spectator_thread(&Dtam::doSpect, this);
 
-  if(!track_candidates){
-    std::thread optimization_thread(&Dtam::doOptimization, this, active_all_candidates, debug_optimization,opt_norm, test_single, image_id, test_marginalization);
-    optimization_thread.join();
-  }
-
+  // spectator_thread.join();
+  optimization_thread.join();
   initialization_thread_.join();
   update_cameras_thread_.join();
   frontend_thread_.join();

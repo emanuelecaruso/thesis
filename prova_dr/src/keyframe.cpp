@@ -137,6 +137,7 @@ void KeyframeHandler::marginalizeKeyframeSelect(){
     float percentage_marg = getPercentuageMarg(keyframe);
     if(percentage_marg>dtam_->parameters_->percentage_marg_pts_threshold){
       marginalizeKeyframe(i);
+      break;
       percentage_marginalization=true;
     }
 
@@ -165,10 +166,10 @@ void KeyframeHandler::marginalizeKeyframeSelect(){
 
 float KeyframeHandler::getPercentuageMarg(CameraForMapping* keyframe){
   int num_active_pts = keyframe->active_points_->size();
-  int num_marg_pts = keyframe->marginalized_points_->size();
+  int num_non_active_pts = keyframe->marginalized_points_->size();
 
-  // return (num_active_pts/(num_active_pts+num_marg_pts));
-  return 0;
+  return (((float)num_non_active_pts)/((float)(num_active_pts+num_non_active_pts)));
+  // return 0;
 }
 
 float KeyframeHandler::getScore(CameraForMapping* keyframe){
@@ -186,7 +187,7 @@ float KeyframeHandler::getScore(CameraForMapping* keyframe){
       continue;
 
     Eigen::Vector3f pos_diff = (keyframe->frame_camera_wrt_world_->translation())-(keyframe_->frame_camera_wrt_world_->translation());
-    sum += 1.0/(pos_diff.norm()+0.0001);
+    sum += 1.0/(pos_diff.norm()+0.00000001);
 
   }
   return d1*sum;

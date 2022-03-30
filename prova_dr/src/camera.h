@@ -21,6 +21,7 @@ class Camera{
     Image<float>* invdepth_map_;
     Eigen::Isometry3f* frame_camera_wrt_world_;
     Eigen::Isometry3f* frame_world_wrt_camera_;
+    std::mutex mu_access_pose;
 
 
     Camera(const std::string& name, const CamParameters* cam_parameters,
@@ -86,6 +87,18 @@ class Camera{
     };
 
 
+    inline Eigen::Isometry3f access_frame_camera_wrt_world(){
+      std::lock_guard<std::mutex> locker(mu_access_pose);
+      Eigen::Isometry3f T = (*frame_camera_wrt_world_);
+      return T;
+    }
+
+    inline Eigen::Isometry3f access_frame_world_wrt_camera(){
+      std::lock_guard<std::mutex> locker(mu_access_pose);
+      Eigen::Isometry3f T = (*frame_world_wrt_camera_);
+      return T;
+    }
+
 
     void printMembers() const;
 
@@ -123,9 +136,10 @@ class Camera{
     void showDepthMap(int image_scale=1) const;
 
 
-    inline Camera* clone(){
-      return new Camera(*this);
-    }
+    // inline Camera* clone(){
+    //   Camera* new_cam = new Camera(*this);
+    //   return new_cam;
+    // }
   protected:
     Eigen::Matrix3f* compute_K();
     Image<pixelIntensity>* returnIntensityImgFromPath(const std::string& path_rgb);

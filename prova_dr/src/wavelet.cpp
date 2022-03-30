@@ -31,7 +31,7 @@ Image<float>* Wvlt_lvl::getPhase(Image<pixelIntensity>* dx, Image<pixelIntensity
   // phase->image_/=6.28;
   // phase->show(1);
   //
-  // cv::waitKey(0);
+  // waitkey(0);
 
   return phase;
 }

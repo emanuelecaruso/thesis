@@ -483,7 +483,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
         //     ep_segment->showEpipolarWithMin(cand->level_);
         //     Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
         //     magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-        //     cv::waitKey(0);
+        //     waitkey(0);
         //   // }
         //
         //   // push the same bounds
@@ -525,7 +525,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           //   ep_segment->showEpipolarWithMin(cand->level_);
           //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
           //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-          //   cv::waitKey(0);
+          //   waitkey(0);
           // }
 
           break;
@@ -539,7 +539,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
           //   ep_segment->showEpipolarWithMin(cand->level_);
           //   Image<float>* magn = keyframe->wavelet_dec_->vector_wavelets->at(cand->level_)->magn_cd;
           //   magn->showImgWithColoredPixel(cand->pixel_,pow(2,cand->level_+1), keyframe->name_+"magn");
-          //   cv::waitKey(0);
+          //   waitkey(0);
           // }
 
           n_cand_updated++;
@@ -615,7 +615,7 @@ void Mapper::trackExistingCandidates_(bool debug_mapping){
   {
     last_keyframe->showProjCandidates(1);
     sharedCoutDebug("         - DEBUG: total error: "+std::to_string(total_error));
-    cv::waitKey(0);
+    waitkey(0);
     // cv::destroyAllWindows();
   }
 

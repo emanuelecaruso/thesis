@@ -629,6 +629,7 @@ executables/CMakeFiles/test_dso.dir/__/src/bundleadj.cpp.o: ../src/bundleadj.cpp
   ../src/environment.h \
   ../src/bundleadj.h \
   ../src/initializer.h \
+  ../src/spectator.h \
   ../src/utils.h \
   /usr/include/c++/7/future \
   /usr/include/c++/7/atomic \
@@ -2011,6 +2012,7 @@ executables/CMakeFiles/test_dso.dir/__/src/dtam.cpp.o: ../src/dtam.cpp \
   ../src/environment.h \
   ../src/bundleadj.h \
   ../src/initializer.h \
+  ../src/spectator.h \
   ../src/utils.h \
   /usr/include/c++/7/future \
   /usr/include/c++/7/atomic \
@@ -4492,6 +4494,7 @@ executables/CMakeFiles/test_dso.dir/__/src/initializer.cpp.o: ../src/initializer
   ../src/environment.h \
   ../src/bundleadj.h \
   ../src/initializer.h \
+  ../src/spectator.h \
   ../src/utils.h \
   /usr/include/c++/7/future \
   /usr/include/c++/7/atomic \
@@ -5126,6 +5129,7 @@ executables/CMakeFiles/test_dso.dir/__/src/keyframe.cpp.o: ../src/keyframe.cpp \
   ../src/environment.h \
   ../src/bundleadj.h \
   ../src/initializer.h \
+  ../src/spectator.h \
   ../src/utils.h \
   /usr/include/c++/7/future \
   /usr/include/c++/7/atomic \
@@ -5759,6 +5763,7 @@ executables/CMakeFiles/test_dso.dir/__/src/mapper.cpp.o: ../src/mapper.cpp \
   ../src/environment.h \
   ../src/bundleadj.h \
   ../src/initializer.h \
+  ../src/spectator.h \
   ../src/utils.h \
   /usr/include/c++/7/future \
   /usr/include/c++/7/atomic \
@@ -7022,6 +7027,7 @@ executables/CMakeFiles/test_dso.dir/__/src/tracker.cpp.o: ../src/tracker.cpp \
   ../src/environment.h \
   ../src/bundleadj.h \
   ../src/initializer.h \
+  ../src/spectator.h \
   ../src/utils.h \
   /usr/include/c++/7/future \
   /usr/include/c++/7/atomic \
@@ -8486,7 +8492,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
   ../src/tracker.h \
   ../src/environment.h \
   ../src/bundleadj.h \
-  ../src/initializer.h
+  ../src/initializer.h \
+  ../src/spectator.h
 
 
 ../executables/test_dso.cpp:
@@ -8494,8 +8501,6 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 ../src/utils.cpp:
 
 ../src/tracker.cpp:
-
-../src/spectator.h:
 
 ../src/spectator.cpp:
 
@@ -8540,6 +8545,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 /usr/include/signal.h:
 
 /usr/include/x86_64-linux-gnu/bits/setjmp2.h:
+
+/home/emanuele/.local/lib/python3.6/site-packages/numpy/core/include/numpy/npy_interrupt.h:
 
 /usr/include/c++/7/bits/stl_function.h:
 
@@ -9729,8 +9736,6 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 
 /usr/local/include/opencv4/opencv2/shape/emdL1.hpp:
 
-/home/emanuele/.local/lib/python3.6/site-packages/numpy/core/include/numpy/npy_interrupt.h:
-
 /usr/local/include/opencv4/opencv2/shape/shape_transformer.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/getopt_core.h:
@@ -9888,6 +9893,8 @@ executables/CMakeFiles/test_dso.dir/test_dso.cpp.o: ../executables/test_dso.cpp 
 ../src/environment.h:
 
 ../src/bundleadj.h:
+
+../src/spectator.h:
 
 /usr/include/c++/7/future:
 
