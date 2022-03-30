@@ -368,6 +368,8 @@ class BundleAdj{
 
   private:
 
+    friend class Tracker;
+
     Dtam* const dtam_;
     Params* const parameters_;
     int num_active_points_;

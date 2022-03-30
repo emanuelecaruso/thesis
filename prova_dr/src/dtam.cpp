@@ -743,8 +743,8 @@ void Dtam::test_dso(){
   bool take_gt_points=true;
 
   bool track_candidates=false;
-  // int guess_type=POSE_CONSTANT;
-  int guess_type=VELOCITY_CONSTANT;
+  int guess_type=POSE_CONSTANT;
+  // int guess_type=VELOCITY_CONSTANT;
   int opt_norm=HUBER;
   // int opt_norm=QUADRATIC;
   int test_single=TEST_ALL;

@@ -322,68 +322,87 @@ bool Tracker::iterationLSCands(Matrix6f& H, Vector6f& b, float& chi, Candidate* 
 
 bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* active_pt, CameraForMapping* frame_new, Eigen::Isometry3f& current_guess ){
 
-  float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
-  Eigen::Matrix3f K = *(frame_new->K_);
-  float variance = dtam_->parameters_->variance;
-  int ni = dtam_->parameters_->robustifier_dofs;
-  float coeff = pixels_meter_ratio/pow(2,active_pt->level_+1);
-
-  // variables
-  Eigen::Vector2f uv_newframe;
-  pxl pixel_newframe;
-  Eigen::Vector3f point_newframe;
-  Eigen::Vector3f* point = active_pt->p_; // 3D point wrt world frame
-  Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_; // 3D point wrt cam frame
-  float invdepth = active_pt->invdepth_;
-  float invdepth_var = active_pt->invdepth_var_;
-
-  point_newframe= current_guess*(*point);
-
-  Eigen::Vector3f p_proj = K*point_newframe;
-  // return false if the projected point is behind the camera
-  if (p_proj.z()<frame_new->cam_parameters_->lens){
-    active_pt->opt_flow_distance_=-1;
+  Eigen::Vector3f point_m_0;
+  pxl pixel_m;
+  Eigen::Matrix<float,2,3>* J_1_;
+  J_1_ = dtam_->bundle_adj_->getJfirst_( active_pt, frame_new, point_m_0, pixel_m);
+  if (J_1_==nullptr)
     return false;
-  }
-  uv_newframe = p_proj.head<2>()*(1./p_proj.z());
+  Eigen::Matrix3f relative_rot_mat = dtam_->bundle_adj_->getRelativeRotationMatrix( active_pt,frame_new);
+  Eigen::Matrix<float,3,6> JSecond_jm = dtam_->bundle_adj_->getJSecondJm( point_m_0 );
+  Eigen::Matrix<float,1,2> img_jacobian = dtam_->bundle_adj_->getImageJacobian( active_pt, frame_new, pixel_m, INTENSITY_ID);
+  Eigen::Matrix<float,1,3> J_1= dtam_->bundle_adj_->getJfirst( J_1_, img_jacobian);
+  Eigen::Matrix<float,1,6> J_m = dtam_->bundle_adj_->getJm( J_1, JSecond_jm);
+  Eigen::Matrix<float, 6, 1> J_m_transp = J_m.transpose();
 
-  active_pt->opt_flow_distance_=-1;
+  float error = dtam_->bundle_adj_->getError( active_pt, frame_new ,pixel_m, INTENSITY_ID );
+  float  weight_total = dtam_->bundle_adj_->getWeightTotal(error);
 
-  frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
+  H+=J_m_transp*weight_total*J_m;
+  b+=J_m_transp*weight_total*error;
+  chi += dtam_->bundle_adj_->getChi(error);
 
-  frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
 
-  if(!frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_newframe))
-    return false;
-
-  Eigen::Matrix<float, 2,3> proj_jacobian;
-  Eigen::Matrix<float, 3,6> state_jacobian;
-  Eigen::Matrix<float, 2,6> jacobian_to_mul;
-  Eigen::Matrix<float, 2,1> jacobian_to_mul_normalizer;
-  Eigen::Matrix<float, 3,1> invdepth_jacobian;
-
-  proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
-                   0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
-
-  state_jacobian << 1, 0, 0,  0                  ,  point_newframe.z()  , -point_newframe.y(),
-                    0, 1, 0, -point_newframe.z() ,  0                   ,  point_newframe.x(),
-                    0, 0, 1,  point_newframe.y() , -point_newframe.x()  ,  0         ;
-
-  invdepth_jacobian << -active_pt->uv_.x()/pow(invdepth,2),
-                         -active_pt->uv_.y()/pow(invdepth,2),
-                         -1/pow(invdepth,2);
-
-  jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(active_pt->cam_->frame_camera_wrt_world_->linear()*invdepth_jacobian)));
-
-  jacobian_to_mul = (proj_jacobian*K)*state_jacobian;
-
-  Eigen::Matrix<float, 1,2> img_jacobian;
-  pixelIntensity z, z_hat;
-
-  z = active_pt->intensity_;
-  z_hat = frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_newframe);
-  img_jacobian << frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_newframe);
-  updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
+  //
+  // float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
+  // Eigen::Matrix3f K = *(frame_new->K_);
+  // float variance = dtam_->parameters_->variance;
+  // int ni = dtam_->parameters_->robustifier_dofs;
+  // float coeff = pixels_meter_ratio/pow(2,active_pt->level_+1);
+  //
+  // // variables
+  // Eigen::Vector2f uv_newframe;
+  // pxl pixel_newframe;
+  // Eigen::Vector3f point_newframe;
+  // Eigen::Vector3f* point = active_pt->p_; // 3D point wrt world frame
+  // Eigen::Vector3f* point_incamframe = active_pt->p_incamframe_; // 3D point wrt cam frame
+  // float invdepth = active_pt->invdepth_;
+  // float invdepth_var = active_pt->invdepth_var_;
+  //
+  // point_newframe= current_guess*(*point);
+  //
+  // Eigen::Vector3f p_proj = K*point_newframe;
+  // // return false if the projected point is behind the camera
+  // if (p_proj.z()<frame_new->cam_parameters_->lens){
+  //   return false;
+  // }
+  // uv_newframe = p_proj.head<2>()*(1./p_proj.z());
+  //
+  // frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
+  //
+  // frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
+  //
+  // if(!frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->pixelInRange(pixel_newframe))
+  //   return false;
+  //
+  // Eigen::Matrix<float, 2,3> proj_jacobian;
+  // Eigen::Matrix<float, 3,6> state_jacobian;
+  // Eigen::Matrix<float, 2,6> jacobian_to_mul;
+  // Eigen::Matrix<float, 2,1> jacobian_to_mul_normalizer;
+  // Eigen::Matrix<float, 3,1> invdepth_jacobian;
+  //
+  // proj_jacobian << 1./p_proj.z(), 0, -p_proj.x()/pow(p_proj.z(),2),
+  //                  0, 1./p_proj.z(), -p_proj.y()/pow(p_proj.z(),2);
+  //
+  // state_jacobian << 1, 0, 0,  0                  ,  point_newframe.z()  , -point_newframe.y(),
+  //                   0, 1, 0, -point_newframe.z() ,  0                   ,  point_newframe.x(),
+  //                   0, 0, 1,  point_newframe.y() , -point_newframe.x()  ,  0         ;
+  //
+  // invdepth_jacobian << -active_pt->uv_.x()/pow(invdepth,2),
+  //                        -active_pt->uv_.y()/pow(invdepth,2),
+  //                        -1/pow(invdepth,2);
+  //
+  // jacobian_to_mul_normalizer = proj_jacobian*(K*(current_guess.linear()*(active_pt->cam_->frame_camera_wrt_world_->linear()*invdepth_jacobian)));
+  //
+  // jacobian_to_mul = (proj_jacobian*K)*state_jacobian;
+  //
+  // Eigen::Matrix<float, 1,2> img_jacobian;
+  // pixelIntensity z, z_hat;
+  //
+  // z = active_pt->intensity_;
+  // z_hat = frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c->evalPixelBilinear(pixel_newframe);
+  // img_jacobian << frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dx->evalPixelBilinear(pixel_newframe), frame_new->wavelet_dec_->getWavLevel(active_pt->level_)->c_dy->evalPixelBilinear(pixel_newframe);
+  // updateLS( H, b, chi, jacobian_to_mul, jacobian_to_mul_normalizer, z, z_hat, img_jacobian, ni, variance, coeff, invdepth_var );
 
 
   // z = active_pt->grad_magnitude_;
@@ -467,34 +486,34 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
       v= keyframe->active_points_;
 
 
-    // CamCouple* cam_couple = new CamCouple(keyframe,frame_new,0);
+    CamCouple* cam_couple = new CamCouple(keyframe,frame_new,0);
 
     // for each active point
     for(ActivePoint* active_pt : *v){
 
-      // Eigen::Vector2f uv;
-      // pxl pixel_newframe;
-      // float depth_m;
-      // float depth_r= 1.0/active_pt->invdepth_;
-      // cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, depth_m );
-      // cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, uv.x(), uv.y() );
-      // cam_couple->cam_m_->uv2pixelCoords( uv, pixel_newframe, active_pt->level_);
-
-
-      Eigen::Vector2f uv_newframe;
+      Eigen::Vector2f uv;
       pxl pixel_newframe;
-      Eigen::Vector3f point_newframe;
-      Eigen::Vector3f* point = active_pt->p_;
-
-      point_newframe= current_guess*(*point);
-      float invdepth_proj = 1.0/point_newframe.z();
-      frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
-      frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
-
-      colorRGB color = frame_new->invdepthToRgb(invdepth_proj);
+      float depth_m;
+      float depth_r= 1.0/active_pt->invdepth_;
+      cam_couple->getD2(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, depth_m );
+      cam_couple->getUv(active_pt->uv_.x(), active_pt->uv_.y(), depth_r, uv.x(), uv.y() );
+      cam_couple->cam_m_->uv2pixelCoords( uv, pixel_newframe, active_pt->level_);
 
 
-      // colorRGB color = frame_new->invdepthToRgb(1.0/depth_m);
+      // Eigen::Vector2f uv_newframe;
+      // pxl pixel_newframe;
+      // Eigen::Vector3f point_newframe;
+      // Eigen::Vector3f* point = active_pt->p_;
+      //
+      // point_newframe= current_guess*(*point);
+      // float invdepth_proj = 1.0/point_newframe.z();
+      // frame_new->projectPointInCamFrame( point_newframe, uv_newframe );
+      // frame_new->uv2pixelCoords(uv_newframe, pixel_newframe, active_pt->level_);
+      //
+      // colorRGB color = frame_new->invdepthToRgb(invdepth_proj);
+
+
+      colorRGB color = frame_new->invdepthToRgb(1.0/depth_m);
       show_image->setPixel( pixel_newframe, color);
 
     }
@@ -574,18 +593,22 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
       H.setZero();
       b.setZero();
       chi=0;
+      Eigen::Isometry3f pose = current_guess.inverse();
+      curr_cam->assignPose(pose);
+      curr_cam->assignPose0(pose);
 
       //DEBUG
       if(debug_tracking){
         dtam_->spectator_->renderState();
         dtam_->spectator_->showSpectator();
-        CameraForMapping* frame_new = dtam_->getCurrentCamera();
-        frame_new->clearProjectedActivePoints();
-        bool take_fixed_point = 0;
-        dtam_->bundle_adj_->projectActivePoints(frame_new,take_fixed_point);
-        frame_new->showProjActivePoints(1);
+        // CameraForMapping* frame_new = dtam_->getCurrentCamera();
+        // frame_new->clearProjectedActivePoints();
+        // bool take_fixed_point = 0;
+        // dtam_->bundle_adj_->projectActivePoints(frame_new,take_fixed_point);
+        // frame_new->showProjActivePoints(1);
+
         showProjectActivePtsWithCurrGuess(current_guess, i);
-        frame_new->clearProjectedActivePoints();
+        // frame_new->clearProjectedActivePoints();
       }
 
 
@@ -596,6 +619,7 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
         // std::cout << "keyframe " << keyframe_idx << std::endl;
 
         CameraForMapping* keyframe = dtam_->camera_vector_->at(keyframe_idx);
+
 
         std::vector<ActivePoint*>* v;
         if(i>0){
@@ -641,12 +665,7 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
         }
         current_guess=new_guess;
 
-        if(debug_tracking){
-          Eigen::Isometry3f pose = current_guess.inverse();
-          curr_cam->assignPose(pose);
-          curr_cam->assignPose0(pose);
 
-        }
       }
 
       iterations++;

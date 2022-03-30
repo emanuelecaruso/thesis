@@ -12,7 +12,7 @@
 #include "defs.h"
 
 // candidate selection
-static int coarsest_level_= 3; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
+static int coarsest_level_= 2; // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 static int reg_level_=2;     // e.g. level = 3 -> 0,1,2,*3* (fourth level)
 static float grad_threshold_=0.07;
 static int num_candidates_=1000;

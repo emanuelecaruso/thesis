@@ -791,6 +791,7 @@ JacobiansAndError* BundleAdj::getJacobiansAndError(ActivePoint* active_pt, Camer
 
   float chi = getChi(error);
   // float chi = getChi(error,omega);
+  // float weight = (ni+1.0)/(ni+(pow(error,2)/variance));
   float  weight_total = getWeightTotal(error);
 
 
