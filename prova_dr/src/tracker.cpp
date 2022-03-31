@@ -343,6 +343,7 @@ bool Tracker::iterationLS(Matrix6f& H, Vector6f& b, float& chi, ActivePoint* act
   chi += dtam_->bundle_adj_->getChi(error);
 
 
+
   //
   // float pixels_meter_ratio = dtam_->camera_vector_->at(0)->cam_parameters_->resolution_x/dtam_->camera_vector_->at(0)->cam_parameters_->width;
   // Eigen::Matrix3f K = *(frame_new->K_);
@@ -518,10 +519,13 @@ void Tracker::showProjectActivePtsWithCurrGuess(Eigen::Isometry3f& current_guess
 
     }
 
+    delete cam_couple;
   }
 
   show_image->show(2*pow(2,level));
   waitkey(0);
+  delete show_image;
+
 }
 
 
@@ -677,6 +681,7 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
      // break;
      // std::cout << "ao? " << std::endl;
   }
+  cv::destroyWindow("project curr guess, "+frame_new->name_);
 
 }
 

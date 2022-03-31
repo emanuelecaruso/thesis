@@ -454,6 +454,10 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       break;
 
     if(bundle_adj_->keyframe_vector_ba_->size()<=2){
+      int test_single = bundle_adj_->test_single_;
+      bundle_adj_->test_single_=TEST_ONLY_POINTS;
+      bundle_adj_->optimize();
+      bundle_adj_->test_single_=test_single;
       if(debug_optimization){
         std::this_thread::sleep_for(std::chrono::microseconds(10000));
         optimization_done_.notify_all();
@@ -461,6 +465,7 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
 
       continue;
     }
+
 
     // DEBUG
     if(bundle_adj_->debug_optimization_){
@@ -733,14 +738,14 @@ void Dtam::test_optimization_points(){
 
 void Dtam::test_dso(){
 
-  bool debug_initialization=false;
+  bool debug_initialization=true;
   bool debug_mapping=false;
   bool debug_tracking=true;
   bool debug_optimization= true;
 
   bool initialization_loop=false;
   bool take_gt_poses=false;
-  bool take_gt_points=true;
+  bool take_gt_points=false;
 
   bool track_candidates=false;
   int guess_type=POSE_CONSTANT;
@@ -753,7 +758,7 @@ void Dtam::test_dso(){
   // int image_id=PHASE_ID;
   bool test_marginalization=false;
 
-  bool all_keyframes=true;
+  bool all_keyframes=false;
   bool wait_for_initialization=true;
   bool active_all_candidates=true;
 

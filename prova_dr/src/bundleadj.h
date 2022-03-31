@@ -16,6 +16,11 @@ class deltaUpdateIncrements{
     deltaUpdateIncrements(Eigen::VectorXf* dx_poses_, Eigen::VectorXf* dx_points_):
     dx_poses(dx_poses_),
     dx_points(dx_points_){}
+
+    ~deltaUpdateIncrements(){
+      delete dx_poses;
+      delete dx_points;
+    }
 };
 
 class JacobiansAndError{
@@ -129,7 +134,7 @@ public:
   }
 
   ~HessianAndB_base(){
-    // deleteAllPtrs();
+    deleteAllPtrs();
   }
 
   inline bool isNull(){

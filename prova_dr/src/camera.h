@@ -99,6 +99,7 @@ class Camera{
       return T;
     }
 
+    colorRGB invdepthToRgb(float invdepth);
 
     void printMembers() const;
 
@@ -251,6 +252,11 @@ class Candidate : public CandidateBase{
     grad_phase_(grad_phase)
     { }
 
+    ~Candidate(){
+      delete p_incamframe_;
+      delete p_;
+      delete regions_coarse_;
+    }
 
     CameraForMapping* cam_;
     std::vector<bound>* bounds_;
@@ -373,6 +379,16 @@ class ActivePoint : public CandidateBase{
     to_marginalize_(false)
     { }
 
+    ~ActivePoint(){
+      if(p_incamframe_!=p_incamframe_0_)
+        delete p_incamframe_0_;
+      if(p_!=p_0_)
+        delete p_0_;
+
+      delete p_incamframe_;
+      delete p_;
+
+    }
 
     CameraForMapping* cam_;
     std::vector<RegionWithActivePoints*>* regions_coarse_;
@@ -756,7 +772,6 @@ class CameraForMapping: public Camera{
                               env_cam->invdepth_map_, parameters, env_cam)
            {  };
 
-    colorRGB invdepthToRgb(float invdepth);
     void showCandidates(float size);
     void showCoarseCandidates(int level, float size=1);
     void showCoarseActivePoints(int level, float size=1);

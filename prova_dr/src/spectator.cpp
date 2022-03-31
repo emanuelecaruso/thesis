@@ -76,7 +76,7 @@ void Spectator::renderPoints(){
         int num_act_pts = cam->active_points_->size();
         for ( int j = num_act_pts-1; j>=0; j--){
           ActivePoint* act_pt = cam->active_points_->at(j);
-          plotPt(act_pt, red);
+          plotPt(act_pt, magenta);
         }
       }
     }
@@ -151,7 +151,7 @@ bool Spectator::plotPt(Eigen::Vector3f& pt, const colorRGB& color, pxl& pixel){
   spectator_cam_->uv2pixelCoords(uv, pixel);
 
   if(spectator_image_->pixelInRange(pixel)){
-    spectator_image_->drawCircle( color, pixel,1,1);
+    spectator_image_->drawCircle( color, pixel,1,2);
     return true;
   }
   return false;

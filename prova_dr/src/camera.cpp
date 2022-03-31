@@ -536,7 +536,7 @@ void CameraForMapping::selectNewCandidates(int max_num_candidates){
 
 
 
-colorRGB CameraForMapping::invdepthToRgb(float invdepth){
+colorRGB Camera::invdepthToRgb(float invdepth){
 
   float min_depth = cam_parameters_->min_depth;
   float invdepth_normalized = min_depth*invdepth;

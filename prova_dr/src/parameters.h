@@ -52,7 +52,7 @@ static int robustifier_dofs_=2;
 static float ratio_for_convergence_ = 0.001;
 
 //  video streaming
-static int end_frame_=100;
+static int end_frame_=20;
 static int fps_=30;
 
 // initializer parameters
@@ -70,7 +70,7 @@ const int spec_resolution_y_ = 768;
 const float spec_width_ = 0.024;
 const float spec_lens_ = 0.035;
 const float spec_min_depth_ = 0.01;
-const float spec_max_depth_ = 1000;
+const float spec_max_depth_ = 20;
 const float spec_distance_ = 2;
 const float rendered_cams_size_ = 0.01;
 

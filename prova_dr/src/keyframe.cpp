@@ -135,7 +135,7 @@ void KeyframeHandler::marginalizeKeyframeSelect(){
     CameraForMapping* keyframe = dtam_->camera_vector_->at(dtam_->keyframe_vector_->at(i));
 
     float percentage_marg = getPercentuageMarg(keyframe);
-    if(percentage_marg>dtam_->parameters_->percentage_marg_pts_threshold){
+    if(percentage_marg<dtam_->parameters_->percentage_marg_pts_threshold){
       marginalizeKeyframe(i);
       break;
       percentage_marginalization=true;
@@ -168,7 +168,7 @@ float KeyframeHandler::getPercentuageMarg(CameraForMapping* keyframe){
   int num_active_pts = keyframe->active_points_->size();
   int num_non_active_pts = keyframe->marginalized_points_->size();
 
-  return (((float)num_non_active_pts)/((float)(num_active_pts+num_non_active_pts)));
+  return (((float)num_active_pts)/((float)(num_active_pts+num_non_active_pts)));
   // return 0;
 }
 
