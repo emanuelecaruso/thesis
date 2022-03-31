@@ -2,3 +2,7 @@
 - make sequential version
 - check sequential version with parallel for
 - work on parallel version using more threads
+
+- experiments
+  - include initial corners or not
+  - do initial ba on points or not
