@@ -16,7 +16,7 @@ class KeyframeHandler{
     {};
 
     bool addKeyframe(bool all_keyframes=false);
-    void addFirstKeyframe();
+    void addFixedFrame();
     bool marginalize_keyframe(bool all_keyframes=false);
     bool marginalize_keyframe_ba(bool all_keyframes=false);
 

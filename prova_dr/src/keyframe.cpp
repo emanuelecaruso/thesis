@@ -21,8 +21,8 @@ bool KeyframeHandler::addKeyframe(bool all_keyframes){
   return frame_added;
 }
 
-void KeyframeHandler::addFirstKeyframe(){
-  dtam_->camera_vector_->at(dtam_->frame_current_)->first_keyframe_=true;
+void KeyframeHandler::addFixedFrame(){
+  dtam_->camera_vector_->at(dtam_->frame_current_)->fixed_=true;
   pushKeyframeFrontend();
   // pushKeyframeBundleadj();
   sharedCoutDebug("   - First keyframe added ( "+ dtam_->camera_vector_->at(dtam_->frame_current_)->name_ +" )");

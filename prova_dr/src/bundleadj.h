@@ -63,7 +63,13 @@ class JacobiansAndError{
       else
         *J_r_transp=J_r_->transpose();
 
-      *J_m_transp=J_m_->transpose();
+      if(J_m==nullptr){
+        delete J_m_transp;
+        J_m_transp= nullptr;
+      }
+      else
+        *J_m_transp=J_m_->transpose();
+
     }
 
     ~JacobiansAndError(){

@@ -701,7 +701,7 @@ class CameraForMapping: public Camera{
     bool new_;
     bool active_points_removed_;
     bool keyframe_;
-    bool first_keyframe_;
+    bool fixed_;
     bool pose_updated_;
     int n_candidates_;
     int state_pose_block_idx_;
@@ -736,7 +736,7 @@ class CameraForMapping: public Camera{
            new_(false),
            active_points_removed_(false),
            keyframe_(false),
-           first_keyframe_(false),
+           fixed_(false),
            pose_updated_(true),
            n_candidates_(0),
            state_pose_block_idx_(-1),

@@ -1,30 +1,4 @@
-- move CameraForMapping in mapper
-- cv::Mat pointer in image.h
-- synchronize better threads
-- TODO remove (dtam.cpp)
-
-- return on rotational invariance
-      updateRotationalInvariantGradients in dtam.cpp
-      updateRotationalInvariantGradients in mapper.cpp
-      float cost = getCostNew in epline.cpp (to rob)
-
-- return on frame selection for initialization (large baseline/score ?)
-- return on homography/fundamentalmat on initialization
-
-- warp function for tracking and opt can be optimized
-
-
-- keyframe management
-- flag for projected active points
-
-- final viewer
-- delete pointers
-- check sync problem
-- check with different datasets
-- check performance
-
-
-POSSIBLE REFACTORING
-
-- remove multiresolution candidate selection
-- better class distribution
+- include corners
+- make sequential version
+- check sequential version with parallel for
+- work on parallel version using more threads

@@ -139,7 +139,7 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
     if(frame_current_==0){
       tracker_->trackCam(true);
-      keyframe_handler_->addFirstKeyframe();
+      keyframe_handler_->addFixedFrame();
       keyframe_handler_->prepareDataForBA();
 
       // keyframe_handler_->addKeyframe(true);
@@ -164,7 +164,8 @@ void Dtam::doInitialization(bool initialization_loop, bool debug_initialization,
 
         if(!initialization_loop){
           // ... add last keyframe
-          keyframe_handler_->addKeyframe(true);
+          // keyframe_handler_->addKeyframe(true);
+          keyframe_handler_->addFixedFrame();
 
           // start initializing the model
           // mapper_->trackExistingCandidates(false,debug_mapping);
@@ -246,7 +247,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
 
       if(frame_current_==0){
         tracker_->trackCam(true);
-        keyframe_handler_->addFirstKeyframe();
+        keyframe_handler_->addFixedFrame();
         mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
         bundle_adj_->projectActivePoints_prepMarg(0);
         bundle_adj_->activateNewPoints();
@@ -269,7 +270,7 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     //
     //   if(frame_current_==0){
     //     tracker_->trackCam(true);
-    //     keyframe_handler_->addFirstKeyframe();
+    //     keyframe_handler_->addFixedFrame();
     //   }
     //   else if(frame_current_==1){
     //     mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
@@ -339,7 +340,7 @@ void Dtam::noiseToPoses(float range_angle, float range_position){
 
   for(int i=0; i<bundle_adj_->keyframe_vector_ba_->size() ; i++){
     CameraForMapping* keyframe = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(i));
-    if(keyframe->first_keyframe_){
+    if(keyframe->fixed_){
       std::cout << keyframe->name_ << " FIRST KEYFRAME " << std::endl;
       continue;
     }
@@ -381,7 +382,7 @@ Eigen::VectorXf* Dtam::noiseToPosesSame(float range_angle, float range_position)
 
   // noise to first keyframe
   CameraForMapping* keyframe_first = camera_vector_->at(bundle_adj_->keyframe_vector_ba_->at(1));
-  assert(!(keyframe_first->first_keyframe_) );
+  assert(!(keyframe_first->fixed_) );
   assert(!(keyframe_first->to_be_marginalized_ba_) );
   Eigen::Isometry3f frame_camera_wrt_world_noisy =  (*(keyframe_first->grountruth_camera_->frame_camera_wrt_world_))*v2t_inv(noise);
   keyframe_first->assignPose0(frame_camera_wrt_world_noisy);
@@ -454,14 +455,14 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       break;
 
     if(bundle_adj_->keyframe_vector_ba_->size()<=2){
-      int test_single = bundle_adj_->test_single_;
-      bundle_adj_->test_single_=TEST_ONLY_POINTS;
-      bundle_adj_->optimize();
-      bundle_adj_->test_single_=test_single;
-      if(debug_optimization){
+      // int test_single = bundle_adj_->test_single_;
+      // bundle_adj_->test_single_=TEST_ONLY_POINTS;
+      // bundle_adj_->optimize();
+      // bundle_adj_->test_single_=test_single;
+      // if(debug_optimization){
         std::this_thread::sleep_for(std::chrono::microseconds(10000));
         optimization_done_.notify_all();
-      }
+      // }
 
       continue;
     }
@@ -738,7 +739,7 @@ void Dtam::test_optimization_points(){
 
 void Dtam::test_dso(){
 
-  bool debug_initialization=true;
+  bool debug_initialization=false;
   bool debug_mapping=false;
   bool debug_tracking=true;
   bool debug_optimization= true;
