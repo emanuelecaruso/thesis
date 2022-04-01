@@ -380,6 +380,7 @@ class BundleAdj{
   private:
 
     friend class Tracker;
+    friend class Initializer;
 
     Dtam* const dtam_;
     Params* const parameters_;

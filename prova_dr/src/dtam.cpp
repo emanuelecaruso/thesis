@@ -286,7 +286,6 @@ void Dtam::doFrontEndPart(bool all_keyframes, bool wait_for_initialization, bool
     // }
 
     tracker_->trackCam(take_gt_poses,track_candidates,guess_type,debug_tracking);
-    pts_activated_flag_=false;
 
     if(keyframe_handler_->addKeyframe(all_keyframes)){
 
@@ -520,6 +519,117 @@ void Dtam::doOptimization(bool active_all_candidates, bool debug_optimization, i
       // notify all threads that optimization has been done
       optimization_done_.notify_all();
     }
+
+  }
+}
+
+void Dtam::doDSOSequential(bool debug_initialization, bool debug_mapping, bool debug_tracking, bool debug_optimization, bool take_gt_poses, bool take_gt_points, int guess_type, int opt_norm, int test_single, int image_id, bool all_keyframes, bool active_all_candidates, bool show_spectator){
+
+  bool initialization_done = false;
+  setOptimizationFlags(debug_optimization,opt_norm,test_single,image_id,0);
+
+  while(true){
+
+    // if the frame is the latest
+    if(frame_current_==int(camera_vector_->size())-1){
+
+      //if cameras are ended
+      if(update_cameras_thread_finished_){
+        break;
+      }
+      else{
+        waitForNewFrame();
+      }
+    }
+
+
+    double t_start=getTime();
+    frame_current_++;
+    int frame_delay = camera_vector_->size()-frame_current_-1;
+
+    // initialization
+    if(!initialization_done){
+      sharedCoutDebug("\nINITIALIZATION of Frame "+std::to_string(frame_current_)+" ("+camera_vector_->at(frame_current_)->name_+") , frame delay: "+std::to_string(frame_delay));
+
+      if(frame_current_==0){
+
+        // camera management
+        tracker_->trackCam(true); // groundtruth
+        keyframe_handler_->addFixedFrame(); // first frame is fixed
+        keyframe_handler_->prepareDataForBA();
+
+        // initialization
+        initializer_->extractCorners();
+        if(debug_initialization)
+          initializer_->showCornersTrackCurr();
+        mapper_->selectNewCandidates();
+
+      }
+      else{
+        initializer_->trackCornersLK();
+
+        // if a good pose is found ...
+        if(initializer_->findPose()){
+          sharedCoutDebug("   - Pose found");
+          if(debug_initialization)
+            initializer_->showCornersTrackCurr();
+
+          // ... add last keyframe
+          // keyframe_handler_->addKeyframe(true);
+          keyframe_handler_->addFixedFrame();
+          keyframe_handler_->prepareDataForBA();
+
+          // start initializing the model
+          mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
+
+          bundle_adj_->projectActivePoints_prepMarg(0);
+          bundle_adj_->activateNewPoints();
+          bundle_adj_->collectCoarseActivePoints();
+
+
+          mapper_->selectNewCandidates();
+
+          initialization_done=true;
+
+          double t_end=getTime();
+          int deltaTime=(t_end-t_start);
+          sharedCoutDebug("   - INITIALIZATION of frame "+std::to_string(frame_current_)+", computation time: "+ std::to_string(deltaTime)+" ms");
+          if(initialization_done){
+            sharedCoutDebug("\nINITIALIZATION ENDED");
+          }
+
+        }
+      }
+
+    }
+    // front end part
+    else{
+
+        sharedCoutDebug("\nFRONT END for Frame "+std::to_string(frame_current_)+" ("+camera_vector_->at(frame_current_)->name_+") , frame delay: "+std::to_string(frame_delay));
+
+
+        tracker_->trackCam(take_gt_poses,0,guess_type,debug_tracking);
+
+        if(keyframe_handler_->addKeyframe(all_keyframes)){
+          keyframe_handler_->prepareDataForBA();
+
+          mapper_->trackExistingCandidates(take_gt_points,debug_mapping);
+
+          bundle_adj_->projectActivePoints_prepMarg(0);
+          bundle_adj_->activateNewPoints();
+          bundle_adj_->collectCoarseActivePoints();
+
+          bundle_adj_->optimize();
+
+          mapper_->selectNewCandidates();
+        }
+        double t_end=getTime();
+        int deltaTime=(t_end-t_start);
+        sharedCoutDebug("FRONT END part of frame: "+std::to_string(frame_current_)+", time: "+ std::to_string(deltaTime)+" ms");
+
+    }
+
+
 
   }
 }
@@ -783,6 +893,49 @@ void Dtam::test_dso(){
 
 }
 
+
+void Dtam::test_dso_sequential(){
+
+  bool debug_initialization=false;
+  bool debug_mapping=false;
+  bool debug_tracking=false;
+  bool debug_optimization= false;
+
+  bool initialization_loop=false;
+  bool take_gt_poses=false;
+  bool take_gt_points=false;
+
+  bool track_candidates=false;
+  int guess_type=POSE_CONSTANT;
+  // int guess_type=VELOCITY_CONSTANT;
+  int opt_norm=HUBER;
+  // int opt_norm=QUADRATIC;
+  int test_single=TEST_ALL;
+  int image_id=INTENSITY_ID;
+  // int image_id=GRADIENT_ID;
+  // int image_id=PHASE_ID;
+  bool test_marginalization=false;
+
+  bool all_keyframes=false;
+
+  bool active_all_candidates=true;
+
+  bool show_spectator=true;
+
+  std::thread update_cameras_thread_(&Dtam::updateCamerasFromEnvironment, this);
+  std::thread dso_thread_(&Dtam::doDSOSequential, this, debug_initialization, debug_mapping, debug_tracking, debug_optimization, take_gt_poses, take_gt_points, guess_type, opt_norm, test_single, image_id, all_keyframes, active_all_candidates, show_spectator );
+  // std::thread dso_thread_(&Dtam::doDSOSequential, this);
+  // std::thread spectator_thread(&Dtam::doSpect, this);
+
+  // spectator_thread.join();
+  dso_thread_.join();
+  update_cameras_thread_.join();
+
+  makeJsonForCameras("./dataset/"+environment_->dataset_name_+"/state_cameras.json");
+  makeJsonForActivePts("./dataset/"+environment_->dataset_name_+"/state.json", camera_vector_->at(5));
+
+
+}
 
 // TODO remove
 bool Dtam::makeJsonForCands(const std::string& path_name, CameraForMapping* camera){

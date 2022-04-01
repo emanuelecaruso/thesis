@@ -42,6 +42,7 @@ class CamCouple{
     bool getCoord(float u1, float v1, float d1, float& coord, bool u_or_v);
     bool getUv(float u1, float v1, float d1, float& u2, float& v2 );
     bool getD1(float u1, float v1, float& d1, float coord, bool u_or_v);
+    bool getD1(float u1, float v1, float& d1, float u2, float v2);
     bool getD2(float u1, float v1, float d1, float& d2);
     bool getSlope(float u1, float v1, float& slope_m);
 

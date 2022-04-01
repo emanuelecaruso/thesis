@@ -148,6 +148,51 @@ bool Initializer::findPose(){
 
 }
 
+void Initializer::corners2activePoints(){
+
+  // CameraForMapping* cam_r =dtam_->camera_vector_->at(ref_frame_idx_);
+  // CameraForMapping* cam_m =dtam_->camera_vector_->at(ref_frame_idx_+1);
+  // std::cout << "cam r m " << cam_r->name_ << " " << cam_m->name_ << std::endl;
+  //
+  // // cam couple
+  // CamCouple cam_couple(cam_r,cam_m);
+  //
+  // // iterate through all corners
+  // for (int i=0; i<corners_vec_->at(1)->size(); i++) {
+  //
+  //   if(inliers_vec_->at(1)->at(i)){
+  //
+  //     cv::Point2f& corner_r = corners_vec_->at(0)->at(i);
+  //     cv::Point2f& corner_m = corners_vec_->at(1)->at(i);
+  //
+  //     pxl pixel_r(corner_r.x/2,corner_r.y/2);
+  //     pxl pixel_m(corner_m.x/2,corner_m.y/2);
+  //     Eigen::Vector2f uv_r;
+  //     Eigen::Vector2f uv_m;
+  //     cam_r->pixelCoords2uv(pixel_r,uv_r,0);
+  //     cam_m->pixelCoords2uv(pixel_m,uv_m,0);
+  //
+  //     float d1;
+  //
+  //     cam_couple.getD1(uv_r.x(),uv_r.y(),d1,uv_m.x(),uv_m.y());
+  //
+  //     pixelIntensity c = cam_r->wavelet_dec_->getWavLevel(0)->c->evalPixel( pixel_r.y(), pixel_r.x() );
+  //     pixelIntensity magn_cd = cam_r->wavelet_dec_->getWavLevel(0)->magn_cd->evalPixel( pixel_r.y(), pixel_r.x() );
+  //     pixelIntensity phase_cd = cam_r->wavelet_dec_->getWavLevel(0)->phase_cd->evalPixel( pixel_r.y(), pixel_r.x() );
+  //
+  //     // create active point from corner
+  //     ActivePoint* active_point = new ActivePoint(pixel_r, uv_r, cam_r, 0, 0, 0, 1.0/d1, 0.001);
+  //     // push active point
+  //     active_point->cam_->active_points_->push_back(active_point);
+  //
+  //     dtam_->bundle_adj_->num_active_points_++;
+  //
+  //   }
+  //   dtam_->bundle_adj_->collectCoarseActivePoints();
+  //   }
+
+}
+
 Eigen::Isometry3f Initializer::computeRelativePoseGt(){
   Eigen::Isometry3f w_T_m = *(dtam_->environment_->camera_vector_->at(dtam_->frame_current_)->frame_camera_wrt_world_);
   Eigen::Isometry3f r_T_w = *(dtam_->camera_vector_->at(ref_frame_idx_)->frame_world_wrt_camera_);

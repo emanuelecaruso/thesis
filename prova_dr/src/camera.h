@@ -118,6 +118,7 @@ class Camera{
     // functions for projections/transformations
     void pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv, int level) const;
     void pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv) const;
+    Eigen::Vector2f pixelCoords2uv(const pxl& pixel_coords) const;
     void uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords, int level) const;
     void uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords) const;
     void pointAtDepth(const Eigen::Vector2f& uv, float depth, Eigen::Vector3f& p) const;
@@ -341,15 +342,49 @@ class ActivePoint : public CandidateBase{
       *p_0_=*cand->p_;
     }
 
+    // active point from corner
+    ActivePoint(pxl& pixel, Eigen::Vector2f& uv,
+                CameraForMapping* cam,
+                pixelIntensity intensity,
+                float grad_magnitude,
+                float grad_phase,
+                float invdepth, float invdepth_var):
+    CandidateBase( 0, pixel, uv),
+    cam_(cam),
+    regions_coarse_(new std::vector<RegionWithActivePoints*>),
+
+    // current guess
+    invdepth_(invdepth),
+    p_incamframe_( new Eigen::Vector3f ),
+    p_(new Eigen::Vector3f),
+    invdepth_var_(invdepth_var),
+    // tangent space point
+    invdepth_0_(invdepth),
+    p_incamframe_0_(new Eigen::Vector3f),
+    p_0_(new Eigen::Vector3f),
+    // active point features
+    intensity_(intensity_),
+    grad_magnitude_(grad_magnitude_),
+    grad_phase_(grad_phase_),
+    // delta update x
+    delta_update_x_(0),
+
+    not_seen_in_last_keyframe_(false),
+    state_point_block_idx_(-1),
+    state_point_block_marg_idx_(-1),
+    has_occlusion_(false),
+    to_marginalize_(false)
+    {
+      initForActivationFromCorner();
+    }
+    void initForActivationFromCorner();
+
     // coarse active point
     ActivePoint(int level, pxl& pixel, Eigen::Vector2f& uv,
                 CameraForMapping* cam,
                 pixelIntensity intensity,
                 float grad_magnitude,
                 float grad_phase,
-                // float intensity_dx, float intensity_dy,
-                // float grad_magnitude_dx, float grad_magnitude_dy,
-                // float grad_phase_dx, float grad_phase_dy,
                 float invdepth, float invdepth_var, Eigen::Vector3f* p,
                 Eigen::Vector3f* p_incamframe ):
     CandidateBase( level, pixel, uv),

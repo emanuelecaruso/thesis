@@ -591,6 +591,7 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
 
     std::vector<float> chi_vec;
     float first_chi_der = 0;
+    float local_thresh;
 
     while(iterations<dtam_->parameters_->max_iterations_ls){
 
@@ -659,12 +660,16 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
       if (chi_vec.size()<=2){
         // first_chi_der=chi_vec.at(0)-chi_vec.at(1);
         current_guess=new_guess;
+
+        if(chi_vec.size()==2){
+          local_thresh= (chi_vec.at(0)-chi_vec.at(1))*dtam_->parameters_->ratio_for_convergence;
+        }
       }
       // if (iterations<dtam_->parameters_->max_iterations_ls/2){
       //   current_guess=new_guess;
       // }
       else {
-        if( (chi_vec.at(chi_vec.size()-2)-chi)<0  ){
+        if( (chi_vec.at(chi_vec.size()-2)-chi) < local_thresh  ){
           break;
         }
         current_guess=new_guess;
@@ -681,7 +686,8 @@ void Tracker::trackWithActivePoints(Eigen::Isometry3f& current_guess, bool debug
      // break;
      // std::cout << "ao? " << std::endl;
   }
-  cv::destroyWindow("project curr guess, "+frame_new->name_);
+  if(debug_tracking)
+    cv::destroyWindow("project curr guess, "+frame_new->name_);
 
 }
 

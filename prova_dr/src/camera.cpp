@@ -103,6 +103,12 @@ void Camera::pixelCoords2uv(const pxl& pixel_coords, Eigen::Vector2f& uv) const 
   pixelCoords2uv( pixel_coords, uv, -1);
 }
 
+Eigen::Vector2f Camera::pixelCoords2uv(const pxl& pixel_coords) const {
+  Eigen::Vector2f uv;
+  pixelCoords2uv( pixel_coords, uv, -1);
+  return uv;
+}
+
 void Camera::uv2pixelCoords(const Eigen::Vector2f& uv, pxl& pixel_coords, int level) const {
 
   int resolution_x=cam_parameters_->resolution_x/(pow(2,level+1));
@@ -441,6 +447,15 @@ void ActivePoint::marginalize(){
   }
 
 }
+
+void ActivePoint::initForActivationFromCorner(){
+  cam_->pointAtDepth(uv_, 1.0/invdepth_, *p_, *p_incamframe_);
+
+  *p_incamframe_0_=(*p_incamframe_);
+  *p_0_=(*p_);
+}
+
+
 
 void ActivePoint::remove(){
   // remove point from vector of active points

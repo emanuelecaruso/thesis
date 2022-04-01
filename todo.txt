@@ -1,4 +1,9 @@
-- include corners
+- include corners ... no?
+
+- doOptimization -> test type as input
+
+- solve numerical stability problem
+
 - make sequential version
 - check sequential version with parallel for
 - work on parallel version using more threads

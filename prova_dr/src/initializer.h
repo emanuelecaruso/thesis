@@ -25,8 +25,12 @@ class Initializer{
     void showCornersTrackSequence();
     void showCornersTrackCurr();
     bool findPose();
+    void corners2activePoints();
 
   private:
+
+    friend class Dtam;
+    
     Dtam* const dtam_;
     Params* const parameters_;
 

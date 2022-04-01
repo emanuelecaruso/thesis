@@ -584,7 +584,7 @@ void HessianAndB_base::LMDampening(Params* parameters){
   // float damp_coeff = max_eig*1e-3;
 
 
-  float damp_pt_coeff = 100;
+  float damp_pt_coeff = 150;
   // float damp_pt_coeff = 1;
   // float damp_pose_coeff = 0.01*pose_block_size*point_block_size;
 
@@ -1615,7 +1615,7 @@ bool BundleAdj::marginalization( ){
   //
   // // debug
   if(debug_optimization_){
-    hessian_b_marg->visualizeHMarg("Hessian marginalization");
+    // hessian_b_marg->visualizeHMarg("Hessian marginalization");
     // hessian_b_marg->hessian_b_marg_old->visualizeH("Hessian marginalization OLD");
   }
 
@@ -1833,7 +1833,7 @@ float BundleAdj::optimizationStep(bool with_marg){
 
 
   if(debug_optimization_){
-    hessian_b->visualizeH("Hessian");
+    // hessian_b->visualizeH("Hessian");
   }
   delete jacobians_and_error_vec;
 
@@ -1936,11 +1936,11 @@ void BundleAdj::optimize(){
         // poses_norm_error_tot->print();
         // std::cout << std::endl;
 
-        chi_history->push_back(chi);
-        pose_angle_error_history->push_back(poses_norm_error_tot->angle);
-        pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
-        points_error_history->push_back(points_norm_error_tot);
-        // waitkey(0);
+        // chi_history->push_back(chi);
+        // pose_angle_error_history->push_back(poses_norm_error_tot->angle);
+        // pose_position_error_history->push_back(poses_norm_error_tot->position_norm);
+        // points_error_history->push_back(points_norm_error_tot);
+        waitkey(0);
       // }
     }
   }
@@ -1951,14 +1951,14 @@ void BundleAdj::optimize(){
     cv::destroyWindow(last_keyframe->name_+", projected active points");
     // if(keyframe_vector_ba_->size()>=parameters_->num_active_keyframes || !test_marginalization_){
 
-      showLine(*chi_history, "chi_history");
-      showLine(*pose_angle_error_history, "pose_angle_error_history");
-      showLine(*pose_position_error_history, "pose_position_error_history");
-      showLine(*points_error_history, "points_error_history");
-      chi_history->clear();
-      pose_angle_error_history->clear();
-      pose_position_error_history->clear();
-      points_error_history->clear();
+      // showLine(*chi_history, "chi_history");
+      // showLine(*pose_angle_error_history, "pose_angle_error_history");
+      // showLine(*pose_position_error_history, "pose_position_error_history");
+      // showLine(*points_error_history, "points_error_history");
+      // chi_history->clear();
+      // pose_angle_error_history->clear();
+      // pose_position_error_history->clear();
+      // points_error_history->clear();
     // }
   }
 
@@ -1969,6 +1969,9 @@ void BundleAdj::optimize(){
   // getCoarseActivePoints();
 
   // after optimization, remove added_ba_ flag on keyframe
+  double t_end=getTime();
+  int deltaTime=(t_end-t_start);
+  sharedCoutDebug("   - Bundle adjustment, time: "+ std::to_string(deltaTime)+" ms");
 
 }
 

@@ -29,7 +29,7 @@ static float flow_dist_threshold_=0.0001;
 static float percentage_marg_pts_threshold_ = 0.05;
 
 // optimization
-static int max_iterations_ba_=30;
+static int max_iterations_ba_=7;
 static int max_num_active_points_=4000;
 // static float huber_threshold_=0.02;
 static float huber_threshold_=0.07;
@@ -46,7 +46,7 @@ static float damp_pose_orientation_ = 0;
 static float damp_point_invdepth_ = 0;
 
 // tracking
-static int max_iterations_ls_=20;
+static int max_iterations_ls_=7;
 static float variance_ = 0.1;
 static int robustifier_dofs_=2;
 static float ratio_for_convergence_ = 0.001;

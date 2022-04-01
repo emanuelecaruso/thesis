@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/usr/local/include/eigen3 -I/usr/include/python3.6m -I/home/emanuele/.local/lib/python3.6/site-packages/numpy/core/include -I/home/emanuele/Scrivania/thesis/prova_dr/src -I/home/emanuele/Scrivania/thesis/prova_dr/src_cuda -I/home/emanuele/Scrivania/thesis/prova_dr/libs -isystem /usr/local/include/opencv4
 
-CXX_FLAGS = -std=c++11 -O3  -pthread -g   -D USE_CUDA
+CXX_FLAGS = -std=c++11 -O3  -pthread -O3 -DNDEBUG   -D USE_CUDA
 

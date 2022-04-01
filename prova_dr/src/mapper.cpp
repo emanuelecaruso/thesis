@@ -111,6 +111,23 @@ bool CamCouple::getD1(float u1, float v1, float& d1, float coord, bool u_or_v){
 
 }
 
+bool CamCouple::getD1(float u1, float v1, float& d1, float u2, float v2){
+  float slope = (v2-v1)/(u2-u1);
+  bool u_or_v = (slope<1 && slope>-1);
+  bool out;
+  // u2
+  if (u_or_v){
+    out = getD1( u1, v1, d1, u2, u_or_v);
+  }
+  // v2
+  else{
+    out = getD1( u1, v1, d1, v2, u_or_v);
+  }
+
+  return out;
+
+}
+
 bool CamCouple::getD2(float u1, float v1, float d1, float& d2){
   d2=(A_d*u1*d1+B_d*v1*d1+C_d*d1+D_d);
   // assert(!std::isnan(d2));
